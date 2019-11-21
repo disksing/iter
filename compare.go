@@ -2,6 +2,18 @@ package iter
 
 import "reflect"
 
+// Comparable values can compare against another value with the same type.
+type Comparable interface {
+	Less(Any) bool
+}
+
+func _less(x, y Any) bool {
+	if c, ok := x.(Comparable); ok {
+		return c.Less(y)
+	}
+	return reflectCompare(x, y) == -1
+}
+
 // Borrow from https://github.com/stretchr/testify/blob/master/assert/assertion_order.go
 func reflectCompare(obj1, obj2 interface{}) int {
 	k1 := reflect.ValueOf(obj1).Kind()

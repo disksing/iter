@@ -1,9 +1,12 @@
 package iter
 
+// Max returns the greater of the given values.
 func Max(a, b interface{}) interface{} {
 	return MaxBy(a, b, _less)
 }
 
+// MaxBy returns the greater of the given values. Values are compared using the
+// given binary comparison function less.
 func MaxBy(a, b interface{}, less BinaryPredicate) interface{} {
 	if less(a, b) {
 		return b
@@ -11,10 +14,13 @@ func MaxBy(a, b interface{}, less BinaryPredicate) interface{} {
 	return a
 }
 
+// MaxElement returns the largest element in a range.
 func MaxElement(first, last ForwardReader) ForwardReader {
 	return MaxElementBy(first, last, _less)
 }
 
+// MaxElementBy returns the largest element in a range. Values are compared
+// using the given binary comparison function less.
 func MaxElementBy(first, last ForwardReader, less BinaryPredicate) ForwardReader {
 	if _eq(first, last) {
 		return last
@@ -28,10 +34,13 @@ func MaxElementBy(first, last ForwardReader, less BinaryPredicate) ForwardReader
 	return max
 }
 
+// Min returns the smaller of the given values.
 func Min(a, b interface{}) interface{} {
 	return MinBy(a, b, _less)
 }
 
+// MinBy returns the smaller of the given values. Values are compared using the
+// given binary comparison function less.
 func MinBy(a, b interface{}, less BinaryPredicate) interface{} {
 	if less(a, b) {
 		return a
@@ -39,10 +48,13 @@ func MinBy(a, b interface{}, less BinaryPredicate) interface{} {
 	return b
 }
 
+// MinElement returns the smallest element in a range.
 func MinElement(first, last ForwardReader) ForwardReader {
 	return MinElementBy(first, last, _less)
 }
 
+// MinElementBy returns the smallest element in a range. Values are compared
+// using the given binary comparison function less.
 func MinElementBy(first, last ForwardReader, less BinaryPredicate) ForwardReader {
 	if _eq(first, last) {
 		return last
@@ -56,10 +68,13 @@ func MinElementBy(first, last ForwardReader, less BinaryPredicate) ForwardReader
 	return min
 }
 
+// Minmax returns the smaller and larger of two elements.
 func Minmax(a, b interface{}) (interface{}, interface{}) {
 	return MinmaxBy(a, b, _less)
 }
 
+// MinmaxBy returns the smaller and larger of two elements. Values are compared
+// using the given binary comparison function less.
 func MinmaxBy(a, b interface{}, less BinaryPredicate) (interface{}, interface{}) {
 	if less(b, a) {
 		return b, a
@@ -67,10 +82,13 @@ func MinmaxBy(a, b interface{}, less BinaryPredicate) (interface{}, interface{})
 	return a, b
 }
 
+// MinmaxElement returns the smallest and the largest elements in a range.
 func MinmaxElement(first, last ForwardReader) (ForwardReader, ForwardReader) {
 	return MinmaxElementBy(first, last, _less)
 }
 
+// MinmaxElementBy returns the smallest and the largest elements in a range.
+// Values are compared using the given binary comparison function less.
 func MinmaxElementBy(first, last ForwardReader, less BinaryPredicate) (ForwardReader, ForwardReader) {
 	if _eq(first, last) {
 		return first, first
@@ -106,10 +124,13 @@ func MinmaxElementBy(first, last ForwardReader, less BinaryPredicate) (ForwardRe
 	return min, max
 }
 
+// Clamp clamps a value between a pair of boundary values.
 func Clamp(v, lo, hi interface{}) interface{} {
 	return ClampBy(v, lo, hi, _less)
 }
 
+// ClampBy clamps a value between a pair of boundary values. Values are compared
+// using the given binary comparison function less.
 func ClampBy(v, lo, hi interface{}, less BinaryPredicate) interface{} {
 	if less(v, lo) {
 		return lo
