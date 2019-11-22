@@ -1,11 +1,7 @@
 package iter
 
 func IsPartitioned(first, last ForwardReader, pred UnaryPredicate) bool {
-	first = FindIfNot(first, last, pred)
-	if _eq(first, last) {
-		return true
-	}
-	return NoneOf(NextReader(first), last, pred)
+	return NoneOf(FindIfNot(first, last, pred), last, pred)
 }
 
 func Partition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWriter {

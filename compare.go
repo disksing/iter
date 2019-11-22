@@ -11,7 +11,7 @@ func _less(x, y Any) bool {
 	if c, ok := x.(Comparable); ok {
 		return c.Less(y)
 	}
-	return reflectCompare(x, y) == -1
+	return reflectCompare(x, y) == 1
 }
 
 // Borrow from https://github.com/stretchr/testify/blob/master/assert/assertion_order.go

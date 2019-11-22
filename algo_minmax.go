@@ -1,13 +1,13 @@
 package iter
 
 // Max returns the greater of the given values.
-func Max(a, b interface{}) interface{} {
+func Max(a, b Any) Any {
 	return MaxBy(a, b, _less)
 }
 
 // MaxBy returns the greater of the given values. Values are compared using the
 // given binary comparison function less.
-func MaxBy(a, b interface{}, less BinaryPredicate) interface{} {
+func MaxBy(a, b Any, less BinaryPredicate) Any {
 	if less(a, b) {
 		return b
 	}
@@ -35,13 +35,13 @@ func MaxElementBy(first, last ForwardReader, less BinaryPredicate) ForwardReader
 }
 
 // Min returns the smaller of the given values.
-func Min(a, b interface{}) interface{} {
+func Min(a, b Any) Any {
 	return MinBy(a, b, _less)
 }
 
 // MinBy returns the smaller of the given values. Values are compared using the
 // given binary comparison function less.
-func MinBy(a, b interface{}, less BinaryPredicate) interface{} {
+func MinBy(a, b Any, less BinaryPredicate) Any {
 	if less(a, b) {
 		return a
 	}
@@ -69,13 +69,13 @@ func MinElementBy(first, last ForwardReader, less BinaryPredicate) ForwardReader
 }
 
 // Minmax returns the smaller and larger of two elements.
-func Minmax(a, b interface{}) (interface{}, interface{}) {
+func Minmax(a, b Any) (Any, Any) {
 	return MinmaxBy(a, b, _less)
 }
 
 // MinmaxBy returns the smaller and larger of two elements. Values are compared
 // using the given binary comparison function less.
-func MinmaxBy(a, b interface{}, less BinaryPredicate) (interface{}, interface{}) {
+func MinmaxBy(a, b Any, less BinaryPredicate) (Any, Any) {
 	if less(b, a) {
 		return b, a
 	}
@@ -103,6 +103,7 @@ func MinmaxElementBy(first, last ForwardReader, less BinaryPredicate) (ForwardRe
 			} else if less(max.Read(), i.Read()) {
 				max = i
 			}
+			break
 		} else {
 			if less(first.Read(), i.Read()) {
 				if less(first.Read(), min.Read()) {
@@ -125,13 +126,13 @@ func MinmaxElementBy(first, last ForwardReader, less BinaryPredicate) (ForwardRe
 }
 
 // Clamp clamps a value between a pair of boundary values.
-func Clamp(v, lo, hi interface{}) interface{} {
+func Clamp(v, lo, hi Any) Any {
 	return ClampBy(v, lo, hi, _less)
 }
 
 // ClampBy clamps a value between a pair of boundary values. Values are compared
 // using the given binary comparison function less.
-func ClampBy(v, lo, hi interface{}, less BinaryPredicate) interface{} {
+func ClampBy(v, lo, hi Any, less BinaryPredicate) Any {
 	if less(v, lo) {
 		return lo
 	}
