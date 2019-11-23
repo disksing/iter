@@ -94,7 +94,7 @@ func TestForEach(t *testing.T) {
 	assert := assert.New(t)
 	a := randIntSlice()
 	var b []int
-	f := func(x Iter) { b = append(b, x.(Readable).Read().(int)) }
+	f := func(x Iter) { b = append(b, x.(Reader).Read().(int)) }
 	ForEach(begin(a), end(a), f)
 	sliceEqual(assert, a, b)
 	n := rand.Intn(len(a) + 1)
