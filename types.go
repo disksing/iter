@@ -2,6 +2,26 @@ package iter
 
 import "reflect"
 
+// Equalable values can evaluate equivalent with anthoer value with the same
+// type.
+type Equalable interface {
+	Equal(Any) bool
+}
+
+func _eq(x Any, y Any) bool {
+	if e, ok := x.(Equalable); ok {
+		return e.Equal(y)
+	}
+	if e, ok := y.(Equalable); ok {
+		return e.Equal(x)
+	}
+	return x == y
+}
+
+func _ne(x Any, y Any) bool {
+	return !_eq(x, y)
+}
+
 // Comparable values can compare against another value with the same type.
 type Comparable interface {
 	Less(Any) bool
@@ -207,3 +227,34 @@ func reflectCompare(obj1, obj2 interface{}) int {
 	}
 	panic("unknown type")
 }
+
+// Any represents any type.
+type Any = interface{}
+
+// Function types.
+type (
+	UnaryPredicate  func(Any) bool
+	BinaryPredicate func(Any, Any) bool
+	IterFunction    func(Iter)
+	UnaryOperation  func(Any) Any
+	BinaryOperation func(Any, Any) Any
+	Generator       func() Any
+)
+
+func _eq1(v Any) UnaryPredicate {
+	return func(x Any) bool {
+		return _eq(v, x)
+	}
+}
+
+func _ne1(v Any) UnaryPredicate {
+	return func(x Any) bool {
+		return _ne(v, x)
+	}
+}
+
+func _not1(p UnaryPredicate) UnaryPredicate {
+	return func(x Any) bool { return !p(x) }
+}
+
+func _true1(Any) bool { return true }
