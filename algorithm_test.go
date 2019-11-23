@@ -2,10 +2,11 @@ package iter_test
 
 import (
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/disksing/iter"
+	. "github.com/disksing/iter"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,9 +26,20 @@ func randIntSlice() []int {
 	return s
 }
 
+func randString() string {
+	l := randInt()
+	var s strings.Builder
+	for i := 0; i < l; i++ {
+		s.WriteByte('a' + byte(rand.Intn(26)))
+	}
+	return s.String()
+}
+
 var (
-	begin = iter.SliceBegin
-	end   = iter.SliceEnd
+	begin    = SliceBegin
+	end      = SliceEnd
+	strBegin = StringBegin
+	strEnd   = StringEnd
 )
 
 func init() {
@@ -42,12 +54,12 @@ func sliceEqual(assert *assert.Assertions, a, b []int) {
 }
 
 func iterEqual(assert *assert.Assertions, a, b interface{}) {
-	assert.True(a.(iter.Equalable).Equal(b), "a=%v\nb=%v", a, b)
+	assert.True(a.(Equalable).Equal(b), "a=%v\nb=%v", a, b)
 }
 
 func TestAllAnyNoneOf(t *testing.T) {
 	assert := assert.New(t)
-	pred := func(x iter.Any) bool { return x.(int)%2 == 0 }
+	pred := func(x Any) bool { return x.(int)%2 == 0 }
 	allOf := func(x []int) bool {
 		for _, v := range x {
 			if !pred(v) {
@@ -73,21 +85,21 @@ func TestAllAnyNoneOf(t *testing.T) {
 		return true
 	}
 	s := randIntSlice()
-	assert.Equal(iter.AllOf(begin(s), end(s), pred), allOf(s))
-	assert.Equal(iter.AnyOf(begin(s), end(s), pred), anyOf(s))
-	assert.Equal(iter.NoneOf(begin(s), end(s), pred), noneOf(s))
+	assert.Equal(AllOf(begin(s), end(s), pred), allOf(s))
+	assert.Equal(AnyOf(begin(s), end(s), pred), anyOf(s))
+	assert.Equal(NoneOf(begin(s), end(s), pred), noneOf(s))
 }
 
 func TestForEach(t *testing.T) {
 	assert := assert.New(t)
 	a := randIntSlice()
 	var b []int
-	f := func(x iter.Iter) { b = append(b, x.(iter.Readable).Read().(int)) }
-	iter.ForEach(begin(a), end(a), f)
+	f := func(x Iter) { b = append(b, x.(Readable).Read().(int)) }
+	ForEach(begin(a), end(a), f)
 	sliceEqual(assert, a, b)
 	n := rand.Intn(len(a) + 1)
 	b = nil
-	iter.ForEachN(begin(a), n, f)
+	ForEachN(begin(a), n, f)
 	sliceEqual(assert, a[:n], b)
 }
 
@@ -99,19 +111,19 @@ func TestCount(t *testing.T) {
 		m[x]++
 	}
 	for i := 0; i < 100; i++ {
-		assert.Equal(iter.Count(begin(a), end(a), i), m[i])
+		assert.Equal(Count(begin(a), end(a), i), m[i])
 	}
 }
 
 func TestMismatch(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randIntSlice(), randIntSlice()
-	var last2 iter.ForwardReader
+	var last2 ForwardReader
 	if len(b) <= len(a) || rand.Intn(2) == 0 {
 		last2 = end(b)
 	}
-	it1, it2 := iter.Mismatch(begin(a), end(a), begin(b), last2)
-	n1, n2 := iter.Distance(begin(a), it1), iter.Distance(begin(b), it2)
+	it1, it2 := Mismatch(begin(a), end(a), begin(b), last2)
+	n1, n2 := Distance(begin(a), it1), Distance(begin(b), it2)
 	assert.Equal(n1, n2)
 	assert.Equal(a[:n1], b[:n1])
 	assert.True((n1 >= len(a)) || (n1 >= len(b)) || a[n1] != b[n1])
@@ -120,21 +132,21 @@ func TestMismatch(t *testing.T) {
 func TestFind(t *testing.T) {
 	assert := assert.New(t)
 	a := randIntSlice()
-	f := func(x iter.Any) bool { return x.(int)%2 == 0 }
+	f := func(x Any) bool { return x.(int)%2 == 0 }
 	v := randInt()
-	it := iter.Find(begin(a), end(a), v)
-	assert.True(iter.NoneOf(begin(a), it, func(x iter.Any) bool { return x.(int) == v }))
-	if n := iter.Distance(begin(a), it); n < len(a) {
+	it := Find(begin(a), end(a), v)
+	assert.True(NoneOf(begin(a), it, func(x Any) bool { return x.(int) == v }))
+	if n := Distance(begin(a), it); n < len(a) {
 		assert.Equal(a[n], v)
 	}
-	it = iter.FindIf(begin(a), end(a), f)
-	assert.True(iter.NoneOf(begin(a), it, f))
-	if n := iter.Distance(begin(a), it); n < len(a) {
+	it = FindIf(begin(a), end(a), f)
+	assert.True(NoneOf(begin(a), it, f))
+	if n := Distance(begin(a), it); n < len(a) {
 		assert.True(f(a[n]))
 	}
-	it = iter.FindIfNot(begin(a), end(a), f)
-	assert.True(iter.AllOf(begin(a), it, f))
-	if n := iter.Distance(begin(a), it); n < len(a) {
+	it = FindIfNot(begin(a), end(a), f)
+	assert.True(AllOf(begin(a), it, f))
+	if n := Distance(begin(a), it); n < len(a) {
 		assert.False(f(a[n]))
 	}
 }
@@ -142,33 +154,87 @@ func TestFind(t *testing.T) {
 func TestFindEnd(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randIntSlice(), randIntSlice()
-	it := iter.FindEnd(begin(a), end(a), begin(b), end(b))
-	if it.(iter.Equalable).Equal(end(a)) {
+	it := FindEnd(begin(a), end(a), begin(b), end(b))
+	if it.(Equalable).Equal(end(a)) {
 		if len(b) > 0 {
-			it = iter.Search(begin(a), end(a), begin(b), end(b))
+			it = Search(begin(a), end(a), begin(b), end(b))
 		}
 	} else {
-		assert.True(iter.Equal(begin(b), end(b), it, nil))
-		it = iter.FindEnd(iter.NextReader(it), end(a), begin(b), end(b))
+		assert.True(Equal(begin(b), end(b), it, nil))
+		it = FindEnd(NextReader(it), end(a), begin(b), end(b))
 	}
 	iterEqual(assert, it, end(a))
+}
+
+func TestFindFirstOf(t *testing.T) {
+	a, b := randString(), randString()
+	i := strings.IndexAny(a, b)
+	if i == -1 {
+		i = len(a)
+	}
+	iterEqual(assert.New(t),
+		FindFirstOf(strBegin(a), strEnd(a), strBegin(b), strEnd(b)),
+		AdvanceN(strBegin(a), i),
+	)
+}
+
+func TestAdjacentFind(t *testing.T) {
+	a := randIntSlice()
+	res := len(a)
+	for i := 0; i < len(a)-1; i++ {
+		if a[i] == a[i+1] {
+			res = i
+			break
+		}
+	}
+	iterEqual(assert.New(t),
+		AdjacentFind(begin(a), end(a)),
+		AdvanceN(begin(a), res),
+	)
+}
+
+func TestSearch(t *testing.T) {
+	a, b := randString(), randString()
+	i := strings.Index(a, b)
+	if i == -1 {
+		i = len(a)
+	}
+	iterEqual(assert.New(t),
+		Search(strBegin(a), strEnd(a), strBegin(b), strEnd(b)),
+		AdvanceN(strBegin(a), i),
+	)
+}
+
+func TestSearchN(t *testing.T) {
+	a := randString()
+	c := byte('a' + byte(rand.Intn(26)))
+	n := rand.Intn(10)
+	b := strings.Repeat(string(c), n)
+	i := strings.Index(a, b)
+	if i == -1 {
+		i = len(a)
+	}
+	iterEqual(assert.New(t),
+		SearchN(strBegin(a), strEnd(a), n, c),
+		AdvanceN(strBegin(a), i),
+	)
 }
 
 func TestMinmax(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randInt(), randInt()
-	min, max := iter.Minmax(a, b)
+	min, max := Minmax(a, b)
 	assert.LessOrEqual(min, max)
-	assert.Equal(iter.Max(a, b), max)
-	assert.Equal(iter.Min(a, b), min)
+	assert.Equal(Max(a, b), max)
+	assert.Equal(Min(a, b), min)
 }
 
 func TestMinmaxElement(t *testing.T) {
 	assert := assert.New(t)
 	s := randIntSlice()
-	min, max := iter.MinmaxElement(begin(s), end(s))
-	min2, max2 := iter.MinElement(begin(s), end(s)), iter.MaxElement(begin(s), end(s))
-	assert.True(iter.NoneOf(begin(s), end(s), func(v iter.Any) bool { return v.(int) > max.Read().(int) || v.(int) < min.Read().(int) }))
+	min, max := MinmaxElement(begin(s), end(s))
+	min2, max2 := MinElement(begin(s), end(s)), MaxElement(begin(s), end(s))
+	assert.True(NoneOf(begin(s), end(s), func(v Any) bool { return v.(int) > max.Read().(int) || v.(int) < min.Read().(int) }))
 	if len(s) > 0 {
 		assert.Equal(min.Read(), min2.Read())
 		assert.Equal(max.Read(), max2.Read())
@@ -182,9 +248,9 @@ func TestMinmaxElement(t *testing.T) {
 
 func TestClamp(t *testing.T) {
 	assert := assert.New(t)
-	l, h := iter.Minmax(randInt(), randInt())
+	l, h := Minmax(randInt(), randInt())
 	v := randInt()
-	c := iter.Clamp(v, l, h)
+	c := Clamp(v, l, h)
 	if c != v {
 		assert.True(v < l.(int) || v > h.(int))
 	}

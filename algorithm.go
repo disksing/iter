@@ -14,8 +14,8 @@ func AnyOf(first, last ForwardReader, pred UnaryPredicate) bool {
 	return _ne(FindIf(first, last, pred), last)
 }
 
-// NoneOf checks if unary predicate p returns true for no elements in the range
-// [first, last).
+// NoneOf checks if unary predicate pred returns true for no elements in the
+// range [first, last).
 func NoneOf(first, last ForwardReader, pred UnaryPredicate) bool {
 	return _eq(FindIf(first, last, pred), last)
 }
@@ -139,10 +139,14 @@ func FindFirstOfBy(first, last, sFirst, sLast ForwardReader, pred BinaryPredicat
 	})
 }
 
+// AdjacentFind searches the range [first, last) for two consecutive identical
+// elements.
 func AdjacentFind(first, last ForwardReader) ForwardReader {
 	return AdjacentFindBy(first, last, _eq)
 }
 
+// AdjacentFindBy searches the range [first, last) for two consecutive identical
+// elements. Elements are compared using the given binary predicate pred.
 func AdjacentFindBy(first, last ForwardReader, pred BinaryPredicate) ForwardReader {
 	if _eq(first, last) {
 		return last
@@ -155,10 +159,15 @@ func AdjacentFindBy(first, last ForwardReader, pred BinaryPredicate) ForwardRead
 	return last
 }
 
+// Search searches for the first occurrence of the sequence of elements
+// [sFirst, sLast) in the range [first, last).
 func Search(first, last, sFirst, sLast ForwardReader) ForwardReader {
 	return SearchBy(first, last, sFirst, sLast, _eq)
 }
 
+// SearchBy searches for the first occurrence of the sequence of elements
+// [sFirst, sLast) in the range [first, last). Elements are compared using the
+// given binary predicate pred.
 func SearchBy(first, last, sFirst, sLast ForwardReader, pred BinaryPredicate) ForwardReader {
 	for {
 		it := first
@@ -177,16 +186,21 @@ func SearchBy(first, last, sFirst, sLast ForwardReader, pred BinaryPredicate) Fo
 	}
 }
 
+// SearchN searches the range [first, last) for the first sequence of count
+// identical elements, each equal to the given value.
 func SearchN(first, last ForwardReader, count int, v Any) ForwardReader {
 	return SearchNBy(first, last, count, v, _eq)
 }
 
+// SearchNBy searches the range [first, last) for the first sequence of count
+// identical elements. Elements are compared using the given binary predicate
+// pred.
 func SearchNBy(first, last ForwardReader, count int, v Any, pred BinaryPredicate) ForwardReader {
 	if count <= 0 {
 		return first
 	}
 	for ; _ne(first, last); first = NextReader(first) {
-		if !pred(first, v) {
+		if !pred(first.Read(), v) {
 			continue
 		}
 		candidate := first

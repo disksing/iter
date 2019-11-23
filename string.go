@@ -51,7 +51,7 @@ func (it StringIter) Read() interface{} {
 	return it.s[it.i]
 }
 
-func (it StringIter) Equal(it2 Iter) bool {
+func (it StringIter) Equal(it2 Any) bool {
 	return it.i == it2.(StringIter).i
 }
 
