@@ -97,12 +97,20 @@ func (it SliceIter) Distance(it2 RandomIter) int {
 	return d
 }
 
-// type SliceBackInserter struct {
-// 	s reflect.Value
-// }
+type sliceBackInserter struct {
+	s reflect.Value
+}
 
-// func SliceBackInserter(s Any) *SliceBackInserter {
-// 	return &SliceBackInserter{
-// 		s: reflect.ValueOf(s),
-// 	}
-// }
+func SliceBackInserter(s interface{}) ForwardWriter {
+	return &sliceBackInserter{
+		s: reflect.ValueOf(s).Elem(),
+	}
+}
+
+func (bi *sliceBackInserter) Next() ForwardIter {
+	return bi
+}
+
+func (bi *sliceBackInserter) Write(x Any) {
+	bi.s.Set(reflect.Append(bi.s, reflect.ValueOf(x)))
+}

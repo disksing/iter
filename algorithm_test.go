@@ -220,6 +220,70 @@ func TestSearchN(t *testing.T) {
 	)
 }
 
+func TestCopy(t *testing.T) {
+	a := randIntSlice()
+	var b []int
+	Copy(begin(a), end(a), SliceBackInserter(&b))
+	sliceEqual(assert.New(t), a, b)
+}
+
+func TestCopyIf(t *testing.T) {
+	a := randIntSlice()
+	var b []int
+	f := func(x Any) bool { return x.(int)%2 == 0 }
+	var c []int
+	for _, x := range a {
+		if f(x) {
+			c = append(c, x)
+		}
+	}
+	CopyIf(begin(a), end(a), SliceBackInserter(&b), f)
+	sliceEqual(assert.New(t), b, c)
+}
+
+func TestCopyN(t *testing.T) {
+	a := randIntSlice()
+	n := rand.Intn(len(a) + 1)
+	var b []int
+	CopyN(begin(a), n, SliceBackInserter(&b))
+	sliceEqual(assert.New(t), b, a[:n])
+}
+
+func TestCopyBackward(t *testing.T) {
+	a := randIntSlice()
+	n := randInt()
+	b := make([]int, len(a)+n)
+	CopyBackward(begin(a), end(a), end(b))
+	sliceEqual(assert.New(t), a, b[n:])
+}
+
+func TestFill(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	x := randInt()
+	Fill(begin(a), end(a), x)
+	assert.True(AllOf(begin(a), end(a), func(v Any) bool { return v.(int) == x }))
+}
+
+func TestFillN(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	for len(a) == 0 {
+		a = randIntSlice()
+	}
+	b := append(a[:0:0], a...)
+	n := rand.Intn(len(a)) - rand.Intn(len(a))
+	x := randInt()
+	FillN(begin(a), n, x)
+	for i, v := range a {
+		if i < n {
+			assert.Equal(v, x)
+		} else {
+			assert.Equal(v, b[i])
+		}
+	}
+}
+
 func TestMinmax(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randInt(), randInt()

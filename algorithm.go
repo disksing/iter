@@ -221,10 +221,16 @@ func SearchNBy(first, last ForwardReader, count int, v Any, pred BinaryPredicate
 	return last
 }
 
+// Copy copies the elements in the range, defined by [first, last), to another
+// range beginning at dFirst. It returns an iterator in the destination range,
+// pointing past the last element copied.
 func Copy(first, last ForwardReader, dFirst ForwardWriter) ForwardWriter {
 	return CopyIf(first, last, dFirst, _true1)
 }
 
+// CopyIf copies the elements in the range, defined by [first, last), and
+// predicate pred returns true, to another range beginning at dFirst. It returns
+// an iterator in the destination range, pointing past the last element copied.
 func CopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPredicate) ForwardWriter {
 	for _ne(first, last) {
 		if pred(first.Read()) {
@@ -236,6 +242,9 @@ func CopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPredicate
 	return dFirst
 }
 
+// CopyN copies exactly count values from the range beginning at first to the
+// range beginning at result. It returns an iterator in the destination range,
+// pointing past the last element copied.
 func CopyN(first ForwardReader, count int, result ForwardWriter) ForwardWriter {
 	for ; count > 0; count-- {
 		result.Write(first.Read())
@@ -244,20 +253,27 @@ func CopyN(first ForwardReader, count int, result ForwardWriter) ForwardWriter {
 	return result
 }
 
-func CopyBackward(first, last BackwardReader, dLast BackwardWriter) BackwardWriter {
+// CopyBackward copies the elements from the range, defined by [first, last), to
+// another range ending at dLast. The elements are copied in reverse order (the
+// last element is copied first), but their relative order is preserved. It
+// returns an iterator to the last element copied.
+func CopyBackward(first, last BidiReader, dLast BidiWriter) BidiWriter {
 	for _ne(first, last) {
-		last, dLast = PrevReader(last), PrevWriter(dLast)
+		last, dLast = PrevBidiReader(last), PrevBidiWriter(dLast)
 		dLast.Write(last.Read())
 	}
 	return dLast
 }
 
+// Fill assigns the given value to the elements in the range [first, last).
 func Fill(first, last ForwardWriter, v Any) {
 	for ; _ne(first, last); first = NextWriter(first) {
 		first.Write(v)
 	}
 }
 
+// FillN assigns the given value to the first count elements in the range
+// beginning at first if count > 0. Does nothing otherwise.
 func FillN(first ForwardWriter, count int, v Any) {
 	for ; count > 0; count-- {
 		first.Write(v)
@@ -272,7 +288,7 @@ func Transform(first, last ForwardReader, dFirst ForwardWriter, op UnaryOperatio
 	return dFirst
 }
 
-func Transform2(first1, last1, first2 ForwardReader, dFirst ForwardWriter, op BinaryOperation) ForwardWriter {
+func TransformBinary(first1, last1, first2 ForwardReader, dFirst ForwardWriter, op BinaryOperation) ForwardWriter {
 	for ; _ne(first1, last1); dFirst, first1, first2 = NextWriter(dFirst), NextReader(first1), NextReader(first2) {
 		dFirst.Write(op(first1.Read(), first2.Read()))
 	}
