@@ -58,11 +58,11 @@ func (it SliceIter) String() string {
 	return fmt.Sprintf("[%v](len=%d,cap=%d)@%d%s", strings.Join(buf, ","), it.s.Len(), it.s.Cap(), it.i, dir)
 }
 
-func (it SliceIter) Read() interface{} {
+func (it SliceIter) Read() Any {
 	return it.s.Index(it.i).Interface()
 }
 
-func (it SliceIter) Write(v interface{}) {
+func (it SliceIter) Write(v Any) {
 	it.s.Index(it.i).Set(reflect.ValueOf(v))
 }
 
@@ -101,7 +101,7 @@ func (it SliceIter) Distance(it2 RandomIter) int {
 // 	s reflect.Value
 // }
 
-// func SliceBackInserter(s interface{}) *SliceBackInserter {
+// func SliceBackInserter(s Any) *SliceBackInserter {
 // 	return &SliceBackInserter{
 // 		s: reflect.ValueOf(s),
 // 	}

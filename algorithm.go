@@ -252,13 +252,13 @@ func CopyBackward(first, last BackwardReader, dLast BackwardWriter) BackwardWrit
 	return dLast
 }
 
-func Fill(first, last ForwardWriter, v interface{}) {
+func Fill(first, last ForwardWriter, v Any) {
 	for ; _ne(first, last); first = NextWriter(first) {
 		first.Write(v)
 	}
 }
 
-func FillN(first ForwardWriter, count int, v interface{}) {
+func FillN(first ForwardWriter, count int, v Any) {
 	for ; count > 0; count-- {
 		first.Write(v)
 		first = NextWriter(first)
@@ -293,7 +293,7 @@ func GenerateN(first ForwardWriter, count int, g Generator) ForwardWriter {
 	return first
 }
 
-func Remove(first, last ForwardReadWriter, v interface{}) ForwardReadWriter {
+func Remove(first, last ForwardReadWriter, v Any) ForwardReadWriter {
 	return RemoveIf(first, last, _eq1(v))
 }
 
@@ -310,7 +310,7 @@ func RemoveIf(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWri
 	return first
 }
 
-func RemoveCopy(first, last ForwardReader, dFirst ForwardWriter, v interface{}) ForwardWriter {
+func RemoveCopy(first, last ForwardReader, dFirst ForwardWriter, v Any) ForwardWriter {
 	return RemoveCopyIf(first, last, dFirst, _eq1(v))
 }
 
@@ -324,11 +324,11 @@ func RemoveCopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPre
 	return dFirst
 }
 
-func Replace(first, last ForwardReadWriter, old, new interface{}) {
+func Replace(first, last ForwardReadWriter, old, new Any) {
 	ReplaceIf(first, last, _eq1(old), new)
 }
 
-func ReplaceIf(first, last ForwardReadWriter, pred UnaryPredicate, v interface{}) {
+func ReplaceIf(first, last ForwardReadWriter, pred UnaryPredicate, v Any) {
 	for ; _ne(first, last); first = NextReadWriter(first) {
 		if pred(first.Read()) {
 			first.Write(v)
@@ -336,11 +336,11 @@ func ReplaceIf(first, last ForwardReadWriter, pred UnaryPredicate, v interface{}
 	}
 }
 
-func ReplaceCopy(first, last ForwardReader, dFirst ForwardWriter, old, new interface{}) ForwardWriter {
+func ReplaceCopy(first, last ForwardReader, dFirst ForwardWriter, old, new Any) ForwardWriter {
 	return ReplaceCopyIf(first, last, dFirst, _eq1(old), new)
 }
 
-func ReplaceCopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPredicate, v interface{}) ForwardWriter {
+func ReplaceCopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPredicate, v Any) ForwardWriter {
 	for ; _ne(first, last); first = NextReader(first) {
 		if pred(first.Read()) {
 			dFirst.Write(first.Read())

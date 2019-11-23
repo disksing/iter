@@ -47,7 +47,7 @@ func (it StringIter) String() string {
 	return fmt.Sprintf("%s@%d%s", it.s, it.i, dir)
 }
 
-func (it StringIter) Read() interface{} {
+func (it StringIter) Read() Any {
 	return it.s[it.i]
 }
 

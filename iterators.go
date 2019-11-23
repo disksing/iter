@@ -3,10 +3,10 @@ package iter
 type (
 	Iter   interface{}
 	Reader interface {
-		Read() interface{}
+		Read() Any
 	}
 	Writer interface {
-		Write(interface{})
+		Write(Any)
 	}
 	ReadWriter interface {
 		Reader

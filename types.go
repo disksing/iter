@@ -35,7 +35,7 @@ func _less(x, y Any) bool {
 }
 
 // Borrow from https://github.com/stretchr/testify/blob/master/assert/assertion_order.go
-func reflectCompare(obj1, obj2 interface{}) int {
+func reflectCompare(obj1, obj2 Any) int {
 	k1 := reflect.ValueOf(obj1).Kind()
 	k2 := reflect.ValueOf(obj2).Kind()
 	if k2 != k1 {

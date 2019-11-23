@@ -53,7 +53,7 @@ func sliceEqual(assert *assert.Assertions, a, b []int) {
 	assert.Equal(a, b)
 }
 
-func iterEqual(assert *assert.Assertions, a, b interface{}) {
+func iterEqual(assert *assert.Assertions, a, b Iter) {
 	assert.True(a.(Equalable).Equal(b), "a=%v\nb=%v", a, b)
 }
 
