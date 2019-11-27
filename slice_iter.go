@@ -114,3 +114,8 @@ func (bi *sliceBackInserter) Next() ForwardIter {
 func (bi *sliceBackInserter) Write(x Any) {
 	bi.s.Set(reflect.Append(bi.s, reflect.ValueOf(x)))
 }
+
+func SliceErase(s interface{}, it Iter) {
+	v := reflect.ValueOf(s).Elem()
+	v.Set(v.Slice(0, Distance(SliceBegin(v), it)))
+}

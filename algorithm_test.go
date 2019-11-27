@@ -284,6 +284,82 @@ func TestFillN(t *testing.T) {
 	}
 }
 
+func TestTransform(t *testing.T) {
+	a := randIntSlice()
+	var b []int
+	for _, x := range a {
+		b = append(b, x*2)
+	}
+	Transform(begin(a), end(a), begin(a), func(x Any) Any { return x.(int) * 2 })
+	sliceEqual(assert.New(t), a, b)
+}
+
+func TestTransformBinary(t *testing.T) {
+	a, b := randIntSlice(), randIntSlice()
+	if len(a) > len(b) {
+		a, b = b, a
+	}
+	c := make([]int, len(a))
+	TransformBinary(begin(a), end(a), begin(b), begin(c), func(x, y Any) Any { return x.(int) * y.(int) })
+	for i := range a {
+		a[i] *= b[i]
+	}
+	sliceEqual(assert.New(t), a, c)
+}
+
+func TestGenerate(t *testing.T) {
+	assert := assert.New(t)
+	var i int
+	g := func() Any { i++; return i }
+	a := randIntSlice()
+	Generate(begin(a), end(a), g)
+	for i := range a {
+		assert.Equal(i+1, a[i])
+	}
+}
+
+func TestGenerateN(t *testing.T) {
+	assert := assert.New(t)
+	var i int
+	g := func() Any { i++; return i }
+	a := randIntSlice()
+	b := append(a[:0:0], a...)
+	n := rand.Intn(len(a) + 1)
+	GenerateN(begin(a), n, g)
+	for i := range a {
+		if i < n {
+			assert.Equal(i+1, a[i])
+		} else {
+			assert.Equal(a[i], b[i])
+		}
+	}
+}
+
+func TestRemove(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	b := append(a[:0:0], a...)
+	c := append(a[:0:0], a...)
+	var d, e []int
+	f := func(x Any) bool { return x.(int)%2 == 0 }
+
+	count1 := Count(begin(a), end(a), 1)
+	countf := CountIf(begin(a), end(a), f)
+	SliceErase(&a, Remove(begin(a), end(a), 1))
+	SliceErase(&b, RemoveIf(begin(b), end(b), f))
+	RemoveCopy(begin(c), end(c), SliceBackInserter(&d), 1)
+	RemoveCopyIf(begin(c), end(c), SliceBackInserter(&e), f)
+
+	assert.Equal(Count(begin(a), end(a), 1), 0)
+	assert.True(NoneOf(begin(b), end(b), f))
+	assert.Equal(Count(begin(d), end(d), 1), 0)
+	assert.True(NoneOf(begin(e), end(e), f))
+	assert.Equal(len(a), len(c)-count1)
+	assert.Equal(len(b), len(c)-countf)
+	assert.Equal(len(d), len(c)-count1)
+	assert.Equal(len(e), len(c)-countf)
+}
+
 func TestMinmax(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randInt(), randInt()

@@ -1,9 +1,12 @@
 package iter
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
-import "strings"
-
+// StringIter is the iterator to access a string in bytes. To travise a string
+// by rune, convert the string to []rune then use SliceIter.
 type StringIter struct {
 	s        string
 	i        int
@@ -82,6 +85,8 @@ func (it StringIter) Distance(it2 RandomIter) int {
 	return d
 }
 
+// MakeString creates a string by range spesified by [first, last). The value
+// type should be byte or rune.
 func MakeString(first, last ForwardReader) string {
 	var s strings.Builder
 	for ; _ne(first, last); first = NextReader(first) {
