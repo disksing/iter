@@ -361,12 +361,14 @@ func RemoveCopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPre
 	return dFirst
 }
 
-// Replace
+// Replace replaces all elements equal to old with new in the range [first,
+// last).
 func Replace(first, last ForwardReadWriter, old, new Any) {
 	ReplaceIf(first, last, _eq1(old), new)
 }
 
-// ReplaceIf
+// ReplaceIf replaces all elements satisfy pred with new in the range [first,
+// last).
 func ReplaceIf(first, last ForwardReadWriter, pred UnaryPredicate, v Any) {
 	for ; _ne(first, last); first = NextReadWriter(first) {
 		if pred(first.Read()) {
@@ -375,47 +377,56 @@ func ReplaceIf(first, last ForwardReadWriter, pred UnaryPredicate, v Any) {
 	}
 }
 
+// ReplaceCopy copies the elements from the range [first, last) to another range
+// beginning at dFirst replacing all elements equal to old with new. The source
+// and destination ranges cannot overlap.
 func ReplaceCopy(first, last ForwardReader, dFirst ForwardWriter, old, new Any) ForwardWriter {
 	return ReplaceCopyIf(first, last, dFirst, _eq1(old), new)
 }
 
-// ReplaceCopyIf
+// ReplaceCopyIf copies the elements from the range [first, last) to another
+// range beginning at dFirst replacing all elements satisfy pred with new. The
+// source and destination ranges cannot overlap.
 func ReplaceCopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPredicate, v Any) ForwardWriter {
-	for ; _ne(first, last); first = NextReader(first) {
+	for ; _ne(first, last); first, dFirst = NextReader(first), NextWriter(dFirst) {
 		if pred(first.Read()) {
+			dFirst.Write(v)
+		} else {
 			dFirst.Write(first.Read())
-			dFirst = NextWriter(dFirst)
 		}
 	}
 	return dFirst
 }
 
-// IterSwap
-func IterSwap(a, b ReadWriter) {
-	t := a.Read()
-	a.Write(b.Read())
-	b.Write(t)
+// Swap swaps value of two iterators.
+func Swap(a, b ReadWriter) {
+	va, vb := a.Read(), b.Read()
+	a.Write(vb)
+	b.Write(va)
 }
 
-// SwapRanges
+// SwapRanges exchanges elements between range [first1, last1) and another range
+// starting at first2.
 func SwapRanges(first1, last1, first2 ForwardReadWriter) {
 	for ; _ne(first1, last1); first1, first2 = NextReadWriter(first1), NextReadWriter(first2) {
-		IterSwap(first1, first2)
+		Swap(first1, first2)
 	}
 }
 
-// Reverse
+// Reverse reverses the order of the elements in the range [first, last).
 func Reverse(first, last BidiReadWriter) {
 	for ; _ne(first, last); first = NextBidiReadWriter(first) {
 		last = PrevBidiReadWriter(last)
 		if _eq(first, last) {
 			return
 		}
-		IterSwap(first, last)
+		Swap(first, last)
 	}
 }
 
-// ReverseCopy
+// ReverseCopy copies the elements from the range [first, last) to another range
+// beginning at dFirst in such a way that the elements in the new range are in
+// reverse order.
 func ReverseCopy(first, last BackwardReader, dFirst ForwardWriter) ForwardWriter {
 	for _ne(first, last) {
 		last = PrevReader(last)
@@ -425,7 +436,7 @@ func ReverseCopy(first, last BackwardReader, dFirst ForwardWriter) ForwardWriter
 	return dFirst
 }
 
-// Rotate
+// Rotate performs a left rotation on a range of elements.
 func Rotate(first, nFirst, last ForwardReadWriter) ForwardReadWriter {
 	if _eq(first, nFirst) {
 		return last
@@ -438,7 +449,7 @@ func Rotate(first, nFirst, last ForwardReadWriter) ForwardReadWriter {
 		if _eq(write, nextRead) {
 			nextRead = read
 		}
-		IterSwap(write, read)
+		Swap(write, read)
 		write, read = NextReadWriter(write), NextReadWriter(read)
 	}
 	Rotate(write, nextRead, last)
@@ -454,7 +465,7 @@ func RotateCopy(first, nFirst, last ForwardReader, dFirst ForwardWriter) Forward
 // Shuffle
 func Shuffle(first, last RandomReadWriter, r *rand.Rand) {
 	for n := first.Distance(last) - 1; n > 0; n-- {
-		IterSwap(AdvanceNReadWriter(first, n), AdvanceNReadWriter(first, r.Intn(n+1)))
+		Swap(AdvanceNReadWriter(first, n), AdvanceNReadWriter(first, r.Intn(n+1)))
 	}
 }
 
@@ -559,7 +570,7 @@ func Partition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWr
 	}
 	for i := NextReadWriter(first); _ne(i, last); i = NextReadWriter(i) {
 		if pred(i.Read()) {
-			IterSwap(first, i)
+			Swap(first, i)
 			first = NextReadWriter(first)
 		}
 	}

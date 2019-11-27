@@ -360,6 +360,37 @@ func TestRemove(t *testing.T) {
 	assert.Equal(len(e), len(c)-countf)
 }
 
+func TestReplace(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	b := append(a[:0:0], a...)
+	c := append(a[:0:0], a...)
+	var d, e []int
+	f := func(x Any) bool { return x.(int)%2 == 0 }
+
+	Replace(begin(a), end(a), 1, 2)
+	ReplaceIf(begin(b), end(b), f, 1)
+	ReplaceCopy(begin(c), end(c), SliceBackInserter(&d), 1, 2)
+	ReplaceCopyIf(begin(c), end(c), SliceBackInserter(&e), f, 1)
+
+	for i := range c {
+		if c[i] == 1 {
+			assert.Equal(a[i], 2)
+			assert.Equal(d[i], 2)
+		} else {
+			assert.Equal(a[i], c[i])
+			assert.Equal(d[i], c[i])
+		}
+		if f(c[i]) {
+			assert.Equal(b[i], 1)
+			assert.Equal(e[i], 1)
+		} else {
+			assert.Equal(b[i], c[i])
+			assert.Equal(e[i], c[i])
+		}
+	}
+}
+
 func TestMinmax(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randInt(), randInt()
