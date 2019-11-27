@@ -281,6 +281,7 @@ func FillN(first ForwardWriter, count int, v Any) {
 	}
 }
 
+// Transform
 func Transform(first, last ForwardReader, dFirst ForwardWriter, op UnaryOperation) ForwardWriter {
 	for ; _ne(first, last); dFirst, first = NextWriter(dFirst), NextReader(first) {
 		dFirst.Write(op(first.Read()))
@@ -288,6 +289,7 @@ func Transform(first, last ForwardReader, dFirst ForwardWriter, op UnaryOperatio
 	return dFirst
 }
 
+// TransformBinary
 func TransformBinary(first1, last1, first2 ForwardReader, dFirst ForwardWriter, op BinaryOperation) ForwardWriter {
 	for ; _ne(first1, last1); dFirst, first1, first2 = NextWriter(dFirst), NextReader(first1), NextReader(first2) {
 		dFirst.Write(op(first1.Read(), first2.Read()))
@@ -295,12 +297,14 @@ func TransformBinary(first1, last1, first2 ForwardReader, dFirst ForwardWriter, 
 	return dFirst
 }
 
+// Generate
 func Generate(first, last ForwardWriter, g Generator) {
 	for ; _ne(first, last); first = NextWriter(first) {
 		first.Write(g())
 	}
 }
 
+// GenerateN
 func GenerateN(first ForwardWriter, count int, g Generator) ForwardWriter {
 	for ; count > 0; count-- {
 		first.Write(g())
@@ -309,10 +313,12 @@ func GenerateN(first ForwardWriter, count int, g Generator) ForwardWriter {
 	return first
 }
 
+// Remove
 func Remove(first, last ForwardReadWriter, v Any) ForwardReadWriter {
 	return RemoveIf(first, last, _eq1(v))
 }
 
+// RemoveIf
 func RemoveIf(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWriter {
 	first = FindIf(first, last, pred).(ForwardReadWriter)
 	if _ne(first, last) {
@@ -326,10 +332,12 @@ func RemoveIf(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWri
 	return first
 }
 
+// RemoveCopy
 func RemoveCopy(first, last ForwardReader, dFirst ForwardWriter, v Any) ForwardWriter {
 	return RemoveCopyIf(first, last, dFirst, _eq1(v))
 }
 
+// RemoveCopyIf
 func RemoveCopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPredicate) ForwardWriter {
 	for ; _ne(first, last); first = NextReader(first) {
 		if !pred(first.Read()) {
@@ -340,10 +348,12 @@ func RemoveCopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPre
 	return dFirst
 }
 
+// Replace
 func Replace(first, last ForwardReadWriter, old, new Any) {
 	ReplaceIf(first, last, _eq1(old), new)
 }
 
+// ReplaceIf
 func ReplaceIf(first, last ForwardReadWriter, pred UnaryPredicate, v Any) {
 	for ; _ne(first, last); first = NextReadWriter(first) {
 		if pred(first.Read()) {
@@ -356,6 +366,7 @@ func ReplaceCopy(first, last ForwardReader, dFirst ForwardWriter, old, new Any) 
 	return ReplaceCopyIf(first, last, dFirst, _eq1(old), new)
 }
 
+// ReplaceCopyIf
 func ReplaceCopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPredicate, v Any) ForwardWriter {
 	for ; _ne(first, last); first = NextReader(first) {
 		if pred(first.Read()) {
@@ -366,18 +377,21 @@ func ReplaceCopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPr
 	return dFirst
 }
 
+// IterSwap
 func IterSwap(a, b ReadWriter) {
 	t := a.Read()
 	a.Write(b.Read())
 	b.Write(t)
 }
 
+// SwapRanges
 func SwapRanges(first1, last1, first2 ForwardReadWriter) {
 	for ; _ne(first1, last1); first1, first2 = NextReadWriter(first1), NextReadWriter(first2) {
 		IterSwap(first1, first2)
 	}
 }
 
+// Reverse
 func Reverse(first, last BidiReadWriter) {
 	for ; _ne(first, last); first = NextBidiReadWriter(first) {
 		last = PrevBidiReadWriter(last)
@@ -388,6 +402,7 @@ func Reverse(first, last BidiReadWriter) {
 	}
 }
 
+// ReverseCopy
 func ReverseCopy(first, last BackwardReader, dFirst ForwardWriter) ForwardWriter {
 	for _ne(first, last) {
 		last = PrevReader(last)
@@ -397,6 +412,7 @@ func ReverseCopy(first, last BackwardReader, dFirst ForwardWriter) ForwardWriter
 	return dFirst
 }
 
+// Rotate
 func Rotate(first, nFirst, last ForwardReadWriter) ForwardReadWriter {
 	if _eq(first, nFirst) {
 		return last
@@ -416,17 +432,20 @@ func Rotate(first, nFirst, last ForwardReadWriter) ForwardReadWriter {
 	return write
 }
 
+// RotateCopy
 func RotateCopy(first, nFirst, last ForwardReader, dFirst ForwardWriter) ForwardWriter {
 	dFirst = Copy(nFirst, last, dFirst)
 	return Copy(first, nFirst, dFirst)
 }
 
+// Shuffle
 func Shuffle(first, last RandomReadWriter, r *rand.Rand) {
 	for n := first.Distance(last) - 1; n > 0; n-- {
 		IterSwap(AdvanceNReadWriter(first, n), AdvanceNReadWriter(first, r.Intn(n+1)))
 	}
 }
 
+// Sample
 func Sample(first, last ForwardReader, out ForwardWriter, n int, r *rand.Rand) ForwardWriter {
 	_, okr := first.(RandomReader)
 	randWriter, okw := out.(RandomWriter)
@@ -468,10 +487,12 @@ func _reservoirSample(first, last ForwardReader, out RandomWriter, n int, r *ran
 	return AdvanceNWriter(out, n)
 }
 
+// Unique
 func Unique(first, last ForwardReadWriter) ForwardReadWriter {
 	return UniqueIf(first, last, _eq)
 }
 
+// UniqueIf
 func UniqueIf(first, last ForwardReadWriter, pred BinaryPredicate) ForwardReadWriter {
 	if _eq(first, last) {
 		return last
@@ -490,10 +511,12 @@ func UniqueIf(first, last ForwardReadWriter, pred BinaryPredicate) ForwardReadWr
 	}
 }
 
+// UniqueCopy
 func UniqueCopy(first, last ForwardReader, result ForwardWriter) ForwardWriter {
 	return UniqueCopyIf(first, last, result, _eq)
 }
 
+// UniqueCopyIf
 func UniqueCopyIf(first, last ForwardReader, result ForwardWriter, pred BinaryPredicate) ForwardWriter {
 	if _ne(first, last) {
 		v := first.Read()
@@ -510,10 +533,12 @@ func UniqueCopyIf(first, last ForwardReader, result ForwardWriter, pred BinaryPr
 	return result
 }
 
+// IsPartitioned
 func IsPartitioned(first, last ForwardReader, pred UnaryPredicate) bool {
 	return NoneOf(FindIfNot(first, last, pred), last, pred)
 }
 
+// Partition
 func Partition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWriter {
 	first = FindIfNot(first, last, pred).(ForwardReadWriter)
 	if _eq(first, last) {
@@ -528,6 +553,7 @@ func Partition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWr
 	return first
 }
 
+// ParittionCopy
 func ParittionCopy(first, last ForwardReader, outTrue, outFalse ForwardWriter, pred UnaryPredicate) (ForwardWriter, ForwardWriter) {
 	for ; _ne(first, last); first = NextReader(first) {
 		if pred(first.Read()) {
@@ -541,10 +567,12 @@ func ParittionCopy(first, last ForwardReader, outTrue, outFalse ForwardWriter, p
 	return outTrue, outFalse
 }
 
+// StablePartition
 func StablePartition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWriter {
 	panic("TODO: not implemented")
 }
 
+// PartitionPoint
 func PartitionPoint(first, last ForwardReader, pred UnaryPredicate) ForwardReader {
 	l := Distance(first, last)
 	for l != 0 {
