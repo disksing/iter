@@ -436,7 +436,9 @@ func ReverseCopy(first, last BackwardReader, dFirst ForwardWriter) ForwardWriter
 	return dFirst
 }
 
-// Rotate performs a left rotation on a range of elements.
+// Rotate performs a left rotation on a range of elements in such a way, that
+// the element nFirst becomes the first element of the new range and nFirst - 1
+// becomes the last element.
 func Rotate(first, nFirst, last ForwardReadWriter) ForwardReadWriter {
 	if _eq(first, nFirst) {
 		return last
@@ -456,27 +458,31 @@ func Rotate(first, nFirst, last ForwardReadWriter) ForwardReadWriter {
 	return write
 }
 
-// RotateCopy
+// RotateCopy copies the elements from the range [first, last), to another range
+// beginning at dFirst in such a way, that the element nFirst becomes the first
+// element of the new range and nFirst - 1 becomes the last element.
 func RotateCopy(first, nFirst, last ForwardReader, dFirst ForwardWriter) ForwardWriter {
-	dFirst = Copy(nFirst, last, dFirst)
-	return Copy(first, nFirst, dFirst)
+	return Copy(first, nFirst, Copy(nFirst, last, dFirst))
 }
 
-// Shuffle
+// Shuffle reorders the elements in the given range [first, last) such that each
+// possible permutation of those elements has equal probability of appearance.
 func Shuffle(first, last RandomReadWriter, r *rand.Rand) {
-	for n := first.Distance(last) - 1; n > 0; n-- {
-		Swap(AdvanceNReadWriter(first, n), AdvanceNReadWriter(first, r.Intn(n+1)))
-	}
+	r.Shuffle(first.Distance(last), func(i, j int) {
+		Swap(AdvanceNReadWriter(first, i), AdvanceNReadWriter(first, j))
+	})
 }
 
-// Sample
+// Sample selects n elements from the sequence [first; last) such that each
+// possible sample has equal probability of appearance, and writes those
+// selected elements into the output iterator out.
 func Sample(first, last ForwardReader, out ForwardWriter, n int, r *rand.Rand) ForwardWriter {
-	_, okr := first.(RandomReader)
-	randWriter, okw := out.(RandomWriter)
-	if okr || !okw {
-		return _selectionSample(first, last, out, n, r)
+	_, rr := first.(RandomReader)
+	rout, rw := out.(RandomWriter)
+	if !rr && rw {
+		return _reservoirSample(first, last, rout, n, r)
 	}
-	return _reservoirSample(first, last, randWriter, n, r)
+	return _selectionSample(first, last, out, n, r)
 }
 
 func _selectionSample(first, last ForwardReader, out ForwardWriter, n int, r *rand.Rand) ForwardWriter {
@@ -485,11 +491,11 @@ func _selectionSample(first, last ForwardReader, out ForwardWriter, n int, r *ra
 		n = unsampled
 	}
 	for ; n != 0; first = NextReader(first) {
-		unsampled--
 		if r.Intn(unsampled) < n {
 			out.Write(first.Read())
 			out, n = NextWriter(out), n-1
 		}
+		unsampled--
 	}
 	return out
 }
@@ -504,8 +510,8 @@ func _reservoirSample(first, last ForwardReader, out RandomWriter, n int, r *ran
 	}
 	sz := k
 	for ; _ne(first, last); first, k = NextReader(first), k+1 {
-		if r.Intn(k) < sz {
-			AdvanceNWriter(out, k).Write(first.Read())
+		if d := r.Intn(k + 1); d < sz {
+			AdvanceNWriter(out, d).Write(first.Read())
 		}
 	}
 	return AdvanceNWriter(out, n)

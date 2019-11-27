@@ -1,6 +1,7 @@
 package iter_test
 
 import (
+	"container/list"
 	"math/rand"
 	"strings"
 	"testing"
@@ -10,8 +11,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const randN = 100
+
+var r = rand.New(rand.NewSource(time.Now().UnixNano()))
+
 func randInt() int {
-	return rand.Intn(100)
+	return r.Intn(randN)
 }
 
 func randIntSlice() []int {
@@ -21,7 +26,7 @@ func randIntSlice() []int {
 	}
 	s := make([]int, randInt())
 	for i := range s {
-		s[i] = l + rand.Intn(h-l+1)
+		s[i] = l + r.Intn(h-l+1)
 	}
 	return s
 }
@@ -30,7 +35,7 @@ func randString() string {
 	l := randInt()
 	var s strings.Builder
 	for i := 0; i < l; i++ {
-		s.WriteByte('a' + byte(rand.Intn(26)))
+		s.WriteByte('a' + byte(r.Intn(26)))
 	}
 	return s.String()
 }
@@ -41,10 +46,6 @@ var (
 	strBegin = StringBegin
 	strEnd   = StringEnd
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 func sliceEqual(assert *assert.Assertions, a, b []int) {
 	if len(a) == 0 && len(b) == 0 {
@@ -97,7 +98,7 @@ func TestForEach(t *testing.T) {
 	f := func(x Iter) { b = append(b, x.(Reader).Read().(int)) }
 	ForEach(begin(a), end(a), f)
 	sliceEqual(assert, a, b)
-	n := rand.Intn(len(a) + 1)
+	n := r.Intn(len(a) + 1)
 	b = nil
 	ForEachN(begin(a), n, f)
 	sliceEqual(assert, a[:n], b)
@@ -106,12 +107,12 @@ func TestForEach(t *testing.T) {
 func TestCount(t *testing.T) {
 	assert := assert.New(t)
 	a := randIntSlice()
-	m := make(map[int]int)
+	count := make([]int, randN)
 	for _, x := range a {
-		m[x]++
+		count[x]++
 	}
 	for i := 0; i < 100; i++ {
-		assert.Equal(Count(begin(a), end(a), i), m[i])
+		assert.Equal(Count(begin(a), end(a), i), count[i])
 	}
 }
 
@@ -119,7 +120,7 @@ func TestMismatch(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randIntSlice(), randIntSlice()
 	var last2 ForwardReader
-	if len(b) <= len(a) || rand.Intn(2) == 0 {
+	if len(b) <= len(a) || r.Intn(2) == 0 {
 		last2 = end(b)
 	}
 	it1, it2 := Mismatch(begin(a), end(a), begin(b), last2)
@@ -207,8 +208,8 @@ func TestSearch(t *testing.T) {
 
 func TestSearchN(t *testing.T) {
 	a := randString()
-	c := byte('a' + byte(rand.Intn(26)))
-	n := rand.Intn(10)
+	c := byte('a' + byte(r.Intn(26)))
+	n := r.Intn(10)
 	b := strings.Repeat(string(c), n)
 	i := strings.Index(a, b)
 	if i == -1 {
@@ -243,7 +244,7 @@ func TestCopyIf(t *testing.T) {
 
 func TestCopyN(t *testing.T) {
 	a := randIntSlice()
-	n := rand.Intn(len(a) + 1)
+	n := r.Intn(len(a) + 1)
 	var b []int
 	CopyN(begin(a), n, SliceBackInserter(&b))
 	sliceEqual(assert.New(t), b, a[:n])
@@ -272,7 +273,7 @@ func TestFillN(t *testing.T) {
 		a = randIntSlice()
 	}
 	b := append(a[:0:0], a...)
-	n := rand.Intn(len(a)) - rand.Intn(len(a))
+	n := r.Intn(len(a)) - r.Intn(len(a))
 	x := randInt()
 	FillN(begin(a), n, x)
 	for i, v := range a {
@@ -324,7 +325,7 @@ func TestGenerateN(t *testing.T) {
 	g := func() Any { i++; return i }
 	a := randIntSlice()
 	b := append(a[:0:0], a...)
-	n := rand.Intn(len(a) + 1)
+	n := r.Intn(len(a) + 1)
 	GenerateN(begin(a), n, g)
 	for i := range a {
 		if i < n {
@@ -388,6 +389,110 @@ func TestReplace(t *testing.T) {
 			assert.Equal(b[i], c[i])
 			assert.Equal(e[i], c[i])
 		}
+	}
+}
+
+func TestSwapRanges(t *testing.T) {
+	assert := assert.New(t)
+	a, b := randIntSlice(), randIntSlice()
+	a0 := append(a[:0:0], a...)
+	b0 := append(b[:0:0], b...)
+	l := Min(len(a), len(b)).(int)
+	l = r.Intn(l + 1)
+	s1 := r.Intn(len(a) - l + 1)
+	s2 := r.Intn(len(b) - l + 1)
+	SwapRanges(AdvanceNReadWriter(begin(a), s1), AdvanceNReadWriter(begin(a), s1+l), AdvanceNReadWriter(begin(b), s2))
+	for i := range a {
+		if i < s1 || i > s1+l {
+			assert.Equal(a[i], a0[i])
+		}
+	}
+	for i := range b {
+		if i < s2 || i > s2+l {
+			assert.Equal(b[i], b0[i])
+		}
+	}
+	for i := 0; i < l; i++ {
+		assert.Equal(a[s1+i], b0[s2+i])
+		assert.Equal(b[s2+i], a0[s1+i])
+	}
+}
+
+func TestReverse(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	b := append(a[:0:0], a...)
+	c := append(a[:0:0], a...)
+	Reverse(begin(a), end(a))
+	ReverseCopy(begin(b), end(b), begin(c))
+	for i := range a {
+		assert.Equal(c[i], a[i])
+		assert.Equal(b[len(b)-i-1], a[i])
+	}
+}
+
+func TestRotate(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	b := append(a[:0:0], a...)
+	n := r.Intn(len(a) + 1)
+	d := append(a[:0:0], a[n:]...)
+	d = append(d, a[:n]...)
+	var c []int
+	Rotate(begin(a), AdvanceNReadWriter(begin(a), n), end(a))
+	RotateCopy(begin(b), AdvanceNReadWriter(begin(b), n), end(b), SliceBackInserter(&c))
+	sliceEqual(assert, d, a)
+	sliceEqual(assert, d, c)
+}
+
+func TestShuffle(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	count := make([]int, randN)
+	for _, x := range a {
+		count[x]++
+	}
+	Shuffle(begin(a), end(a), r)
+	for _, x := range a {
+		count[x]--
+	}
+	for _, x := range count {
+		assert.Equal(x, 0)
+	}
+}
+
+func TestSampleSelection(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	n := randInt()
+	var b []int
+	Sample(begin(a), end(a), SliceBackInserter(&b), n, r)
+	count := make([]int, randN)
+	for _, x := range a {
+		count[x]++
+	}
+	assert.Equal(len(b), Min(n, len(a)).(int))
+	for i := 0; i < len(b) && i < len(a); i++ {
+		count[b[i]]--
+		assert.GreaterOrEqual(count[b[i]], 0)
+	}
+}
+
+func TestSampleReservoir(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	n := randInt()
+	b := list.New()
+	Copy(begin(a), end(a), ListBackInserter(b))
+	c := make([]int, n)
+	Sample(ListBegin(b), ListEnd(b), begin(c), n, r)
+	count := make([]int, randN)
+	for _, x := range a {
+		count[x]++
+	}
+	for i := 0; i < len(c) && i < len(a); i++ {
+		count[c[i]]--
+		assert.GreaterOrEqual(count[c[i]], 0)
 	}
 }
 
