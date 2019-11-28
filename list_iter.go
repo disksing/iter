@@ -3,8 +3,9 @@ package iter
 import "container/list"
 
 type ListIter struct {
-	l *list.List
-	e *list.Element
+	l        *list.List
+	e        *list.Element
+	backward bool
 }
 
 func ListBegin(l *list.List) *ListIter {
@@ -22,14 +23,16 @@ func ListEnd(l *list.List) *ListIter {
 
 func ListRBegin(l *list.List) *ListIter {
 	return &ListIter{
-		l: l,
-		e: l.Back(),
+		l:        l,
+		e:        l.Back(),
+		backward: true,
 	}
 }
 
 func ListREnd(l *list.List) *ListIter {
 	return &ListIter{
-		l: l,
+		l:        l,
+		backward: true,
 	}
 }
 
@@ -38,16 +41,35 @@ func (l *ListIter) Equal(x Any) bool {
 }
 
 func (l *ListIter) Next() ForwardIter {
+	var e *list.Element
+	if l.backward {
+		e = l.e.Prev()
+	} else {
+		e = l.e.Next()
+	}
 	return &ListIter{
-		l: l.l,
-		e: l.e.Next(),
+		l:        l.l,
+		e:        e,
+		backward: l.backward,
 	}
 }
 
 func (l *ListIter) Prev() BackwardIter {
+	var e *list.Element
+	switch {
+	case l.e == nil && l.backward:
+		e = l.l.Front()
+	case l.e == nil && !l.backward:
+		e = l.l.Back()
+	case l.e != nil && l.backward:
+		e = l.e.Next()
+	case l.e != nil && !l.backward:
+		e = l.e.Prev()
+	}
 	return &ListIter{
-		l: l.l,
-		e: l.e.Prev(),
+		l:        l.l,
+		e:        e,
+		backward: l.backward,
 	}
 }
 

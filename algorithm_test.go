@@ -2,6 +2,7 @@ package iter_test
 
 import (
 	"container/list"
+	"fmt"
 	"math/rand"
 	"strings"
 	"testing"
@@ -506,6 +507,142 @@ func TestUnique(t *testing.T) {
 	sliceEqual(assert, b, c)
 	for i := 0; i < len(b)-1; i++ {
 		assert.NotEqual(b[i], b[i+1])
+	}
+}
+
+func TestPartition(t *testing.T) {
+	assert := assert.New(t)
+	l := randInt()
+	a := make([]bool, l)
+	GenerateN(begin(a), l, func() Any { return r.Intn(2) == 0 })
+	f := func(x Any) bool { return x.(bool) }
+	checkPartition := func(a []bool) bool {
+		var i int
+		for ; i < len(a) && a[i]; i++ {
+		}
+		if i == len(a) {
+			assert.True(IsPartitioned(begin(a), end(a), f))
+			assert.Equal(i, Distance(begin(a), PartitionPoint(begin(a), end(a), f)))
+			return true
+		}
+		m := i
+		for i++; i < len(a); i++ {
+			if a[i] {
+				assert.False(IsPartitioned(begin(a), end(a), f))
+				return false
+			}
+		}
+		assert.True(IsPartitioned(begin(a), end(a), f))
+		assert.Equal(m, Distance(begin(a), PartitionPoint(begin(a), end(a), f)))
+		return true
+	}
+	checkPartition(a)
+
+	var b, c []bool
+	PartitionCopy(begin(a), end(a), SliceBackInserter(&b), SliceBackInserter(&c), f)
+	ita := Partition(begin(a), end(a), f)
+	assert.True(checkPartition(a))
+	assert.True(AllOf(begin(b), end(b), f))
+	assert.True(NoneOf(begin(c), end(c), f))
+	assert.Equal(len(b), Distance(begin(a), ita))
+}
+
+type compareItem struct {
+	a, b int
+}
+
+func (ci *compareItem) Equal(x Any) bool {
+	return ci.a == x.(*compareItem).a
+}
+
+func (ci *compareItem) String() string {
+	return fmt.Sprintf("{a=%v,b=%v}", ci.a, ci.b)
+}
+
+type forwardListIter struct {
+	l *list.List
+	e *list.Element
+}
+
+func forwardListBegin(l *list.List) *forwardListIter {
+	return &forwardListIter{
+		l: l,
+		e: l.Front(),
+	}
+}
+
+func forwardListEnd(l *list.List) *forwardListIter {
+	return &forwardListIter{
+		l: l,
+		e: l.Back(),
+	}
+}
+
+func (l *forwardListIter) Equal(x Any) bool {
+	return l.e == x.(*forwardListIter).e
+}
+
+func (l *forwardListIter) Next() ForwardIter {
+	return &forwardListIter{
+		l: l.l,
+		e: l.e.Next(),
+	}
+}
+
+func (l *forwardListIter) Read() Any {
+	return l.e.Value
+}
+
+func (l *forwardListIter) Write(x Any) {
+	l.e.Value = x
+}
+
+func TestStablePartition(t *testing.T) {
+	assert := assert.New(t)
+	l := randInt()
+	a := make([]*compareItem, l)
+	var id int
+	GenerateN(begin(a), l, func() Any {
+		id++
+		return &compareItem{
+			a: r.Intn(2),
+			b: id,
+		}
+	})
+	f := func(x Any) bool { return x.(*compareItem).a > 0 }
+	b := list.New()
+	Copy(begin(a), end(a), ListBackInserter(b))
+
+	{
+		StablePartition(begin(a), end(a), f)
+		var i int
+		for mb := 0; i < len(a) && f(a[i]); i++ {
+			cb := a[i].b
+			assert.Greater(cb, mb)
+			mb = cb
+		}
+		for mb := 0; i < len(a); i++ {
+			assert.False(f(a[i]))
+			cb := a[i].b
+			assert.Greater(cb, mb)
+			mb = cb
+		}
+	}
+
+	{
+		StablePartition(forwardListBegin(b), forwardListEnd(b), f)
+		var ele *list.Element
+		for mb := 0; ele != nil && f(ele.Value); ele = ele.Next() {
+			cb := ele.Value.(*compareItem).b
+			assert.Greater(cb, mb)
+			mb = cb
+		}
+		for mb := 0; ele != nil; ele = ele.Next() {
+			assert.False(f(ele.Value))
+			cb := ele.Value.(*compareItem).b
+			assert.Greater(cb, mb)
+			mb = cb
+		}
 	}
 }
 

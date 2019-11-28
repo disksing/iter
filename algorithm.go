@@ -598,12 +598,12 @@ func Partition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWr
 	return first
 }
 
-// ParittionCopy copies the elements from the range [first, last) to two
+// PartitionCopy copies the elements from the range [first, last) to two
 // different ranges depending on the value returned by the predicate pred. The
 // elements that satisfy the predicate pred are copied to the range beginning at
 // outTrue. The rest of the elements are copied to the range beginning at
 // outFalse.
-func ParittionCopy(first, last ForwardReader, outTrue, outFalse ForwardWriter, pred UnaryPredicate) (ForwardWriter, ForwardWriter) {
+func PartitionCopy(first, last ForwardReader, outTrue, outFalse ForwardWriter, pred UnaryPredicate) (ForwardWriter, ForwardWriter) {
 	for ; _ne(first, last); first = NextReader(first) {
 		if pred(first.Read()) {
 			outTrue.Write(first.Read())
@@ -621,7 +621,122 @@ func ParittionCopy(first, last ForwardReader, outTrue, outFalse ForwardWriter, p
 // elements for which predicate pred returns false. Relative order of the
 // elements is preserved.
 func StablePartition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWriter {
-	panic("TODO: not implemented")
+	for {
+		if _eq(first, last) {
+			return first
+		}
+		if !pred(first.Read()) {
+			break
+		}
+		first = NextReadWriter(first)
+	}
+	if bfirst, ok := first.(BidiReadWriter); ok {
+		if blast, ok := last.(BidiReadWriter); ok {
+			for {
+				blast = PrevBidiReadWriter(blast)
+				if _eq(first, blast) {
+					return first
+				}
+				if pred(blast.Read()) {
+					break
+				}
+			}
+			return _stablePartitionBidi(bfirst, blast, pred, Distance(first, blast)+1)
+		}
+	}
+	return _stablePartitionForward(first, last, pred, Distance(first, last))
+}
+
+func _stablePartitionBidi(first, last BidiReadWriter, pred UnaryPredicate, l int) BidiReadWriter {
+	if l == 2 {
+		Swap(first, last)
+		return last
+	}
+	if l == 3 {
+		m := NextBidiReadWriter(first)
+		if pred(m.Read()) {
+			Swap(first, m)
+			Swap(m, last)
+			return last
+		}
+		Swap(m, last)
+		Swap(first, m)
+		return m
+	}
+	m, l2 := first, l/2
+	m = AdvanceN(m, l2).(BidiReadWriter)
+	// F???????????????T
+	// f       m       l
+	m1, lh := m, l2
+	for m1 = PrevBidiReadWriter(m1); !pred(m1.Read()); m1 = PrevBidiReadWriter(m1) {
+		if _eq(m1, first) {
+			break
+		}
+		lh--
+	}
+	firstFalse := first
+	if _ne(m1, first) {
+		// F????TFF????????T
+		// f    m1 m       l
+		firstFalse = _stablePartitionBidi(first, m1, pred, lh)
+	}
+	// TTFFFFFF????????T
+	// f ff m1 m       l
+	m1, lh = m, l-l2
+	for pred(m1.Read()) {
+		m1 = NextBidiReadWriter(m1)
+		if _eq(m1, last) {
+			break
+		}
+		lh--
+	}
+	secondFalse := NextBidiReadWriter(last)
+	if _ne(m1, last) {
+		// TTFFFFFFTTTF?????T
+		// f ff m1 m  m1    l
+		secondFalse = _stablePartitionBidi(m1, last, pred, lh)
+	}
+	// TTFFFFFFTTTTTTFFFF
+	// f ff m1 m  m1 sf l
+	return Rotate(firstFalse, m, secondFalse).(BidiReadWriter)
+}
+
+func _stablePartitionForward(first, last ForwardReadWriter, pred UnaryPredicate, l int) ForwardReadWriter {
+	if l == 1 {
+		return first
+	}
+	if l == 2 {
+		m := NextReadWriter(first)
+		if pred(m.Read()) {
+			Swap(first, m)
+			return m
+		}
+		return first
+	}
+	l2 := l / 2
+	m := AdvanceN(first, l2).(ForwardReadWriter)
+	// F?????????????????
+	// f       m         l
+	firstFalse := _stablePartitionForward(first, m, pred, l2)
+	// TTTFFFFF??????????
+	// f  ff   m         l
+	m1, lh := m, l-l2
+	for pred(m1.Read()) {
+		m1 = NextReadWriter(m1)
+		if _eq(m1, last) {
+			break
+		}
+		lh--
+	}
+	secondFalse := last
+	if _ne(m1, last) {
+		// TTTFFFFFTTTF??????
+		// f  ff   m  m1     l
+		secondFalse = _stablePartitionForward(m1, last, pred, lh)
+	}
+	// TTTFFFFFTTTTTFFFFF
+	// f  ff   m    sf   l
+	return Rotate(firstFalse, m, secondFalse)
 }
 
 // PartitionPoint examines the partitioned (as if by std::partition) range
