@@ -899,15 +899,74 @@ func ClampBy(v, lo, hi Any, less BinaryPredicate) Any {
 	return v
 }
 
+// Equal returns true if the range [first1, last1) is equal to the range
+// [first2, last2), and false otherwise. If last2 is nil, it denotes first2 +
+// (last1 - first1).
 func Equal(first1, last1, first2, last2 ForwardReader) bool {
 	return EqualBy(first1, last1, first2, last2, _eq)
 }
 
-func EqualBy(first1, last1, first2, last2 ForwardReader, pred BinaryPredicate) bool {
+// EqualBy returns true if the range [first1, last1) is equal to the range
+// [first2, last2), and false otherwise. If last2 is nil, it denotes first2 +
+// (last1 - first1). Elements are compared using the given binary predicate
+// less.
+func EqualBy(first1, last1, first2, last2 ForwardReader, less BinaryPredicate) bool {
 	for ; _ne(first1, last1); first1, first2 = NextReader(first1), NextReader(first2) {
-		if !pred(first1.Read(), first2.Read()) {
+		if (last2 != nil && _eq(first2, last2)) || !less(first1.Read(), first2.Read()) {
 			return false
 		}
 	}
-	return true
+	return last2 == nil || _eq(first2, last2)
+}
+
+// LexicographicalCompare checks if the first range [first1, last1) is
+// lexicographically less than the second range [first2, last2).
+func LexicographicalCompare(first1, last1, first2, last2 ForwardReader) bool {
+	return LexicographicalCompareBy(first1, last1, first2, last2, _less)
+}
+
+// LexicographicalCompareBy checks if the first range [first1, last1) is
+// lexicographically less than the second range [first2, last2). Elements are
+// compared using the given binary predicate less.
+func LexicographicalCompareBy(first1, last1, first2, last2 ForwardReader, less BinaryPredicate) bool {
+	for ; _ne(first2, last2); first1, first2 = NextReader(first1), NextReader(first2) {
+		if _eq(first1, last1) || less(first1.Read(), first2.Read()) {
+			return true
+		}
+		if less(first2.Read(), first1.Read()) {
+			return false
+		}
+	}
+	return false
+}
+
+// LexicographicalCompareThreeWay lexicographically compares two ranges [first1,
+// last1) and [first2, last2) using three-way comparison. The result will be 0
+// if [first1, last1) == [first2, last2), -1 if [first1, last1) < [first2,
+// last2), 1 if [first1, last1) > [first2, last2).
+func LexicographicalCompareThreeWay(first1, last1, first2, last2 ForwardReader) int {
+	return LexicographicalCompareThreeWayBy(first1, last1, first2, last2, _cmp)
+}
+
+// LexicographicalCompareThreeWayBy lexicographically compares two ranges [first1,
+// last1) and [first2, last2) using three-way comparison. The result will be 0
+// if [first1, last1) == [first2, last2), -1 if [first1, last1) < [first2,
+// last2), 1 if [first1, last1) > [first2, last2). Elements are
+// compared using the given binary predicate cmp.
+func LexicographicalCompareThreeWayBy(first1, last1, first2, last2 ForwardReader, cmp ThreeWayComparer) int {
+	for ; _ne(first2, last2); first1, first2 = NextReader(first1), NextReader(first2) {
+		if _eq(first1, last1) {
+			return -1
+		}
+		switch cmp(first1.Read(), first2.Read()) {
+		case 1:
+			return 1
+		case -1:
+			return -1
+		}
+	}
+	if _eq(first1, last1) {
+		return 0
+	}
+	return 1
 }

@@ -8,12 +8,9 @@ type Equalable interface {
 	Equal(Any) bool
 }
 
-func _eq(x Any, y Any) bool {
+func _eq(x, y Any) bool {
 	if e, ok := x.(Equalable); ok {
 		return e.Equal(y)
-	}
-	if e, ok := y.(Equalable); ok {
-		return e.Equal(x)
 	}
 	return x == y
 }
@@ -31,7 +28,18 @@ func _less(x, y Any) bool {
 	if c, ok := x.(Comparable); ok {
 		return c.Less(y)
 	}
-	return reflectCompare(x, y) == 1
+	return _cmp(x, y) == -1
+}
+
+type TotalOrder interface {
+	Compare(Any) int
+}
+
+func _cmp(x, y Any) int {
+	if t, ok := x.(TotalOrder); ok {
+		return t.Compare(y)
+	}
+	return reflectCompare(x, y)
 }
 
 // Borrow from https://github.com/stretchr/testify/blob/master/assert/assertion_order.go
@@ -47,13 +55,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			intobj1 := obj1.(int)
 			intobj2 := obj2.(int)
 			if intobj1 > intobj2 {
-				return -1
+				return 1
 			}
 			if intobj1 == intobj2 {
 				return 0
 			}
 			if intobj1 < intobj2 {
-				return 1
+				return -1
 			}
 		}
 	case reflect.Int8:
@@ -61,13 +69,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			int8obj1 := obj1.(int8)
 			int8obj2 := obj2.(int8)
 			if int8obj1 > int8obj2 {
-				return -1
+				return 1
 			}
 			if int8obj1 == int8obj2 {
 				return 0
 			}
 			if int8obj1 < int8obj2 {
-				return 1
+				return -1
 			}
 		}
 	case reflect.Int16:
@@ -75,13 +83,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			int16obj1 := obj1.(int16)
 			int16obj2 := obj2.(int16)
 			if int16obj1 > int16obj2 {
-				return -1
+				return 1
 			}
 			if int16obj1 == int16obj2 {
 				return 0
 			}
 			if int16obj1 < int16obj2 {
-				return 1
+				return -1
 			}
 		}
 	case reflect.Int32:
@@ -89,13 +97,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			int32obj1 := obj1.(int32)
 			int32obj2 := obj2.(int32)
 			if int32obj1 > int32obj2 {
-				return -1
+				return 1
 			}
 			if int32obj1 == int32obj2 {
 				return 0
 			}
 			if int32obj1 < int32obj2 {
-				return 1
+				return -1
 			}
 		}
 	case reflect.Int64:
@@ -103,13 +111,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			int64obj1 := obj1.(int64)
 			int64obj2 := obj2.(int64)
 			if int64obj1 > int64obj2 {
-				return -1
+				return 1
 			}
 			if int64obj1 == int64obj2 {
 				return 0
 			}
 			if int64obj1 < int64obj2 {
-				return 1
+				return -1
 			}
 		}
 	case reflect.Uint:
@@ -117,13 +125,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			uintobj1 := obj1.(uint)
 			uintobj2 := obj2.(uint)
 			if uintobj1 > uintobj2 {
-				return -1
+				return 1
 			}
 			if uintobj1 == uintobj2 {
 				return 0
 			}
 			if uintobj1 < uintobj2 {
-				return 1
+				return -1
 			}
 		}
 	case reflect.Uint8:
@@ -131,13 +139,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			uint8obj1 := obj1.(uint8)
 			uint8obj2 := obj2.(uint8)
 			if uint8obj1 > uint8obj2 {
-				return -1
+				return 1
 			}
 			if uint8obj1 == uint8obj2 {
 				return 0
 			}
 			if uint8obj1 < uint8obj2 {
-				return 1
+				return -1
 			}
 		}
 	case reflect.Uint16:
@@ -145,13 +153,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			uint16obj1 := obj1.(uint16)
 			uint16obj2 := obj2.(uint16)
 			if uint16obj1 > uint16obj2 {
-				return -1
+				return 1
 			}
 			if uint16obj1 == uint16obj2 {
 				return 0
 			}
 			if uint16obj1 < uint16obj2 {
-				return 1
+				return -1
 			}
 		}
 	case reflect.Uint32:
@@ -159,13 +167,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			uint32obj1 := obj1.(uint32)
 			uint32obj2 := obj2.(uint32)
 			if uint32obj1 > uint32obj2 {
-				return -1
+				return 1
 			}
 			if uint32obj1 == uint32obj2 {
 				return 0
 			}
 			if uint32obj1 < uint32obj2 {
-				return 1
+				return -1
 			}
 		}
 	case reflect.Uint64:
@@ -173,13 +181,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			uint64obj1 := obj1.(uint64)
 			uint64obj2 := obj2.(uint64)
 			if uint64obj1 > uint64obj2 {
-				return -1
+				return 1
 			}
 			if uint64obj1 == uint64obj2 {
 				return 0
 			}
 			if uint64obj1 < uint64obj2 {
-				return 1
+				return -1
 			}
 		}
 	case reflect.Float32:
@@ -187,13 +195,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			float32obj1 := obj1.(float32)
 			float32obj2 := obj2.(float32)
 			if float32obj1 > float32obj2 {
-				return -1
+				return 1
 			}
 			if float32obj1 == float32obj2 {
 				return 0
 			}
 			if float32obj1 < float32obj2 {
-				return 1
+				return -1
 			}
 		}
 	case reflect.Float64:
@@ -201,13 +209,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			float64obj1 := obj1.(float64)
 			float64obj2 := obj2.(float64)
 			if float64obj1 > float64obj2 {
-				return -1
+				return 1
 			}
 			if float64obj1 == float64obj2 {
 				return 0
 			}
 			if float64obj1 < float64obj2 {
-				return 1
+				return -1
 			}
 		}
 	case reflect.String:
@@ -215,13 +223,13 @@ func reflectCompare(obj1, obj2 Any) int {
 			stringobj1 := obj1.(string)
 			stringobj2 := obj2.(string)
 			if stringobj1 > stringobj2 {
-				return -1
+				return 1
 			}
 			if stringobj1 == stringobj2 {
 				return 0
 			}
 			if stringobj1 < stringobj2 {
-				return 1
+				return -1
 			}
 		}
 	}
@@ -233,12 +241,13 @@ type Any = interface{}
 
 // Function types.
 type (
-	UnaryPredicate  func(Any) bool
-	BinaryPredicate func(Any, Any) bool
-	IterFunction    func(Iter)
-	UnaryOperation  func(Any) Any
-	BinaryOperation func(Any, Any) Any
-	Generator       func() Any
+	UnaryPredicate   func(Any) bool
+	BinaryPredicate  func(Any, Any) bool
+	ThreeWayComparer func(Any, Any) int
+	IterFunction     func(Iter)
+	UnaryOperation   func(Any) Any
+	BinaryOperation  func(Any, Any) Any
+	Generator        func() Any
 )
 
 func _eq1(v Any) UnaryPredicate {

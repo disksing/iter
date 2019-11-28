@@ -646,6 +646,34 @@ func TestStablePartition(t *testing.T) {
 	}
 }
 
+func TestCompare(t *testing.T) {
+	assert := assert.New(t)
+	a, b := randString(), randString()
+	x, y, z, w := StringBegin(a), StringEnd(a), StringBegin(b), StringEnd(b)
+	if a == b {
+		assert.True(Equal(x, y, z, w))
+		assert.False(LexicographicalCompare(x, y, z, w))
+		assert.Equal(LexicographicalCompareThreeWay(x, y, z, w), 0)
+	} else if a < b {
+		assert.False(Equal(x, y, z, w))
+		assert.True(LexicographicalCompare(x, y, z, w))
+		assert.Equal(LexicographicalCompareThreeWay(x, y, z, w), -1)
+	} else {
+		assert.False(Equal(x, y, z, w))
+		assert.False(LexicographicalCompare(x, y, z, w))
+		assert.Equal(LexicographicalCompareThreeWay(x, y, z, w), 1)
+	}
+}
+
+func TestEqual(t *testing.T) {
+	assert := assert.New(t)
+	a, b := randString(), randString()
+	if len(a) > len(b) {
+		a, b = b, a
+	}
+	assert.Equal(Equal(StringBegin(a), StringEnd(a), StringBegin(b), nil), a == b[:len(a)])
+}
+
 func TestMinmax(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randInt(), randInt()
