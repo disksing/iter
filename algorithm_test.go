@@ -496,6 +496,19 @@ func TestSampleReservoir(t *testing.T) {
 	}
 }
 
+func TestUnique(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	b := append(a[:0:0], a...)
+	c := make([]int, len(a))
+	SliceErase(&b, Unique(begin(b), end(b)))
+	SliceErase(&c, UniqueCopy(begin(a), end(a), begin(c)))
+	sliceEqual(assert, b, c)
+	for i := 0; i < len(b)-1; i++ {
+		assert.NotEqual(b[i], b[i+1])
+	}
+}
+
 func TestMinmax(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randInt(), randInt()

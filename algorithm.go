@@ -517,12 +517,17 @@ func _reservoirSample(first, last ForwardReader, out RandomWriter, n int, r *ran
 	return AdvanceNWriter(out, n)
 }
 
-// Unique
+// Unique eliminates all but the first element from every consecutive group of
+// equivalent elements from the range [first, last) and returns a past-the-end
+// iterator for the new logical end of the range.
 func Unique(first, last ForwardReadWriter) ForwardReadWriter {
 	return UniqueIf(first, last, _eq)
 }
 
-// UniqueIf
+// UniqueIf eliminates all but the first element from every consecutive group of
+// equivalent elements from the range [first, last) and returns a past-the-end
+// iterator for the new logical end of the range. Elements are compared using
+// the given binary predicate pred.
 func UniqueIf(first, last ForwardReadWriter, pred BinaryPredicate) ForwardReadWriter {
 	if _eq(first, last) {
 		return last
@@ -541,12 +546,17 @@ func UniqueIf(first, last ForwardReadWriter, pred BinaryPredicate) ForwardReadWr
 	}
 }
 
-// UniqueCopy
+// UniqueCopy copies the elements from the range [first, last), to another range
+// beginning at d_first in such a way that there are no consecutive equal
+// elements. Only the first element of each group of equal elements is copied.
 func UniqueCopy(first, last ForwardReader, result ForwardWriter) ForwardWriter {
 	return UniqueCopyIf(first, last, result, _eq)
 }
 
-// UniqueCopyIf
+// UniqueCopyIf copies the elements from the range [first, last), to another
+// range beginning at d_first in such a way that there are no consecutive equal
+// elements. Only the first element of each group of equal elements is copied.
+// Elements are compared using the given binary predicate pred.
 func UniqueCopyIf(first, last ForwardReader, result ForwardWriter, pred BinaryPredicate) ForwardWriter {
 	if _ne(first, last) {
 		v := first.Read()
@@ -563,12 +573,17 @@ func UniqueCopyIf(first, last ForwardReader, result ForwardWriter, pred BinaryPr
 	return result
 }
 
-// IsPartitioned
+// IsPartitioned returns true if all elements in the range [first, last) that
+// satisfy the predicate pred appear before all elements that don't. Also returns
+// true if [first, last) is empty.
 func IsPartitioned(first, last ForwardReader, pred UnaryPredicate) bool {
 	return NoneOf(FindIfNot(first, last, pred), last, pred)
 }
 
-// Partition
+// Partition reorders the elements in the range [first, last) in such a way that
+// all elements for which the predicate pred returns true precede the elements
+// for which predicate pred returns false. Relative order of the elements is not
+// preserved.
 func Partition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWriter {
 	first = FindIfNot(first, last, pred).(ForwardReadWriter)
 	if _eq(first, last) {
@@ -583,7 +598,11 @@ func Partition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWr
 	return first
 }
 
-// ParittionCopy
+// ParittionCopy copies the elements from the range [first, last) to two
+// different ranges depending on the value returned by the predicate pred. The
+// elements that satisfy the predicate pred are copied to the range beginning at
+// outTrue. The rest of the elements are copied to the range beginning at
+// outFalse.
 func ParittionCopy(first, last ForwardReader, outTrue, outFalse ForwardWriter, pred UnaryPredicate) (ForwardWriter, ForwardWriter) {
 	for ; _ne(first, last); first = NextReader(first) {
 		if pred(first.Read()) {
@@ -597,12 +616,17 @@ func ParittionCopy(first, last ForwardReader, outTrue, outFalse ForwardWriter, p
 	return outTrue, outFalse
 }
 
-// StablePartition
+// StablePartition reorders the elements in the range [first, last) in such a
+// way that all elements for which the predicate pred returns true precede the
+// elements for which predicate pred returns false. Relative order of the
+// elements is preserved.
 func StablePartition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWriter {
 	panic("TODO: not implemented")
 }
 
-// PartitionPoint
+// PartitionPoint examines the partitioned (as if by std::partition) range
+// [first, last) and locates the end of the first partition, that is, the first
+// element that does not satisfy pred or last if all elements satisfy pred.
 func PartitionPoint(first, last ForwardReader, pred UnaryPredicate) ForwardReader {
 	l := Distance(first, last)
 	for l != 0 {
@@ -761,10 +785,10 @@ func ClampBy(v, lo, hi Any, less BinaryPredicate) Any {
 }
 
 func Equal(first1, last1, first2, last2 ForwardReader) bool {
-	return EqualIf(first1, last1, first2, last2, _eq)
+	return EqualBy(first1, last1, first2, last2, _eq)
 }
 
-func EqualIf(first1, last1, first2, last2 ForwardReader, pred BinaryPredicate) bool {
+func EqualBy(first1, last1, first2, last2 ForwardReader, pred BinaryPredicate) bool {
 	for ; _ne(first1, last1); first1, first2 = NextReader(first1), NextReader(first2) {
 		if !pred(first1.Read(), first2.Read()) {
 			return false
@@ -772,53 +796,3 @@ func EqualIf(first1, last1, first2, last2 ForwardReader, pred BinaryPredicate) b
 	}
 	return true
 }
-
-// func IsPermutation(first1, last1, first2, last2 ForwardIter) bool {
-// 	return IsPermutationIf(first1, last1, first2, last2, eqv2)
-// }
-
-// func IsPermutationIf(first1, last1, first2, last2 ForwardIter, eq func(Iter, Iter) bool) bool {
-// 	for ; ne(first1, last1); first1, first2 = first1.Next(), first2.Next() {
-// 		if !eq(first1, first2) {
-// 			break
-// 		}
-// 	}
-// 	if first1 == last1 {
-// 		return true
-// 	}
-
-// 	l1 := Distance(first1, last1)
-// 	if l1 == 1 {
-// 		return false
-// 	}
-// 	last2 = AdvanceN(last2, l1).(ForwardIter)
-// 	for i := first1; i != last1; i = i.Next() {
-// 		match := first1
-// 		for ; match != i; match = match.Next() {
-// 			if eq(match, i) {
-// 				break
-// 			}
-// 		}
-// 		if match == i {
-// 			var c2 int
-// 			for j := first2; j != last2; j = j.Next() {
-// 				if eq(i, j) {
-// 					c2++
-// 				}
-// 			}
-// 			if c2 == 0 {
-// 				return false
-// 			}
-// 			c1 := 1
-// 			for j := Advance(i).(ForwardIter); j != last1; j = j.Next() {
-// 				if eq(i, j) {
-// 					c1++
-// 				}
-// 			}
-// 			if c1 != c2 {
-// 				return false
-// 			}
-// 		}
-// 	}
-// 	return true
-// }
