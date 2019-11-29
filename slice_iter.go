@@ -66,7 +66,7 @@ func (it SliceIter) Write(v Any) {
 	it.s.Index(it.i).Set(reflect.ValueOf(v))
 }
 
-func (it SliceIter) Equal(it2 Any) bool {
+func (it SliceIter) Eq(it2 Any) bool {
 	return it.i == it2.(SliceIter).i
 }
 

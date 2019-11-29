@@ -54,7 +54,7 @@ func (it StringIter) Read() Any {
 	return it.s[it.i]
 }
 
-func (it StringIter) Equal(it2 Any) bool {
+func (it StringIter) Eq(it2 Any) bool {
 	return it.i == it2.(StringIter).i
 }
 

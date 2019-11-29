@@ -55,8 +55,16 @@ func sliceEqual(assert *assert.Assertions, a, b []int) {
 	assert.Equal(a, b)
 }
 
+func _eq(x, y Any) bool {
+	type ieq interface{ Eq(Any) bool }
+	if e, ok := x.(ieq); ok {
+		return e.Eq(y)
+	}
+	return x == y
+}
+
 func iterEqual(assert *assert.Assertions, a, b Iter) {
-	assert.True(a.(Equalable).Equal(b), "a=%v\nb=%v", a, b)
+	assert.True(_eq(a, b), "a=%v\nb=%v", a, b)
 }
 
 func TestAllAnyNoneOf(t *testing.T) {
@@ -155,7 +163,7 @@ func TestFindEnd(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randIntSlice(), randIntSlice()
 	it := FindEnd(begin(a), end(a), begin(b), end(b))
-	if it.(Equalable).Equal(end(a)) {
+	if _eq(it, end(a)) {
 		if len(b) > 0 {
 			it = Search(begin(a), end(a), begin(b), end(b))
 		}
@@ -576,7 +584,7 @@ func forwardListEnd(l *list.List) *forwardListIter {
 	}
 }
 
-func (l *forwardListIter) Equal(x Any) bool {
+func (l *forwardListIter) Eq(x Any) bool {
 	return l.e == x.(*forwardListIter).e
 }
 

@@ -22,7 +22,7 @@ func NoneOf(first, last ForwardReader, pred UnaryPredicate) bool {
 
 // ForEach applies the given function f to the result of dereferencing every
 // iterator in the range [first, last), in order.
-func ForEach(first, last ForwardReader, f IterFunction) IterFunction {
+func ForEach(first, last ForwardReader, f IteratorFunction) IteratorFunction {
 	for ; _ne(first, last); first = NextReader(first) {
 		f(first)
 	}
@@ -31,7 +31,7 @@ func ForEach(first, last ForwardReader, f IterFunction) IterFunction {
 
 // ForEachN applies the given function f to the result of dereferencing every
 // iterator in the range [first, first + n), in order.
-func ForEachN(first ForwardReader, n int, f IterFunction) IterFunction {
+func ForEachN(first ForwardReader, n int, f IteratorFunction) IteratorFunction {
 	for ; n > 0; n, first = n-1, NextReader(first) {
 		f(first)
 	}
@@ -64,9 +64,9 @@ func Mismatch(first1, last1, first2, last2 ForwardReader) (ForwardReader, Forwar
 // MismatchBy returns the first mismatching pair of elements from two ranges:
 // one defined by [first1, last1) and another defined by [first2,last2). If
 // last2 is nil, it denotes first2 + (last1 - first1). Elements are compared
-// using the given binary predicate pred.
-func MismatchBy(first1, last1, first2, last2 ForwardReader, pred BinaryPredicate) (ForwardReader, ForwardReader) {
-	for _ne(first1, last1) && (last2 == nil || _ne(first2, last2)) && pred(first1.Read(), first2.Read()) {
+// using the given comparer eq.
+func MismatchBy(first1, last1, first2, last2 ForwardReader, eq EqComparer) (ForwardReader, ForwardReader) {
+	for _ne(first1, last1) && (last2 == nil || _ne(first2, last2)) && eq(first1.Read(), first2.Read()) {
 		first1, first2 = NextReader(first1), NextReader(first2)
 	}
 	return first1, first2
@@ -105,14 +105,14 @@ func FindEnd(first, last, sFirst, sLast ForwardReader) ForwardReader {
 // FindEndBy searches for the last occurrence of the sequence [sFirst, sLast) in
 // the range [first, last). If [sFirst, sLast) is empty or such sequence is
 // found, last is returned. Elements are compared using the given binary
-// predicate pred.
-func FindEndBy(first, last, sFirst, sLast ForwardReader, pred BinaryPredicate) ForwardReader {
+// comparer eq.
+func FindEndBy(first, last, sFirst, sLast ForwardReader, eq EqComparer) ForwardReader {
 	if _eq(sFirst, sLast) {
 		return last
 	}
 	result := last
 	for {
-		if newResult := SearchBy(first, last, sFirst, sLast, pred); _eq(newResult, last) {
+		if newResult := SearchBy(first, last, sFirst, sLast, eq); _eq(newResult, last) {
 			break
 		} else {
 			result = newResult
@@ -130,11 +130,12 @@ func FindFirstOf(first, last, sFirst, sLast ForwardReader) ForwardReader {
 }
 
 // FindFirstOfBy searches the range [first, last) for any of the elements in the
-// range [sFirst, sLast).
-func FindFirstOfBy(first, last, sFirst, sLast ForwardReader, pred BinaryPredicate) ForwardReader {
+// range [sFirst, sLast). Elements are compared using the given binary comparer
+// eq.
+func FindFirstOfBy(first, last, sFirst, sLast ForwardReader, eq EqComparer) ForwardReader {
 	return FindIf(first, last, func(x Any) bool {
 		return AnyOf(sFirst, sLast, func(s Any) bool {
-			return pred(x, s)
+			return eq(x, s)
 		})
 	})
 }
@@ -146,13 +147,13 @@ func AdjacentFind(first, last ForwardReader) ForwardReader {
 }
 
 // AdjacentFindBy searches the range [first, last) for two consecutive identical
-// elements. Elements are compared using the given binary predicate pred.
-func AdjacentFindBy(first, last ForwardReader, pred BinaryPredicate) ForwardReader {
+// elements. Elements are compared using the given binary comparer eq.
+func AdjacentFindBy(first, last ForwardReader, eq EqComparer) ForwardReader {
 	if _eq(first, last) {
 		return last
 	}
 	for next := NextReader(first); _ne(next, last); first, next = NextReader(first), NextReader(next) {
-		if pred(first.Read(), next.Read()) {
+		if eq(first.Read(), next.Read()) {
 			return first
 		}
 	}
@@ -167,8 +168,8 @@ func Search(first, last, sFirst, sLast ForwardReader) ForwardReader {
 
 // SearchBy searches for the first occurrence of the sequence of elements
 // [sFirst, sLast) in the range [first, last). Elements are compared using the
-// given binary predicate pred.
-func SearchBy(first, last, sFirst, sLast ForwardReader, pred BinaryPredicate) ForwardReader {
+// given binary comparer eq.
+func SearchBy(first, last, sFirst, sLast ForwardReader, eq EqComparer) ForwardReader {
 	for {
 		it := first
 		for sIt := sFirst; ; sIt, it = NextReader(sIt), NextReader(it) {
@@ -178,7 +179,7 @@ func SearchBy(first, last, sFirst, sLast ForwardReader, pred BinaryPredicate) Fo
 			if _eq(it, last) {
 				return last
 			}
-			if !pred(it.Read(), sIt.Read()) {
+			if !eq(it.Read(), sIt.Read()) {
 				break
 			}
 		}
@@ -193,14 +194,13 @@ func SearchN(first, last ForwardReader, count int, v Any) ForwardReader {
 }
 
 // SearchNBy searches the range [first, last) for the first sequence of count
-// identical elements. Elements are compared using the given binary predicate
-// pred.
-func SearchNBy(first, last ForwardReader, count int, v Any, pred BinaryPredicate) ForwardReader {
+// identical elements. Elements are compared using the given binary comparer eq.
+func SearchNBy(first, last ForwardReader, count int, v Any, eq EqComparer) ForwardReader {
 	if count <= 0 {
 		return first
 	}
 	for ; _ne(first, last); first = NextReader(first) {
-		if !pred(first.Read(), v) {
+		if !eq(first.Read(), v) {
 			continue
 		}
 		candidate := first
@@ -213,7 +213,7 @@ func SearchNBy(first, last ForwardReader, count int, v Any, pred BinaryPredicate
 			if first = NextReader(first); _eq(first, last) {
 				return last
 			}
-			if !pred(first.Read(), v) {
+			if !eq(first.Read(), v) {
 				break
 			}
 		}
@@ -527,8 +527,8 @@ func Unique(first, last ForwardReadWriter) ForwardReadWriter {
 // UniqueIf eliminates all but the first element from every consecutive group of
 // equivalent elements from the range [first, last) and returns a past-the-end
 // iterator for the new logical end of the range. Elements are compared using
-// the given binary predicate pred.
-func UniqueIf(first, last ForwardReadWriter, pred BinaryPredicate) ForwardReadWriter {
+// the given binary comparer eq.
+func UniqueIf(first, last ForwardReadWriter, eq EqComparer) ForwardReadWriter {
 	if _eq(first, last) {
 		return last
 	}
@@ -538,7 +538,7 @@ func UniqueIf(first, last ForwardReadWriter, pred BinaryPredicate) ForwardReadWr
 		if _eq(first, last) {
 			return NextReadWriter(result)
 		}
-		if !pred(result.Read(), first.Read()) {
+		if !eq(result.Read(), first.Read()) {
 			if result = NextReadWriter(result); _ne(result, first) {
 				result.Write(first.Read())
 			}
@@ -556,14 +556,14 @@ func UniqueCopy(first, last ForwardReader, result ForwardWriter) ForwardWriter {
 // UniqueCopyIf copies the elements from the range [first, last), to another
 // range beginning at d_first in such a way that there are no consecutive equal
 // elements. Only the first element of each group of equal elements is copied.
-// Elements are compared using the given binary predicate pred.
-func UniqueCopyIf(first, last ForwardReader, result ForwardWriter, pred BinaryPredicate) ForwardWriter {
+// Elements are compared using the given binary comparer eq.
+func UniqueCopyIf(first, last ForwardReader, result ForwardWriter, eq EqComparer) ForwardWriter {
 	if _ne(first, last) {
 		v := first.Read()
 		result.Write(v)
 		result = NextWriter(result)
 		for first = NextReader(first); _ne(first, last); first = NextReader(first) {
-			if !pred(v, first.Read()) {
+			if !eq(v, first.Read()) {
 				v = first.Read()
 				result.Write(v)
 				result = NextWriter(result)
@@ -763,8 +763,8 @@ func Max(a, b Any) Any {
 }
 
 // MaxBy returns the greater of the given values. Values are compared using the
-// given binary comparison function less.
-func MaxBy(a, b Any, less BinaryPredicate) Any {
+// given binary comparer less.
+func MaxBy(a, b Any, less LessComparer) Any {
 	if less(a, b) {
 		return b
 	}
@@ -777,8 +777,8 @@ func MaxElement(first, last ForwardReader) ForwardReader {
 }
 
 // MaxElementBy returns the largest element in a range. Values are compared
-// using the given binary comparison function less.
-func MaxElementBy(first, last ForwardReader, less BinaryPredicate) ForwardReader {
+// using the given binary comparer less.
+func MaxElementBy(first, last ForwardReader, less LessComparer) ForwardReader {
 	if _eq(first, last) {
 		return last
 	}
@@ -797,8 +797,8 @@ func Min(a, b Any) Any {
 }
 
 // MinBy returns the smaller of the given values. Values are compared using the
-// given binary comparison function less.
-func MinBy(a, b Any, less BinaryPredicate) Any {
+// given binary comparer less.
+func MinBy(a, b Any, less LessComparer) Any {
 	if less(a, b) {
 		return a
 	}
@@ -811,8 +811,8 @@ func MinElement(first, last ForwardReader) ForwardReader {
 }
 
 // MinElementBy returns the smallest element in a range. Values are compared
-// using the given binary comparison function less.
-func MinElementBy(first, last ForwardReader, less BinaryPredicate) ForwardReader {
+// using the given binary comparer less.
+func MinElementBy(first, last ForwardReader, less LessComparer) ForwardReader {
 	if _eq(first, last) {
 		return last
 	}
@@ -831,8 +831,8 @@ func Minmax(a, b Any) (Any, Any) {
 }
 
 // MinmaxBy returns the smaller and larger of two elements. Values are compared
-// using the given binary comparison function less.
-func MinmaxBy(a, b Any, less BinaryPredicate) (Any, Any) {
+// using the given binary comparer less.
+func MinmaxBy(a, b Any, less LessComparer) (Any, Any) {
 	if less(b, a) {
 		return b, a
 	}
@@ -845,8 +845,8 @@ func MinmaxElement(first, last ForwardReader) (ForwardReader, ForwardReader) {
 }
 
 // MinmaxElementBy returns the smallest and the largest elements in a range.
-// Values are compared using the given binary comparison function less.
-func MinmaxElementBy(first, last ForwardReader, less BinaryPredicate) (ForwardReader, ForwardReader) {
+// Values are compared using the given binary comparer less.
+func MinmaxElementBy(first, last ForwardReader, less LessComparer) (ForwardReader, ForwardReader) {
 	if _eq(first, last) {
 		return first, first
 	}
@@ -888,8 +888,8 @@ func Clamp(v, lo, hi Any) Any {
 }
 
 // ClampBy clamps a value between a pair of boundary values. Values are compared
-// using the given binary comparison function less.
-func ClampBy(v, lo, hi Any, less BinaryPredicate) Any {
+// using the given binary comparer less.
+func ClampBy(v, lo, hi Any, less LessComparer) Any {
 	if less(v, lo) {
 		return lo
 	}
@@ -908,11 +908,10 @@ func Equal(first1, last1, first2, last2 ForwardReader) bool {
 
 // EqualBy returns true if the range [first1, last1) is equal to the range
 // [first2, last2), and false otherwise. If last2 is nil, it denotes first2 +
-// (last1 - first1). Elements are compared using the given binary predicate
-// less.
-func EqualBy(first1, last1, first2, last2 ForwardReader, less BinaryPredicate) bool {
+// (last1 - first1). Elements are compared using the given binary comparer eq.
+func EqualBy(first1, last1, first2, last2 ForwardReader, eq EqComparer) bool {
 	for ; _ne(first1, last1); first1, first2 = NextReader(first1), NextReader(first2) {
-		if (last2 != nil && _eq(first2, last2)) || !less(first1.Read(), first2.Read()) {
+		if (last2 != nil && _eq(first2, last2)) || !eq(first1.Read(), first2.Read()) {
 			return false
 		}
 	}
@@ -927,8 +926,8 @@ func LexicographicalCompare(first1, last1, first2, last2 ForwardReader) bool {
 
 // LexicographicalCompareBy checks if the first range [first1, last1) is
 // lexicographically less than the second range [first2, last2). Elements are
-// compared using the given binary predicate less.
-func LexicographicalCompareBy(first1, last1, first2, last2 ForwardReader, less BinaryPredicate) bool {
+// compared using the given binary comparer less.
+func LexicographicalCompareBy(first1, last1, first2, last2 ForwardReader, less LessComparer) bool {
 	for ; _ne(first2, last2); first1, first2 = NextReader(first1), NextReader(first2) {
 		if _eq(first1, last1) || less(first1.Read(), first2.Read()) {
 			return true
@@ -979,8 +978,8 @@ func IsPermutation(first1, last1, first2, last2 ForwardReader) bool {
 // IsPermutationBy returns true if there exists a permutation of the elements in
 // the range [first1, last1) that makes that range equal to the range
 // [first2,last2), where last2 denotes first2 + (last1 - first1) if it was not
-// given. Elements are compared using the given binary predicate eq.
-func IsPermutationBy(first1, last1, first2, last2 ForwardReader, eq BinaryPredicate) bool {
+// given. Elements are compared using the given binary comparer eq.
+func IsPermutationBy(first1, last1, first2, last2 ForwardReader, eq EqComparer) bool {
 	l := Distance(first1, last1)
 	if last2 == nil {
 		last2 = AdvanceN(first2, l).(ForwardReader)
@@ -1016,8 +1015,9 @@ func NextPermutation(first, last BidiReadWriter) bool {
 // permutation from the set of all permutations that are lexicographically
 // ordered with respect to less. Returns true if such permutation exists,
 // otherwise transforms the range into the first permutation (as if by
-// Sort(first, last)) and returns false.
-func NextPermutationBy(first, last BidiReadWriter, less BinaryPredicate) bool {
+// Sort(first, last)) and returns false. Elements are compared using the given
+// binary comparer less.
+func NextPermutationBy(first, last BidiReadWriter, less LessComparer) bool {
 	if _eq(first, last) {
 		return false
 	}
@@ -1056,8 +1056,9 @@ func PrevPermutation(first, last BidiReadWriter) bool {
 // permutation from the set of all permutations that are lexicographically
 // ordered with respect to less. Returns true if such permutation exists,
 // otherwise transforms the range into the last permutation (as if by
-// Sort(first, last); Reverse(first, last);) and returns false.
-func PrevPermutationBy(first, last BidiReadWriter, less BinaryPredicate) bool {
+// Sort(first, last); Reverse(first, last);) and returns false. Elements are
+// compared using the given binary comparer less.
+func PrevPermutationBy(first, last BidiReadWriter, less LessComparer) bool {
 	if _eq(first, last) {
 		return false
 	}

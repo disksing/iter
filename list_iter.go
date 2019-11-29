@@ -36,7 +36,7 @@ func ListREnd(l *list.List) *ListIter {
 	}
 }
 
-func (l *ListIter) Equal(x Any) bool {
+func (l *ListIter) Eq(x Any) bool {
 	return l.e == x.(*ListIter).e
 }
 
