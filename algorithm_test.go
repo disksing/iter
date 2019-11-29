@@ -109,9 +109,7 @@ func TestCount(t *testing.T) {
 	assert := assert.New(t)
 	a := randIntSlice()
 	count := make([]int, randN)
-	for _, x := range a {
-		count[x]++
-	}
+	ForEach(begin(a), end(a), func(x Iter) { count[x.(Reader).Read().(int)]++ })
 	for i := 0; i < 100; i++ {
 		assert.Equal(Count(begin(a), end(a), i), count[i])
 	}
@@ -646,9 +644,23 @@ func TestStablePartition(t *testing.T) {
 	}
 }
 
+func TestEqual(t *testing.T) {
+	assert := assert.New(t)
+	a, b := randString(), randString()
+	if len(a) > len(b) {
+		a, b = b, a
+	}
+	assert.Equal(Equal(StringBegin(a), StringEnd(a), StringBegin(b), nil), a == b[:len(a)])
+	a, b = randString(), randString()
+	assert.Equal(Equal(StringBegin(a), StringEnd(a), StringBegin(b), StringEnd(b)), a == b)
+}
+
 func TestCompare(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randString(), randString()
+	if randInt() == 0 {
+		b = a
+	}
 	x, y, z, w := StringBegin(a), StringEnd(a), StringBegin(b), StringEnd(b)
 	if a == b {
 		assert.True(Equal(x, y, z, w))
@@ -665,13 +677,79 @@ func TestCompare(t *testing.T) {
 	}
 }
 
-func TestEqual(t *testing.T) {
+func TestIsPermutation(t *testing.T) {
 	assert := assert.New(t)
-	a, b := randString(), randString()
+	a, b := randIntSlice(), randIntSlice()
+	Generate(begin(b), end(b), func() Any {
+		if len(a) > 0 {
+			return a[r.Intn(len(a))]
+		}
+		return 0
+	})
+
+	count := make([]int, randN)
+	for _, x := range a {
+		count[x]++
+	}
+	for _, x := range b {
+		count[x]--
+	}
+	assert.Equal(
+		IsPermutation(begin(a), end(a), begin(b), end(b)),
+		Count(begin(count), end(count), 0) == randN,
+	)
+
+}
+
+func TestIsPermutation2(t *testing.T) {
+	assert := assert.New(t)
+	a, b := randIntSlice(), randIntSlice()
+	Generate(begin(b), end(b), func() Any {
+		if len(a) > 0 {
+			return a[r.Intn(len(a))]
+		}
+		return 0
+	})
 	if len(a) > len(b) {
 		a, b = b, a
 	}
-	assert.Equal(Equal(StringBegin(a), StringEnd(a), StringBegin(b), nil), a == b[:len(a)])
+	count := make([]int, randN)
+	for i := range a {
+		count[a[i]]++
+		count[b[i]]--
+	}
+	assert.Equal(
+		IsPermutation(begin(a), end(a), begin(b), nil),
+		Count(begin(count), end(count), 0) == randN,
+	)
+}
+
+func TestPermutation(t *testing.T) {
+	assert := assert.New(t)
+	total := []int{0: 0, 1: 1, 2: 2, 3: 6, 4: 24, 5: 120}
+	a := randIntSlice()
+	ml := Min(len(a), 5).(int)
+	a = a[:r.Intn(ml+1)]
+	b := append(a[:0:0], a...)
+	c := make([]int, len(a))
+	for i := 0; ; i++ {
+		Copy(begin(a), end(a), begin(c))
+		ok := NextPermutation(begin(a), end(a))
+		assert.Equal(LexicographicalCompare(begin(c), end(c), begin(a), end(a)), ok)
+		if Equal(begin(a), end(a), begin(b), end(b)) {
+			break
+		}
+		assert.Less(i, total[len(a)])
+	}
+	for i := 0; ; i++ {
+		Copy(begin(a), end(a), begin(c))
+		ok := PrevPermutation(begin(a), end(a))
+		assert.Equal(LexicographicalCompare(begin(a), end(a), begin(c), end(c)), ok)
+		if Equal(begin(a), end(a), begin(b), end(b)) {
+			break
+		}
+		assert.Less(i, total[len(a)])
+	}
 }
 
 func TestMinmax(t *testing.T) {

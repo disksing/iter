@@ -958,15 +958,127 @@ func LexicographicalCompareThreeWayBy(first1, last1, first2, last2 ForwardReader
 		if _eq(first1, last1) {
 			return -1
 		}
-		switch cmp(first1.Read(), first2.Read()) {
-		case 1:
-			return 1
-		case -1:
-			return -1
+		if x := cmp(first1.Read(), first2.Read()); x != 0 {
+			return x
 		}
 	}
 	if _eq(first1, last1) {
 		return 0
 	}
 	return 1
+}
+
+// IsPermutation returns true if there exists a permutation of the elements in
+// the range [first1, last1) that makes that range equal to the range
+// [first2,last2), where last2 denotes first2 + (last1 - first1) if it was not
+// given.
+func IsPermutation(first1, last1, first2, last2 ForwardReader) bool {
+	return IsPermutationBy(first1, last1, first2, last2, _eq)
+}
+
+// IsPermutationBy returns true if there exists a permutation of the elements in
+// the range [first1, last1) that makes that range equal to the range
+// [first2,last2), where last2 denotes first2 + (last1 - first1) if it was not
+// given. Elements are compared using the given binary predicate eq.
+func IsPermutationBy(first1, last1, first2, last2 ForwardReader, eq BinaryPredicate) bool {
+	l := Distance(first1, last1)
+	if last2 == nil {
+		last2 = AdvanceN(first2, l).(ForwardReader)
+	} else if Distance(first2, last2) != l {
+		return false
+	}
+	first1, first2 = MismatchBy(first1, last1, first2, last2, eq)
+	if _eq(first1, last1) {
+		return true
+	}
+	for i := first1; _ne(i, last1); i = NextReader(i) {
+		pred := _eq1(i.Read())
+		if _ne(FindIf(first1, i, pred), i) {
+			continue
+		}
+		c2 := CountIf(first2, last2, pred)
+		if c2 == 0 || c2 != 1+CountIf(NextReader(i), last1, pred) {
+			return false
+		}
+	}
+	return true
+}
+
+// NextPermutation transforms the range [first, last) into the next permutation
+// from the set of all permutations that are lexicographically ordered. Returns
+// true if such permutation exists, otherwise transforms the range into the
+// first permutation (as if by Sort(first, last)) and returns false.
+func NextPermutation(first, last BidiReadWriter) bool {
+	return NextPermutationBy(first, last, _less)
+}
+
+// NextPermutationBy transforms the range [first, last) into the next
+// permutation from the set of all permutations that are lexicographically
+// ordered with respect to less. Returns true if such permutation exists,
+// otherwise transforms the range into the first permutation (as if by
+// Sort(first, last)) and returns false.
+func NextPermutationBy(first, last BidiReadWriter, less BinaryPredicate) bool {
+	if _eq(first, last) {
+		return false
+	}
+	i := PrevBidiReadWriter(last)
+	if _eq(first, i) {
+		return false
+	}
+	for {
+		ip1 := i
+		i = PrevBidiReadWriter(i)
+		if less(i.Read(), ip1.Read()) {
+			j := PrevBidiReadWriter(last)
+			for ; !less(i.Read(), j.Read()); j = PrevBidiReadWriter(j) {
+			}
+			Swap(i, j)
+			Reverse(ip1, last)
+			return true
+		}
+		if _eq(i, first) {
+			Reverse(first, last)
+			return false
+		}
+	}
+}
+
+// PrevPermutation transforms the range [first, last) into the previous
+// permutation from the set of all permutations that are lexicographically
+// ordered. Returns true if such permutation exists, otherwise transforms the
+// range into the last permutation (as if by Sort(first, last); Reverse(first,
+// last);) and returns false.
+func PrevPermutation(first, last BidiReadWriter) bool {
+	return PrevPermutationBy(first, last, _less)
+}
+
+// PrevPermutationBy transforms the range [first, last) into the previous
+// permutation from the set of all permutations that are lexicographically
+// ordered with respect to less. Returns true if such permutation exists,
+// otherwise transforms the range into the last permutation (as if by
+// Sort(first, last); Reverse(first, last);) and returns false.
+func PrevPermutationBy(first, last BidiReadWriter, less BinaryPredicate) bool {
+	if _eq(first, last) {
+		return false
+	}
+	i := PrevBidiReadWriter(last)
+	if _eq(first, i) {
+		return false
+	}
+	for {
+		ip1 := i
+		i = PrevBidiReadWriter(i)
+		if less(ip1.Read(), i.Read()) {
+			j := PrevBidiReadWriter(last)
+			for ; !less(j.Read(), i.Read()); j = PrevBidiReadWriter(j) {
+			}
+			Swap(i, j)
+			Reverse(ip1, last)
+			return true
+		}
+		if _eq(i, first) {
+			Reverse(first, last)
+			return false
+		}
+	}
 }
