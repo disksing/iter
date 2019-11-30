@@ -836,17 +836,23 @@ func TestPartialSum(t *testing.T) {
 	ps := make([]int, len(a))
 	exc := make([]int, len(a))
 	inc := make([]int, len(a))
+	exct := make([]int, len(a))
+	inct := make([]int, len(a))
 	for i := range a {
 		if i == 0 {
 			diff[i] = a[i]
 			ps[i] = a[i]
 			exc[i] = 1
 			inc[i] = 2 + a[i]
+			exct[i] = 3
+			inct[i] = 4 + a[i]*a[i]
 		} else {
 			diff[i] = a[i] - a[i-1]
 			ps[i] = ps[i-1] + a[i]
 			exc[i] = exc[i-1] + a[i-1]
+			exct[i] = exct[i-1] + a[i-1]*2
 			inc[i] = inc[i-1] + a[i]
+			inct[i] = inct[i-1] + a[i]*a[i]
 		}
 	}
 	g := make([]int, len(a))
@@ -858,4 +864,8 @@ func TestPartialSum(t *testing.T) {
 	sliceEqual(assert, g, exc)
 	InclusiveScan(begin(a), end(a), begin(g), 2)
 	sliceEqual(assert, g, inc)
+	TransformExclusiveScan(begin(a), end(a), begin(g), 3, func(x Any) Any { return x.(int) * 2 })
+	sliceEqual(assert, g, exct)
+	TransformInclusiveScan(begin(a), end(a), begin(g), 4, func(x Any) Any { return x.(int) * x.(int) })
+	sliceEqual(assert, g, inct)
 }

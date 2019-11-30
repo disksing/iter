@@ -31,3 +31,5 @@ func _not1(p UnaryPredicate) UnaryPredicate {
 }
 
 func _true1(Any) bool { return true }
+
+func _notrans(x Any) Any { return x }

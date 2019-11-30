@@ -1193,20 +1193,7 @@ func ExclusiveScan(first, last ForwardReader, dFirst ForwardWriter, v Any) Forwa
 // results to the range beginning at dFirst. "exclusive" means that the i-th
 // input element is not included in the i-th sum.
 func ExclusiveScanBy(first, last ForwardReader, dFirst ForwardWriter, v Any, add BinaryOperation) ForwardWriter {
-	if _eq(first, last) {
-		return dFirst
-	}
-	saved := v
-	for {
-		v = add(v, first.Read())
-		dFirst.Write(saved)
-		saved = v
-		first, dFirst = NextReader(first), NextWriter(dFirst)
-		if _eq(first, last) {
-			break
-		}
-	}
-	return dFirst
+	return TransformExclusiveScanBy(first, last, dFirst, v, add, _notrans)
 }
 
 // InclusiveScan computes an inclusive prefix sum operation using v=v+cur or
@@ -1222,8 +1209,57 @@ func InclusiveScan(first, last ForwardReader, dFirst ForwardWriter, v Any) Forwa
 // writes the results to the range beginning at dFirst. "inclusive" means that
 // the i-th input element is included in the i-th sum.
 func InclusiveScanBy(first, last ForwardReader, dFirst ForwardWriter, v Any, add BinaryOperation) ForwardWriter {
+	return TransformInclusiveScanBy(first, last, dFirst, v, add, _notrans)
+}
+
+// TransformExclusiveScan transforms each element in the range [first, last)
+// with op, then computes an exclusive prefix sum operation using v=v+cur or
+// v=v.Add(cur) for the range [first, last), using v as the initial value, and
+// writes the results to the range beginning at dFirst. "exclusive" means that
+// the i-th input element is not included in the i-th sum.
+func TransformExclusiveScan(first, last ForwardReader, dFirst ForwardWriter, v Any, op UnaryOperation) ForwardWriter {
+	return TransformExclusiveScanBy(first, last, dFirst, v, _add, op)
+}
+
+// TransformExclusiveScanBy transforms each element in the range [first, last)
+// with op, then computes an exclusive prefix sum operation using v=add(v,cur)
+// for the range [first, last), using v as the initial value, and writes the
+// results to the range beginning at dFirst. "exclusive" means that the i-th
+// input element is not included in the i-th sum.
+func TransformExclusiveScanBy(first, last ForwardReader, dFirst ForwardWriter, v Any, add BinaryOperation, op UnaryOperation) ForwardWriter {
+	if _eq(first, last) {
+		return dFirst
+	}
+	saved := v
+	for {
+		v = add(v, op(first.Read()))
+		dFirst.Write(saved)
+		saved = v
+		first, dFirst = NextReader(first), NextWriter(dFirst)
+		if _eq(first, last) {
+			break
+		}
+	}
+	return dFirst
+}
+
+// TransformInclusiveScan transforms each element in the range [first, last)
+// with op, then computes an inclusive prefix sum operation using v=v+cur or
+// v=v.Add(cur) for the range [first, last), using v as the initial value (if
+// provided), and writes the results to the range beginning at dFirst.
+// "inclusive" means that the i-th input element is included in the i-th sum.
+func TransformInclusiveScan(first, last ForwardReader, dFirst ForwardWriter, v Any, op UnaryOperation) ForwardWriter {
+	return TransformInclusiveScanBy(first, last, dFirst, v, _add, op)
+}
+
+// TransformInclusiveScanBy transforms each element in the range [first, last)
+// with op, then computes an inclusive prefix sum operation using v=add(v,cur)
+// for the range [first, last), using v as the initial value (if provided), and
+// writes the results to the range beginning at dFirst. "inclusive" means that
+// the i-th input element is included in the i-th sum.
+func TransformInclusiveScanBy(first, last ForwardReader, dFirst ForwardWriter, v Any, add BinaryOperation, op UnaryOperation) ForwardWriter {
 	for ; _ne(first, last); first, dFirst = NextReader(first), NextWriter(dFirst) {
-		v = add(v, first.Read())
+		v = add(v, op(first.Read()))
 		dFirst.Write(v)
 	}
 	return dFirst
