@@ -1083,3 +1083,148 @@ func PrevPermutationBy(first, last BidiReadWriter, less LessComparer) bool {
 		}
 	}
 }
+
+// Iota fills the range [first, last) with sequentially increasing values,
+// starting with v and repetitively evaluating v++/v.Inc().
+func Iota(first, last ForwardWriter, v Any) {
+	IotaBy(first, last, v, _inc)
+}
+
+// IotaBy fills the range [first, last) with sequentially increasing values,
+// starting with v and repetitively evaluating inc(v).
+func IotaBy(first, last ForwardWriter, v Any, inc UnaryOperation) {
+	for ; _ne(first, last); first, v = NextWriter(first), inc(v) {
+		first.Write(v)
+	}
+}
+
+// Accumulate computes the sum of the given value v and the elements in the
+// range [first, last), using v+=x or v=v.Add(x).
+func Accumulate(first, last ForwardReader, v Any) Any {
+	return AccumulateBy(first, last, v, _add)
+}
+
+// AccumulateBy computes the sum of the given value v and the elements in the
+// range [first, last), using v=add(v,x).
+func AccumulateBy(first, last ForwardReader, v Any, add BinaryOperation) Any {
+	for ; _ne(first, last); first = NextReader(first) {
+		v = add(v, first.Read())
+	}
+	return v
+}
+
+// InnerProduct computes inner product (i.e. sum of products) or performs
+// ordered map/reduce operation on the range [first1, last1), using v=v+x*y or
+// v=v.Add(x.Mul(y)).
+func InnerProduct(first1, last1, first2 ForwardReader, v Any) Any {
+	return InnerProductBy(first1, last1, first2, v, _add, _mul)
+}
+
+// InnerProductBy computes inner product (i.e. sum of products) or performs
+// ordered map/reduce operation on the range [first1, last1), using
+// v=add(v,mul(x,y)).
+func InnerProductBy(first1, last1, first2 ForwardReader, v Any, add, mul BinaryOperation) Any {
+	for ; _ne(first1, last1); first1, first2 = NextReader(first1), NextReader(first2) {
+		v = add(v, mul(first1.Read(), first2.Read()))
+	}
+	return v
+}
+
+// AdjacentDifference computes the differences between the second and the first
+// of each adjacent pair of elements of the range [first, last) and writes them
+// to the range beginning at dFirst + 1. An unmodified copy of first is
+// written to dFirst. Differences are calculated by cur-prev or cur.Sub(prev).
+func AdjacentDifference(first, last ForwardReader, dFirst ForwardWriter) ForwardWriter {
+	return AdjacentDifferenceBy(first, last, dFirst, _sub)
+}
+
+// AdjacentDifferenceBy computes the differences between the second and the
+// first of each adjacent pair of elements of the range [first, last) and writes
+// them to the range beginning at dFirst + 1. An unmodified copy of first is
+// written to dFirst. Differences are calculated by sub(cur,prev).
+func AdjacentDifferenceBy(first, last ForwardReader, dFirst ForwardWriter, sub BinaryOperation) ForwardWriter {
+	if _eq(first, last) {
+		return dFirst
+	}
+	prev := first.Read()
+	dFirst.Write(prev)
+	dFirst = NextWriter(dFirst)
+	for first = NextReader(first); _ne(first, last); first, dFirst = NextReader(first), NextWriter(dFirst) {
+		cur := first.Read()
+		dFirst.Write(sub(cur, prev))
+		prev = cur
+	}
+	return dFirst
+}
+
+// PartialSum computes the partial sums of the elements in the subranges of the
+// range [first, last) and writes them to the range beginning at dFirst. Sums
+// are calculated by sum=sum+cur or sum=sum.Add(cur).
+func PartialSum(first, last ForwardReader, dFirst ForwardWriter) ForwardWriter {
+	return PartialSumBy(first, last, dFirst, _add)
+}
+
+// PartialSumBy computes the partial sums of the elements in the subranges of
+// the range [first, last) and writes them to the range beginning at dFirst.
+// Sums are calculated by sum=add(sum,cur).
+func PartialSumBy(first, last ForwardReader, dFirst ForwardWriter, add BinaryOperation) ForwardWriter {
+	if _eq(first, last) {
+		return dFirst
+	}
+	sum := first.Read()
+	dFirst.Write(sum)
+	for first, dFirst = NextReader(first), NextWriter(dFirst); _ne(first, last); first, dFirst = NextReader(first), NextWriter(dFirst) {
+		sum = add(sum, first.Read())
+		dFirst.Write(sum)
+	}
+	return dFirst
+}
+
+// ExclusiveScan computes an exclusive prefix sum operation using v=v+cur or
+// v=v.Add(cur) for the range [first, last), using v as the initial value, and
+// writes the results to the range beginning at dFirst. "exclusive" means that
+// the i-th input element is not included in the i-th sum.
+func ExclusiveScan(first, last ForwardReader, dFirst ForwardWriter, v Any) ForwardWriter {
+	return ExclusiveScanBy(first, last, dFirst, v, _add)
+}
+
+// ExclusiveScanBy computes an exclusive prefix sum operation using v=add(v,cur)
+// for the range [first, last), using v as the initial value, and writes the
+// results to the range beginning at dFirst. "exclusive" means that the i-th
+// input element is not included in the i-th sum.
+func ExclusiveScanBy(first, last ForwardReader, dFirst ForwardWriter, v Any, add BinaryOperation) ForwardWriter {
+	if _eq(first, last) {
+		return dFirst
+	}
+	saved := v
+	for {
+		v = add(v, first.Read())
+		dFirst.Write(saved)
+		saved = v
+		first, dFirst = NextReader(first), NextWriter(dFirst)
+		if _eq(first, last) {
+			break
+		}
+	}
+	return dFirst
+}
+
+// InclusiveScan computes an inclusive prefix sum operation using v=v+cur or
+// v=v.Add(cur) for the range [first, last), using v as the initial value (if
+// provided), and writes the results to the range beginning at dFirst.
+// "inclusive" means that the i-th input element is included in the i-th sum.
+func InclusiveScan(first, last ForwardReader, dFirst ForwardWriter, v Any) ForwardWriter {
+	return InclusiveScanBy(first, last, dFirst, v, _add)
+}
+
+// InclusiveScanBy computes an inclusive prefix sum operation using v=add(v,cur)
+// for the range [first, last), using v as the initial value (if provided), and
+// writes the results to the range beginning at dFirst. "inclusive" means that
+// the i-th input element is included in the i-th sum.
+func InclusiveScanBy(first, last ForwardReader, dFirst ForwardWriter, v Any, add BinaryOperation) ForwardWriter {
+	for ; _ne(first, last); first, dFirst = NextReader(first), NextWriter(dFirst) {
+		v = add(v, first.Read())
+		dFirst.Write(v)
+	}
+	return dFirst
+}

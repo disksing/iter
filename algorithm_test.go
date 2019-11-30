@@ -652,6 +652,44 @@ func TestStablePartition(t *testing.T) {
 	}
 }
 
+func TestMinmax(t *testing.T) {
+	assert := assert.New(t)
+	a, b := randInt(), randInt()
+	min, max := Minmax(a, b)
+	assert.LessOrEqual(min, max)
+	assert.Equal(Max(a, b), max)
+	assert.Equal(Min(a, b), min)
+}
+
+func TestMinmaxElement(t *testing.T) {
+	assert := assert.New(t)
+	s := randIntSlice()
+	min, max := MinmaxElement(begin(s), end(s))
+	min2, max2 := MinElement(begin(s), end(s)), MaxElement(begin(s), end(s))
+	assert.True(NoneOf(begin(s), end(s), func(v Any) bool { return v.(int) > max.Read().(int) || v.(int) < min.Read().(int) }))
+	if len(s) > 0 {
+		assert.Equal(min.Read(), min2.Read())
+		assert.Equal(max.Read(), max2.Read())
+	} else {
+		iterEqual(assert, min, end(s))
+		iterEqual(assert, max, end(s))
+		iterEqual(assert, min2, end(s))
+		iterEqual(assert, max2, end(s))
+	}
+}
+
+func TestClamp(t *testing.T) {
+	assert := assert.New(t)
+	l, h := Minmax(randInt(), randInt())
+	v := randInt()
+	c := Clamp(v, l, h)
+	if c != v {
+		assert.True(v < l.(int) || v > h.(int))
+	}
+	assert.GreaterOrEqual(c, l)
+	assert.LessOrEqual(c, h)
+}
+
 func TestEqual(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randString(), randString()
@@ -760,40 +798,64 @@ func TestPermutation(t *testing.T) {
 	}
 }
 
-func TestMinmax(t *testing.T) {
-	assert := assert.New(t)
-	a, b := randInt(), randInt()
-	min, max := Minmax(a, b)
-	assert.LessOrEqual(min, max)
-	assert.Equal(Max(a, b), max)
-	assert.Equal(Min(a, b), min)
+func TestIota(t *testing.T) {
+	l := randInt()
+	a := make([]int, l)
+	b := make([]int, l)
+	s := randInt()
+	Iota(begin(a), end(a), s+1)
+	Generate(begin(b), end(b), func() Any { s++; return s })
+	sliceEqual(assert.New(t), a, b)
 }
 
-func TestMinmaxElement(t *testing.T) {
-	assert := assert.New(t)
-	s := randIntSlice()
-	min, max := MinmaxElement(begin(s), end(s))
-	min2, max2 := MinElement(begin(s), end(s)), MaxElement(begin(s), end(s))
-	assert.True(NoneOf(begin(s), end(s), func(v Any) bool { return v.(int) > max.Read().(int) || v.(int) < min.Read().(int) }))
-	if len(s) > 0 {
-		assert.Equal(min.Read(), min2.Read())
-		assert.Equal(max.Read(), max2.Read())
-	} else {
-		iterEqual(assert, min, end(s))
-		iterEqual(assert, max, end(s))
-		iterEqual(assert, min2, end(s))
-		iterEqual(assert, max2, end(s))
-	}
+func TestAccumulate(t *testing.T) {
+	a := randIntSlice()
+	sum := Accumulate(begin(a), end(a), 0)
+	sum2 := 0
+	ForEach(begin(a), end(a), func(it Iter) {
+		sum2 += it.(Reader).Read().(int)
+	})
+	assert.New(t).Equal(sum, sum2)
 }
 
-func TestClamp(t *testing.T) {
-	assert := assert.New(t)
-	l, h := Minmax(randInt(), randInt())
-	v := randInt()
-	c := Clamp(v, l, h)
-	if c != v {
-		assert.True(v < l.(int) || v > h.(int))
+func TestInnerProduct(t *testing.T) {
+	a, b := randIntSlice(), randIntSlice()
+	l := Min(len(a), len(b)).(int)
+	p := InnerProduct(begin(a), end(a[:l]), begin(b), 0)
+	var p2 int
+	for i := 0; i < l; i++ {
+		p2 += a[i] * b[i]
 	}
-	assert.GreaterOrEqual(c, l)
-	assert.LessOrEqual(c, h)
+	assert.New(t).Equal(p, p2)
+}
+
+func TestPartialSum(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	diff := make([]int, len(a))
+	ps := make([]int, len(a))
+	exc := make([]int, len(a))
+	inc := make([]int, len(a))
+	for i := range a {
+		if i == 0 {
+			diff[i] = a[i]
+			ps[i] = a[i]
+			exc[i] = 1
+			inc[i] = 2 + a[i]
+		} else {
+			diff[i] = a[i] - a[i-1]
+			ps[i] = ps[i-1] + a[i]
+			exc[i] = exc[i-1] + a[i-1]
+			inc[i] = inc[i-1] + a[i]
+		}
+	}
+	g := make([]int, len(a))
+	AdjacentDifference(begin(a), end(a), begin(g))
+	sliceEqual(assert, g, diff)
+	PartialSum(begin(a), end(a), begin(g))
+	sliceEqual(assert, g, ps)
+	ExclusiveScan(begin(a), end(a), begin(g), 1)
+	sliceEqual(assert, g, exc)
+	InclusiveScan(begin(a), end(a), begin(g), 2)
+	sliceEqual(assert, g, inc)
 }
