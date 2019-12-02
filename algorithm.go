@@ -1,6 +1,10 @@
 package iter
 
-import "math/rand"
+import (
+	"container/heap"
+	"math/rand"
+	"sort"
+)
 
 // AllOf checks if unary predicate pred returns true for all elements in the
 // range [first, last).
@@ -55,15 +59,17 @@ func CountIf(first, last ForwardReader, pred UnaryPredicate) int {
 }
 
 // Mismatch returns the first mismatching pair of elements from two ranges: one
-// defined by [first1, last1) and another defined by [first2,last2). If last2 is
-// nil, it denotes first2 + (last1 - first1).
+// defined by [first1, last1) and another defined by [first2,last2).
+//
+// If last2 is nil, it denotes first2 + (last1 - first1).
 func Mismatch(first1, last1, first2, last2 ForwardReader) (ForwardReader, ForwardReader) {
 	return MismatchBy(first1, last1, first2, last2, _eq)
 }
 
 // MismatchBy returns the first mismatching pair of elements from two ranges:
-// one defined by [first1, last1) and another defined by [first2,last2). If
-// last2 is nil, it denotes first2 + (last1 - first1). Elements are compared
+// one defined by [first1, last1) and another defined by [first2,last2).
+//
+// If last2 is nil, it denotes first2 + (last1 - first1). Elements are compared
 // using the given comparer eq.
 func MismatchBy(first1, last1, first2, last2 ForwardReader, eq EqComparer) (ForwardReader, ForwardReader) {
 	for _ne(first1, last1) && (last2 == nil || _ne(first2, last2)) && eq(first1.Read(), first2.Read()) {
@@ -96,16 +102,18 @@ func FindIfNot(first, last ForwardReader, pred UnaryPredicate) ForwardReader {
 }
 
 // FindEnd searches for the last occurrence of the sequence [sFirst, sLast) in
-// the range [first, last). If [sFirst, sLast) is empty or such sequence is
-// found, last is returned.
+// the range [first, last).
+//
+// If [sFirst, sLast) is empty or such sequence is found, last is returned.
 func FindEnd(first, last, sFirst, sLast ForwardReader) ForwardReader {
 	return FindEndBy(first, last, sFirst, sLast, _eq)
 }
 
 // FindEndBy searches for the last occurrence of the sequence [sFirst, sLast) in
-// the range [first, last). If [sFirst, sLast) is empty or such sequence is
-// found, last is returned. Elements are compared using the given binary
-// comparer eq.
+// the range [first, last).
+//
+// If [sFirst, sLast) is empty or such sequence is found, last is returned.
+// Elements are compared using the given binary comparer eq.
 func FindEndBy(first, last, sFirst, sLast ForwardReader, eq EqComparer) ForwardReader {
 	if _eq(sFirst, sLast) {
 		return last
@@ -123,15 +131,15 @@ func FindEndBy(first, last, sFirst, sLast ForwardReader, eq EqComparer) ForwardR
 }
 
 // FindFirstOf searches the range [first, last) for any of the elements in the
-// range [sFirst, sLast). Elements are compared using the given binary predicate
-// pred.
+// range [sFirst, sLast).
 func FindFirstOf(first, last, sFirst, sLast ForwardReader) ForwardReader {
 	return FindFirstOfBy(first, last, sFirst, sLast, _eq)
 }
 
 // FindFirstOfBy searches the range [first, last) for any of the elements in the
-// range [sFirst, sLast). Elements are compared using the given binary comparer
-// eq.
+// range [sFirst, sLast).
+//
+// Elements are compared using the given binary comparer eq.
 func FindFirstOfBy(first, last, sFirst, sLast ForwardReader, eq EqComparer) ForwardReader {
 	return FindIf(first, last, func(x Any) bool {
 		return AnyOf(sFirst, sLast, func(s Any) bool {
@@ -147,7 +155,9 @@ func AdjacentFind(first, last ForwardReader) ForwardReader {
 }
 
 // AdjacentFindBy searches the range [first, last) for two consecutive identical
-// elements. Elements are compared using the given binary comparer eq.
+// elements.
+//
+// Elements are compared using the given binary comparer eq.
 func AdjacentFindBy(first, last ForwardReader, eq EqComparer) ForwardReader {
 	if _eq(first, last) {
 		return last
@@ -167,8 +177,9 @@ func Search(first, last, sFirst, sLast ForwardReader) ForwardReader {
 }
 
 // SearchBy searches for the first occurrence of the sequence of elements
-// [sFirst, sLast) in the range [first, last). Elements are compared using the
-// given binary comparer eq.
+// [sFirst, sLast) in the range [first, last).
+//
+// Elements are compared using the given binary comparer eq.
 func SearchBy(first, last, sFirst, sLast ForwardReader, eq EqComparer) ForwardReader {
 	for {
 		it := first
@@ -194,7 +205,9 @@ func SearchN(first, last ForwardReader, count int, v Any) ForwardReader {
 }
 
 // SearchNBy searches the range [first, last) for the first sequence of count
-// identical elements. Elements are compared using the given binary comparer eq.
+// identical elements.
+//
+// Elements are compared using the given binary comparer eq.
 func SearchNBy(first, last ForwardReader, count int, v Any, eq EqComparer) ForwardReader {
 	if count <= 0 {
 		return first
@@ -222,15 +235,19 @@ func SearchNBy(first, last ForwardReader, count int, v Any, eq EqComparer) Forwa
 }
 
 // Copy copies the elements in the range, defined by [first, last), to another
-// range beginning at dFirst. It returns an iterator in the destination range,
-// pointing past the last element copied.
+// range beginning at dFirst.
+//
+// It returns an iterator in the destination range, pointing past the last
+// element copied.
 func Copy(first, last ForwardReader, dFirst ForwardWriter) ForwardWriter {
 	return CopyIf(first, last, dFirst, _true1)
 }
 
 // CopyIf copies the elements in the range, defined by [first, last), and
-// predicate pred returns true, to another range beginning at dFirst. It returns
-// an iterator in the destination range, pointing past the last element copied.
+// predicate pred returns true, to another range beginning at dFirst.
+//
+// It returns an iterator in the destination range, pointing past the last
+// element copied.
 func CopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPredicate) ForwardWriter {
 	for _ne(first, last) {
 		if pred(first.Read()) {
@@ -243,8 +260,10 @@ func CopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPredicate
 }
 
 // CopyN copies exactly count values from the range beginning at first to the
-// range beginning at result. It returns an iterator in the destination range,
-// pointing past the last element copied.
+// range beginning at result.
+//
+// It returns an iterator in the destination range, pointing past the last
+// element copied.
 func CopyN(first ForwardReader, count int, result ForwardWriter) ForwardWriter {
 	for ; count > 0; count-- {
 		result.Write(first.Read())
@@ -254,9 +273,11 @@ func CopyN(first ForwardReader, count int, result ForwardWriter) ForwardWriter {
 }
 
 // CopyBackward copies the elements from the range, defined by [first, last), to
-// another range ending at dLast. The elements are copied in reverse order (the
-// last element is copied first), but their relative order is preserved. It
-// returns an iterator to the last element copied.
+// another range ending at dLast.
+//
+// The elements are copied in reverse order (the last element is copied first),
+// but their relative order is preserved. It returns an iterator to the last
+// element copied.
 func CopyBackward(first, last BidiReader, dLast BidiWriter) BidiWriter {
 	for _ne(first, last) {
 		last, dLast = PrevBidiReader(last), PrevBidiWriter(dLast)
@@ -273,7 +294,9 @@ func Fill(first, last ForwardWriter, v Any) {
 }
 
 // FillN assigns the given value to the first count elements in the range
-// beginning at first if count > 0. Does nothing otherwise.
+// beginning at first.
+//
+// If count <= 0, it does nothing.
 func FillN(first ForwardWriter, count int, v Any) {
 	for ; count > 0; count-- {
 		first.Write(v)
@@ -309,8 +332,9 @@ func Generate(first, last ForwardWriter, g Generator) {
 }
 
 // GenerateN assigns values, generated by given function object g, to the first
-// count elements in the range beginning at first, if count>0. Does nothing
-// otherwise.
+// count elements in the range beginning at first.
+//
+// If count <= 0, it does nothing.
 func GenerateN(first ForwardWriter, count int, g Generator) ForwardWriter {
 	for ; count > 0; count-- {
 		first.Write(g())
@@ -342,15 +366,18 @@ func RemoveIf(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWri
 }
 
 // RemoveCopy copies elements from the range [first, last), to another range
-// beginning at dFirst, omitting the elements equal to v. Source and destination
-// ranges cannot overlap.
+// beginning at dFirst, omitting the elements equal to v.
+//
+// Source and destination ranges cannot overlap.
 func RemoveCopy(first, last ForwardReader, dFirst ForwardWriter, v Any) ForwardWriter {
 	return RemoveCopyIf(first, last, dFirst, _eq1(v))
 }
 
 // RemoveCopyIf copies elements from the range [first, last), to another range
 // beginning at dFirst, omitting the elements which predicate function returns
-// true. Source and destination ranges cannot overlap.
+// true.
+//
+// Source and destination ranges cannot overlap.
 func RemoveCopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPredicate) ForwardWriter {
 	for ; _ne(first, last); first = NextReader(first) {
 		if !pred(first.Read()) {
@@ -378,15 +405,17 @@ func ReplaceIf(first, last ForwardReadWriter, pred UnaryPredicate, v Any) {
 }
 
 // ReplaceCopy copies the elements from the range [first, last) to another range
-// beginning at dFirst replacing all elements equal to old with new. The source
-// and destination ranges cannot overlap.
+// beginning at dFirst replacing all elements equal to old with new.
+//
+// The source and destination ranges cannot overlap.
 func ReplaceCopy(first, last ForwardReader, dFirst ForwardWriter, old, new Any) ForwardWriter {
 	return ReplaceCopyIf(first, last, dFirst, _eq1(old), new)
 }
 
 // ReplaceCopyIf copies the elements from the range [first, last) to another
-// range beginning at dFirst replacing all elements satisfy pred with new. The
-// source and destination ranges cannot overlap.
+// range beginning at dFirst replacing all elements satisfy pred with new.
+//
+// The source and destination ranges cannot overlap.
 func ReplaceCopyIf(first, last ForwardReader, dFirst ForwardWriter, pred UnaryPredicate, v Any) ForwardWriter {
 	for ; _ne(first, last); first, dFirst = NextReader(first), NextWriter(dFirst) {
 		if pred(first.Read()) {
@@ -526,8 +555,9 @@ func Unique(first, last ForwardReadWriter) ForwardReadWriter {
 
 // UniqueIf eliminates all but the first element from every consecutive group of
 // equivalent elements from the range [first, last) and returns a past-the-end
-// iterator for the new logical end of the range. Elements are compared using
-// the given binary comparer eq.
+// iterator for the new logical end of the range.
+//
+// Elements are compared using the given binary comparer eq.
 func UniqueIf(first, last ForwardReadWriter, eq EqComparer) ForwardReadWriter {
 	if _eq(first, last) {
 		return last
@@ -548,15 +578,19 @@ func UniqueIf(first, last ForwardReadWriter, eq EqComparer) ForwardReadWriter {
 
 // UniqueCopy copies the elements from the range [first, last), to another range
 // beginning at d_first in such a way that there are no consecutive equal
-// elements. Only the first element of each group of equal elements is copied.
+// elements.
+//
+// Only the first element of each group of equal elements is copied.
 func UniqueCopy(first, last ForwardReader, result ForwardWriter) ForwardWriter {
 	return UniqueCopyIf(first, last, result, _eq)
 }
 
 // UniqueCopyIf copies the elements from the range [first, last), to another
 // range beginning at d_first in such a way that there are no consecutive equal
-// elements. Only the first element of each group of equal elements is copied.
-// Elements are compared using the given binary comparer eq.
+// elements.
+//
+// Only the first element of each group of equal elements is copied. Elements
+// are compared using the given binary comparer eq.
 func UniqueCopyIf(first, last ForwardReader, result ForwardWriter, eq EqComparer) ForwardWriter {
 	if _ne(first, last) {
 		v := first.Read()
@@ -582,8 +616,9 @@ func IsPartitioned(first, last ForwardReader, pred UnaryPredicate) bool {
 
 // Partition reorders the elements in the range [first, last) in such a way that
 // all elements for which the predicate pred returns true precede the elements
-// for which predicate pred returns false. Relative order of the elements is not
-// preserved.
+// for which predicate pred returns false.
+//
+// Relative order of the elements is not preserved.
 func Partition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWriter {
 	first = FindIfNot(first, last, pred).(ForwardReadWriter)
 	if _eq(first, last) {
@@ -739,9 +774,9 @@ func _stablePartitionForward(first, last ForwardReadWriter, pred UnaryPredicate,
 	return Rotate(firstFalse, m, secondFalse)
 }
 
-// PartitionPoint examines the partitioned (as if by std::partition) range
-// [first, last) and locates the end of the first partition, that is, the first
-// element that does not satisfy pred or last if all elements satisfy pred.
+// PartitionPoint examines the partitioned (as if by Partition) range [first,
+// last) and locates the end of the first partition, that is, the first element
+// that does not satisfy pred or last if all elements satisfy pred.
 func PartitionPoint(first, last ForwardReader, pred UnaryPredicate) ForwardReader {
 	l := Distance(first, last)
 	for l != 0 {
@@ -757,13 +792,506 @@ func PartitionPoint(first, last ForwardReader, pred UnaryPredicate) ForwardReade
 	return first
 }
 
+// IsSorted checks if the elements in range [first, last) are sorted in
+// non-descending order.
+func IsSorted(first, last ForwardReader) bool {
+	return _eq(IsSortedUntil(first, last), last)
+}
+
+// IsSortedBy checks if the elements in range [first, last) are sorted in
+// non-descending order.
+//
+// Elements are compared using the given binary comparer less.
+func IsSortedBy(first, last ForwardReader, less LessComparer) bool {
+	return _eq(IsSortedUntilBy(first, last, less), last)
+}
+
+// IsSortedUntil examines the range [first, last) and finds the largest range
+// beginning at first in which the elements are sorted in ascending order.
+func IsSortedUntil(first, last ForwardReader) ForwardReader {
+	return IsSortedUntilBy(first, last, _less)
+}
+
+// IsSortedUntilBy examines the range [first, last) and finds the largest range
+// beginning at first in which the elements are sorted in ascending order.
+//
+// Elements are compared using the given binary comparer less.
+func IsSortedUntilBy(first, last ForwardReader, less LessComparer) ForwardReader {
+	if _ne(first, last) {
+		for next := NextReader(first); _ne(next, last); next = NextReader(next) {
+			if less(next.Read(), first.Read()) {
+				return next
+			}
+			first = next
+		}
+	}
+	return last
+}
+
+// Adapt RandomIter to sort.Interface and heap.Interface.
+type sortHelper struct {
+	first RandomReadWriter
+	n     int
+	less  LessComparer
+}
+
+func (s *sortHelper) Len() int {
+	return s.n
+}
+
+func (s *sortHelper) Less(i, j int) bool {
+	return s.less(
+		AdvanceNReader(s.first, i),
+		AdvanceNReader(s.first, j),
+	)
+}
+
+func (s *sortHelper) Swap(i, j int) {
+	it1, it2 := AdvanceNReadWriter(s.first, i), AdvanceNReadWriter(s.first, j)
+	v1, v2 := it1.Read(), it2.Read()
+	it1.Write(v2)
+	it2.Write(v1)
+}
+
+func (s *sortHelper) Push(x interface{}) {
+	s.n++
+}
+
+func (s *sortHelper) Pop() interface{} {
+	s.n--
+	return nil
+}
+
+// Sort sorts the elements in the range [first, last) in ascending order. The
+// order of equal elements is not guaranteed to be preserved.
+func Sort(first, last RandomReadWriter) {
+	SortBy(first, last, _less)
+}
+
+// SortBy sorts the elements in the range [first, last) in ascending order. The
+// order of equal elements is not guaranteed to be preserved.
+//
+// Elements are compared using the given binary comparer less.
+func SortBy(first, last RandomReadWriter, less LessComparer) {
+	sort.Sort(&sortHelper{
+		first: first,
+		n:     first.Distance(last),
+		less:  less,
+	})
+}
+
+// PartialSort rearranges elements such that the range [first, middle) contains
+// the sorted (middle-first) smallest elements in the range [first, last).
+//
+// The order of equal elements is not guaranteed to be preserved. The order of
+// the remaining elements in the range [middle, last) is unspecified.
+func PartialSort(first, middle, last RandomReadWriter) {
+	PartialSortBy(first, middle, last, _less)
+}
+
+// PartialSortBy rearranges elements such that the range [first, middle)
+// contains the sorted (middle-first) smallest elements in the range [first,
+// last).
+//
+// The order of equal elements is not guaranteed to be preserved. The order of
+// the remaining elements in the range [middle, last) is unspecified. Elements
+// are compared using the given binary comparer less.
+func PartialSortBy(first, middle, last RandomReadWriter, less LessComparer) {
+	MakeHeapBy(first, middle, less)
+	for i := middle; _ne(i, last); i = NextRandomReadWriter(i) {
+		if less(i.Read(), first.Read()) {
+			Swap(first, i)
+			heap.Fix(&sortHelper{
+				first: first,
+				n:     first.Distance(middle),
+				less:  less,
+			}, 0)
+		}
+	}
+	SortHeapBy(first, middle, less)
+}
+
+// ParitialSortCopy sorts some of the elements in the range [first, last) in
+// ascending order, storing the result in the range [dFirst, dLast).
+//
+// At most dLast - dFirst of the elements are placed sorted to the range
+// [dFirst, dFirst + n). n is the number of elements to sort (n = min(last -
+// first, dLast - dFirst)). The order of equal elements is not guaranteed to be
+// preserved.
+func PartialSortCopy(first, last ForwardReader, dFirst, dLast RandomReadWriter) {
+	PartialSortCopyBy(first, last, dFirst, dLast, _less)
+}
+
+// PartialSortCopyBy sorts some of the elements in the range [first, last) in
+// ascending order, storing the result in the range [dFirst, dLast).
+//
+// At most dLast - dFirst of the elements are placed sorted to the range
+// [dFirst, dFirst + n). n is the number of elements to sort (n = min(last -
+// first, dLast - dFirst)). The order of equal elements is not guaranteed to be
+// preserved. Elements are compared using the given binary comparer less.
+func PartialSortCopyBy(first, last ForwardReader, dFirst, dLast RandomReadWriter, less LessComparer) {
+	r, len := dFirst, dFirst.Distance(dLast)
+	for ; _ne(first, last) && _ne(r, dLast); first, r = NextReader(first), NextRandomReadWriter(r) {
+		r.Write(first.Read())
+	}
+	MakeHeapBy(dFirst, dLast, less)
+	for ; _ne(first, last); first = NextReader(first) {
+		if less(first.Read(), dFirst.Read()) {
+			dFirst.Write(first.Read())
+			heap.Fix(&sortHelper{
+				first: dFirst,
+				n:     len,
+				less:  less,
+			}, 0)
+		}
+	}
+	SortHeapBy(dFirst, r, less)
+}
+
+// StableSort sorts the elements in the range [first, last) in ascending order.
+// The order of equivalent elements is guaranteed to be preserved.
+func StableSort(first, last RandomReadWriter) {
+	StableSortBy(first, last, _less)
+}
+
+// StableSortBy sorts the elements in the range [first, last) in ascending
+// order.
+//
+// The order of equivalent elements is guaranteed to be preserved. Elements are
+// compared using the given binary comparer less.
+func StableSortBy(first, last RandomReadWriter, less LessComparer) {
+	sort.Stable(&sortHelper{
+		first: first,
+		n:     first.Distance(last),
+		less:  less,
+	})
+}
+
+// NthElement is a partial sorting algorithm that rearranges elements in [first,
+// last) such that:
+// a. The element pointed at by nth is changed to whatever element would occur
+// in that position if [first, last) were sorted.
+// b. All of the elements before this new nth element are less than or equal to
+// the elements after the new nth element.
+func NthElement(first, nth, last RandomReadWriter) {
+	NthElementBy(first, nth, last, _less)
+}
+
+// NthElementBy is a partial sorting algorithm that rearranges elements in
+// [first, last) such that:
+// a. The element pointed at by nth is changed to whatever element would occur
+// in that position if [first, last) were sorted.
+// b. All of the elements before this new nth element are less than or equal to
+// the elements after the new nth element.
+//
+// Elements are compared using the given binary comparer less.
+func NthElementBy(first, nth, last RandomReadWriter, less LessComparer) {
+Restart:
+	for {
+		if _eq(nth, last) {
+			return
+		}
+		len := first.Distance(last)
+		if len <= 7 {
+			SortBy(first, last, less)
+			return
+		}
+
+		m := AdvanceNReadWriter(first, len/2)
+		last1 := PrevRandomReadWriter(last)
+
+		// sort {first, m, last1}
+		var maybeSorted bool
+		if !less(m, first) {
+			// first<=m
+			if !less(last1, m) {
+				// first<=m<=last1
+				maybeSorted = true
+			} else {
+				// first<=m,m>last1
+				Swap(m, last1)
+				// first<=last1,m<last1
+				if less(m, first) {
+					// m<first<=last1
+					Swap(first, m)
+					// first<m<=last1
+				}
+				// first<=m<last1
+			}
+		} else if less(last1, m) {
+			// first>m>last1
+			Swap(first, last1)
+			// first<m<last1
+		} else {
+			// first>m,m<=last1
+			Swap(first, m)
+			// first<m,first<=last1
+			if less(last1, m) {
+				// first<=last1<m
+				Swap(m, last1)
+				// first<=m<last1
+			}
+			// first<m<=last1
+		}
+
+		i, j := first, last1
+		// -????????0???????+   // 0: pivot, -: <=pivot, <: <pivot, +: >=pivot, >: >pivot
+		// f        m        l
+		// i                j
+		if !less(i.Read(), m.Read()) {
+			// 0????????0???????+
+			// f        m        l
+			// i                j
+			for {
+				if j = PrevRandomReadWriter(j); _eq(i, j) {
+					// 0+++++++++++++
+					// f             l
+					// i
+					// j
+					if i, j = NextRandomReadWriter(i), last1; !less(first.Read(), j.Read()) {
+						// 0++++++++++++0
+						// fi           jl
+						for {
+							if _eq(i, j) {
+								// 00000000000000
+								// f            jl
+								//              i
+								return
+							}
+							if less(first.Read(), i.Read()) {
+								// 00000>+++++++0
+								// f    i       jl
+								Swap(i, j)
+								maybeSorted = false
+								i = NextRandomReadWriter(i)
+								break
+							}
+							i = NextRandomReadWriter(i)
+						}
+					}
+					// 000000++++++++
+					// f     i      jl
+					if _eq(i, j) {
+						// 0000000000000+
+						// f            jl
+						//              i
+						return
+					}
+					for {
+						for !less(first, i) {
+							i = NextRandomReadWriter(i)
+						}
+						for j = PrevRandomReadWriter(j); less(first, j); j = PrevRandomReadWriter(j) {
+						}
+						// 000000>+++++0++
+						// f     i     j  l
+						if !_less(i, j) {
+							break
+						}
+						Swap(i, j)
+						maybeSorted = false
+						i = NextRandomReadWriter(i)
+					}
+					// 000000000+++++++
+					// f       ji      l
+					if _less(nth, i) {
+						return
+					}
+					first = i
+					continue Restart
+				}
+				if less(j.Read(), m.Read()) {
+					// 0???-+++++++++
+					// f             l
+					// i   j
+					Swap(i, j)
+					maybeSorted = false
+					break
+				}
+			}
+		}
+
+		// i.Read() < m.Read()
+		i = NextRandomReadWriter(i)
+		// -??????0????????+         -??????0????0+++
+		// fi     m        jl  [OR]  fi     m    j   l
+		if _less(i, j) {
+			for {
+				for less(i.Read(), m.Read()) {
+					i = NextRandomReadWriter(i)
+				}
+				for j = PrevRandomReadWriter(j); !less(j.Read(), m.Read()); j = PrevRandomReadWriter(j) {
+				}
+				// ----+??0?????<+++        -------0?????<+++
+				// f      m         l [OR]  f      m         l
+				//     i        j                  i     j
+				if !less(i, j) {
+					// -------0--+++++++       -------0+++++++++
+					// f      m         l [OR] f      m         l
+					//          ji                   ji
+					break
+				}
+				Swap(i, j)
+				maybeSorted = false
+				if _eq(m, i) {
+					m = j
+				}
+				// -----??0?????++++       --------?????0+++
+				// f   i  m     j   l [OR] f            m   l
+				//                                i     j
+				i = NextRandomReadWriter(i)
+			}
+		}
+
+		// -------+++0+++
+		// f      i  m   l
+		if _ne(i, m) && less(m.Read(), i.Read()) {
+			Swap(i, m)
+			maybeSorted = false
+		}
+		// -------0++++++
+		// f      i      l
+		if _eq(nth, i) {
+			return
+		}
+		if _less(nth, i) {
+			if maybeSorted && IsSortedBy(first, i, less) {
+				return
+			}
+			last = i
+		} else {
+			if maybeSorted && IsSortedBy(i, last, less) {
+				return
+			}
+			first = NextRandomReadWriter(i)
+		}
+	}
+}
+
+// IsHeap checks if the elements in range [first, last) are a max heap.
+func IsHeap(first, last RandomReader) bool {
+	return IsHeapBy(first, last, _less)
+}
+
+// IsHeapBy checks if the elements in range [first, last) are a max heap.
+//
+// Elements are compared using the given binary comparer less.
+func IsHeapBy(first, last RandomReader, less LessComparer) bool {
+	return _eq(IsHeapUntilBy(first, last, less), last)
+}
+
+// IsHeapUntil examines the range [first, last) and finds the largest range
+// beginning at first which is a max heap.
+func IsHeapUntil(first, last RandomReader) RandomReader {
+	return IsHeapUntilBy(first, last, _less)
+}
+
+// IsHeapUntilBy examines the range [first, last) and finds the largest range
+// beginning at first which is a max heap.
+//
+// Elements are compared using the given binary comparer less.
+func IsHeapUntilBy(first, last RandomReader, less LessComparer) RandomReader {
+	len, p, c, pp := first.Distance(last), 0, 1, first
+	for c < len {
+		cp := AdvanceNReader(first, c)
+		if less(pp.Read(), cp.Read()) {
+			return cp
+		}
+		c++
+		if c == len {
+			return last
+		}
+		cp = NextRandomReader(cp)
+		if less(pp.Read(), cp.Read()) {
+			return cp
+		}
+		p++
+		pp = NextRandomReader(pp)
+		c = 2*p + 1
+	}
+	return last
+}
+
+// MakeHeap constructs a max heap in the range [first, last).
+func MakeHeap(first, last RandomReadWriter) {
+	MakeHeapBy(first, last, _less)
+}
+
+// MakeHeapBy constructs a max heap in the range [first, last).
+//
+// Elements are compared using the given binary comparer less.
+func MakeHeapBy(first, last RandomReadWriter, less LessComparer) {
+	heap.Init(&sortHelper{
+		first: first,
+		n:     first.Distance(last),
+		less:  less,
+	})
+}
+
+// PushHeap inserts the element at the position last-1 into the max heap defined
+// by the range [first, last-1).
+func PushHeap(first, last RandomReadWriter) {
+	PushHeapBy(first, last, _less)
+}
+
+// PushHeapBy inserts the element at the position last-1 into the max heap
+// defined by the range [first, last-1).
+//
+// Elements are compared using the given binary comparer less.
+func PushHeapBy(first, last RandomReadWriter, less LessComparer) {
+	heap.Push(&sortHelper{
+		first: first,
+		n:     first.Distance(last) - 1,
+		less:  less,
+	}, nil)
+}
+
+// PopHeap swaps the value in the position first and the value in the position
+// last-1 and makes the subrange [first, last-1) into a heap. This has the
+// effect of removing the first element from the heap defined by the range
+// [first, last).
+func PopHeap(first, last RandomReadWriter) {
+	PopHeapBy(first, last, _less)
+}
+
+// PopHeapBy swaps the value in the position first and the value in the position
+// last-1 and makes the subrange [first, last-1) into a heap. This has the
+// effect of removing the first element from the heap defined by the range
+// [first, last).
+//
+// Elements are compared using the given binary comparer less.
+func PopHeapBy(first, last RandomReadWriter, less LessComparer) {
+	heap.Pop(&sortHelper{
+		first: first,
+		n:     first.Distance(last),
+		less:  less,
+	})
+}
+
+// SortHeap converts the max heap [first, last) into a sorted range in ascending
+// order. The resulting range no longer has the heap property.
+func SortHeap(first, last RandomReadWriter) {
+	SortHeapBy(first, last, _less)
+}
+
+// SortHeapBy converts the max heap [first, last) into a sorted range in ascending
+// order. The resulting range no longer has the heap property.
+//
+// Elements are compared using the given binary comparer less.
+func SortHeapBy(first, last RandomReadWriter, less LessComparer) {
+	for ; _ne(first, last); last = PrevRandomReadWriter(last) {
+		PopHeapBy(first, last, less)
+	}
+}
+
 // Max returns the greater of the given values.
 func Max(a, b Any) Any {
 	return MaxBy(a, b, _less)
 }
 
-// MaxBy returns the greater of the given values. Values are compared using the
-// given binary comparer less.
+// MaxBy returns the greater of the given values.
+//
+// Values are compared using the given binary comparer less.
 func MaxBy(a, b Any, less LessComparer) Any {
 	if less(a, b) {
 		return b
@@ -776,8 +1304,9 @@ func MaxElement(first, last ForwardReader) ForwardReader {
 	return MaxElementBy(first, last, _less)
 }
 
-// MaxElementBy returns the largest element in a range. Values are compared
-// using the given binary comparer less.
+// MaxElementBy returns the largest element in a range.
+//
+// Values are compared using the given binary comparer less.
 func MaxElementBy(first, last ForwardReader, less LessComparer) ForwardReader {
 	if _eq(first, last) {
 		return last
@@ -796,8 +1325,9 @@ func Min(a, b Any) Any {
 	return MinBy(a, b, _less)
 }
 
-// MinBy returns the smaller of the given values. Values are compared using the
-// given binary comparer less.
+// MinBy returns the smaller of the given values.
+//
+// Values are compared using the given binary comparer less.
 func MinBy(a, b Any, less LessComparer) Any {
 	if less(a, b) {
 		return a
@@ -810,8 +1340,9 @@ func MinElement(first, last ForwardReader) ForwardReader {
 	return MinElementBy(first, last, _less)
 }
 
-// MinElementBy returns the smallest element in a range. Values are compared
-// using the given binary comparer less.
+// MinElementBy returns the smallest element in a range.
+//
+// Values are compared using the given binary comparer less.
 func MinElementBy(first, last ForwardReader, less LessComparer) ForwardReader {
 	if _eq(first, last) {
 		return last
@@ -830,8 +1361,9 @@ func Minmax(a, b Any) (Any, Any) {
 	return MinmaxBy(a, b, _less)
 }
 
-// MinmaxBy returns the smaller and larger of two elements. Values are compared
-// using the given binary comparer less.
+// MinmaxBy returns the smaller and larger of two elements.
+//
+// Values are compared using the given binary comparer less.
 func MinmaxBy(a, b Any, less LessComparer) (Any, Any) {
 	if less(b, a) {
 		return b, a
@@ -845,6 +1377,7 @@ func MinmaxElement(first, last ForwardReader) (ForwardReader, ForwardReader) {
 }
 
 // MinmaxElementBy returns the smallest and the largest elements in a range.
+//
 // Values are compared using the given binary comparer less.
 func MinmaxElementBy(first, last ForwardReader, less LessComparer) (ForwardReader, ForwardReader) {
 	if _eq(first, last) {
@@ -887,8 +1420,9 @@ func Clamp(v, lo, hi Any) Any {
 	return ClampBy(v, lo, hi, _less)
 }
 
-// ClampBy clamps a value between a pair of boundary values. Values are compared
-// using the given binary comparer less.
+// ClampBy clamps a value between a pair of boundary values.
+//
+// Values are compared using the given binary comparer less.
 func ClampBy(v, lo, hi Any, less LessComparer) Any {
 	if less(v, lo) {
 		return lo
@@ -900,15 +1434,18 @@ func ClampBy(v, lo, hi Any, less LessComparer) Any {
 }
 
 // Equal returns true if the range [first1, last1) is equal to the range
-// [first2, last2), and false otherwise. If last2 is nil, it denotes first2 +
-// (last1 - first1).
+// [first2, last2), and false otherwise.
+//
+// If last2 is nil, it denotes first2 + (last1 - first1).
 func Equal(first1, last1, first2, last2 ForwardReader) bool {
 	return EqualBy(first1, last1, first2, last2, _eq)
 }
 
 // EqualBy returns true if the range [first1, last1) is equal to the range
-// [first2, last2), and false otherwise. If last2 is nil, it denotes first2 +
-// (last1 - first1). Elements are compared using the given binary comparer eq.
+// [first2, last2), and false otherwise.
+//
+// If last2 is nil, it denotes first2 + (last1 - first1). Elements are compared
+// using the given binary comparer eq.
 func EqualBy(first1, last1, first2, last2 ForwardReader, eq EqComparer) bool {
 	for ; _ne(first1, last1); first1, first2 = NextReader(first1), NextReader(first2) {
 		if (last2 != nil && _eq(first2, last2)) || !eq(first1.Read(), first2.Read()) {
@@ -925,8 +1462,9 @@ func LexicographicalCompare(first1, last1, first2, last2 ForwardReader) bool {
 }
 
 // LexicographicalCompareBy checks if the first range [first1, last1) is
-// lexicographically less than the second range [first2, last2). Elements are
-// compared using the given binary comparer less.
+// lexicographically less than the second range [first2, last2).
+//
+// Elements are compared using the given binary comparer less.
 func LexicographicalCompareBy(first1, last1, first2, last2 ForwardReader, less LessComparer) bool {
 	for ; _ne(first2, last2); first1, first2 = NextReader(first1), NextReader(first2) {
 		if _eq(first1, last1) || less(first1.Read(), first2.Read()) {
@@ -950,8 +1488,9 @@ func LexicographicalCompareThreeWay(first1, last1, first2, last2 ForwardReader) 
 // LexicographicalCompareThreeWayBy lexicographically compares two ranges [first1,
 // last1) and [first2, last2) using three-way comparison. The result will be 0
 // if [first1, last1) == [first2, last2), -1 if [first1, last1) < [first2,
-// last2), 1 if [first1, last1) > [first2, last2). Elements are
-// compared using the given binary predicate cmp.
+// last2), 1 if [first1, last1) > [first2, last2).
+//
+// Elements are compared using the given binary predicate cmp.
 func LexicographicalCompareThreeWayBy(first1, last1, first2, last2 ForwardReader, cmp ThreeWayComparer) int {
 	for ; _ne(first2, last2); first1, first2 = NextReader(first1), NextReader(first2) {
 		if _eq(first1, last1) {
@@ -978,7 +1517,9 @@ func IsPermutation(first1, last1, first2, last2 ForwardReader) bool {
 // IsPermutationBy returns true if there exists a permutation of the elements in
 // the range [first1, last1) that makes that range equal to the range
 // [first2,last2), where last2 denotes first2 + (last1 - first1) if it was not
-// given. Elements are compared using the given binary comparer eq.
+// given.
+//
+// Elements are compared using the given binary comparer eq.
 func IsPermutationBy(first1, last1, first2, last2 ForwardReader, eq EqComparer) bool {
 	l := Distance(first1, last1)
 	if last2 == nil {
@@ -1015,7 +1556,9 @@ func NextPermutation(first, last BidiReadWriter) bool {
 // permutation from the set of all permutations that are lexicographically
 // ordered with respect to less. Returns true if such permutation exists,
 // otherwise transforms the range into the first permutation (as if by
-// Sort(first, last)) and returns false. Elements are compared using the given
+// Sort(first, last)) and returns false.
+//
+// Elements are compared using the given
 // binary comparer less.
 func NextPermutationBy(first, last BidiReadWriter, less LessComparer) bool {
 	if _eq(first, last) {
@@ -1056,8 +1599,9 @@ func PrevPermutation(first, last BidiReadWriter) bool {
 // permutation from the set of all permutations that are lexicographically
 // ordered with respect to less. Returns true if such permutation exists,
 // otherwise transforms the range into the last permutation (as if by
-// Sort(first, last); Reverse(first, last);) and returns false. Elements are
-// compared using the given binary comparer less.
+// Sort(first, last); Reverse(first, last);) and returns false.
+//
+// Elements are compared using the given binary comparer less.
 func PrevPermutationBy(first, last BidiReadWriter, less LessComparer) bool {
 	if _eq(first, last) {
 		return false
