@@ -828,7 +828,7 @@ func IsSortedUntilBy(first, last ForwardReader, less LessComparer) ForwardReader
 	return last
 }
 
-// Adapt RandomIter to sort.Interface and heap.Interface.
+// Adapt RandomIter to sort.Interface.
 type sortHelper struct {
 	first RandomReadWriter
 	n     int
@@ -841,8 +841,8 @@ func (s *sortHelper) Len() int {
 
 func (s *sortHelper) Less(i, j int) bool {
 	return s.less(
-		AdvanceNReader(s.first, i),
-		AdvanceNReader(s.first, j),
+		AdvanceNReader(s.first, i).Read(),
+		AdvanceNReader(s.first, j).Read(),
 	)
 }
 
@@ -853,12 +853,24 @@ func (s *sortHelper) Swap(i, j int) {
 	it2.Write(v1)
 }
 
-func (s *sortHelper) Push(x interface{}) {
-	s.n++
+// Adapt RandomIter to sort.Interface.
+type heapHelper struct {
+	*sortHelper
 }
 
-func (s *sortHelper) Pop() interface{} {
-	s.n--
+func (h *heapHelper) Less(i, j int) bool {
+	return h.less(
+		AdvanceNReader(h.first, j).Read(),
+		AdvanceNReader(h.first, i).Read(),
+	)
+}
+
+func (h *heapHelper) Push(x interface{}) {
+	h.n++
+}
+
+func (h *heapHelper) Pop() interface{} {
+	h.n--
 	return nil
 }
 
@@ -901,11 +913,12 @@ func PartialSortBy(first, middle, last RandomReadWriter, less LessComparer) {
 	for i := middle; _ne(i, last); i = NextRandomReadWriter(i) {
 		if less(i.Read(), first.Read()) {
 			Swap(first, i)
-			heap.Fix(&sortHelper{
-				first: first,
-				n:     first.Distance(middle),
-				less:  less,
-			}, 0)
+			heap.Fix(&heapHelper{
+				&sortHelper{
+					first: first,
+					n:     first.Distance(middle),
+					less:  less,
+				}}, 0)
 		}
 	}
 	SortHeapBy(first, middle, less)
@@ -930,6 +943,9 @@ func PartialSortCopy(first, last ForwardReader, dFirst, dLast RandomReadWriter) 
 // first, dLast - dFirst)). The order of equal elements is not guaranteed to be
 // preserved. Elements are compared using the given binary comparer less.
 func PartialSortCopyBy(first, last ForwardReader, dFirst, dLast RandomReadWriter, less LessComparer) {
+	if _eq(dFirst, dLast) {
+		return
+	}
 	r, len := dFirst, dFirst.Distance(dLast)
 	for ; _ne(first, last) && _ne(r, dLast); first, r = NextReader(first), NextRandomReadWriter(r) {
 		r.Write(first.Read())
@@ -938,11 +954,12 @@ func PartialSortCopyBy(first, last ForwardReader, dFirst, dLast RandomReadWriter
 	for ; _ne(first, last); first = NextReader(first) {
 		if less(first.Read(), dFirst.Read()) {
 			dFirst.Write(first.Read())
-			heap.Fix(&sortHelper{
-				first: dFirst,
-				n:     len,
-				less:  less,
-			}, 0)
+			heap.Fix(&heapHelper{
+				&sortHelper{
+					first: dFirst,
+					n:     len,
+					less:  less,
+				}}, 0)
 		}
 	}
 	SortHeapBy(dFirst, r, less)
@@ -1002,23 +1019,23 @@ Restart:
 
 		// sort {first, m, last1}
 		var maybeSorted bool
-		if !less(m, first) {
+		if !less(m.Read(), first.Read()) {
 			// first<=m
-			if !less(last1, m) {
+			if !less(last1.Read(), m.Read()) {
 				// first<=m<=last1
 				maybeSorted = true
 			} else {
 				// first<=m,m>last1
 				Swap(m, last1)
 				// first<=last1,m<last1
-				if less(m, first) {
+				if less(m.Read(), first.Read()) {
 					// m<first<=last1
 					Swap(first, m)
 					// first<m<=last1
 				}
 				// first<=m<last1
 			}
-		} else if less(last1, m) {
+		} else if less(last1.Read(), m.Read()) {
 			// first>m>last1
 			Swap(first, last1)
 			// first<m<last1
@@ -1026,7 +1043,7 @@ Restart:
 			// first>m,m<=last1
 			Swap(first, m)
 			// first<m,first<=last1
-			if less(last1, m) {
+			if less(last1.Read(), m.Read()) {
 				// first<=last1<m
 				Swap(m, last1)
 				// first<=m<last1
@@ -1221,11 +1238,12 @@ func MakeHeap(first, last RandomReadWriter) {
 //
 // Elements are compared using the given binary comparer less.
 func MakeHeapBy(first, last RandomReadWriter, less LessComparer) {
-	heap.Init(&sortHelper{
-		first: first,
-		n:     first.Distance(last),
-		less:  less,
-	})
+	heap.Init(&heapHelper{
+		&sortHelper{
+			first: first,
+			n:     first.Distance(last),
+			less:  less,
+		}})
 }
 
 // PushHeap inserts the element at the position last-1 into the max heap defined
@@ -1239,10 +1257,12 @@ func PushHeap(first, last RandomReadWriter) {
 //
 // Elements are compared using the given binary comparer less.
 func PushHeapBy(first, last RandomReadWriter, less LessComparer) {
-	heap.Push(&sortHelper{
-		first: first,
-		n:     first.Distance(last) - 1,
-		less:  less,
+	heap.Push(&heapHelper{
+		&sortHelper{
+			first: first,
+			n:     first.Distance(last) - 1,
+			less:  less,
+		},
 	}, nil)
 }
 
@@ -1261,11 +1281,12 @@ func PopHeap(first, last RandomReadWriter) {
 //
 // Elements are compared using the given binary comparer less.
 func PopHeapBy(first, last RandomReadWriter, less LessComparer) {
-	heap.Pop(&sortHelper{
-		first: first,
-		n:     first.Distance(last),
-		less:  less,
-	})
+	heap.Pop(&heapHelper{
+		&sortHelper{
+			first: first,
+			n:     first.Distance(last),
+			less:  less,
+		}})
 }
 
 // SortHeap converts the max heap [first, last) into a sorted range in ascending

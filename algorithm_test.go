@@ -1,9 +1,11 @@
 package iter_test
 
 import (
+	"container/heap"
 	"container/list"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -561,6 +563,15 @@ func (ci *compareItem) Equal(x Any) bool {
 	return ci.a == x.(*compareItem).a
 }
 
+func (ci *compareItem) Less(x Any) bool {
+	return ci.a < x.(*compareItem).a
+}
+
+func (ci *compareItem) Less2(x Any) bool {
+	return ci.Less(x) ||
+		(ci.a == x.(*compareItem).a && ci.b < x.(*compareItem).b)
+}
+
 func (ci *compareItem) String() string {
 	return fmt.Sprintf("{a=%v,b=%v}", ci.a, ci.b)
 }
@@ -649,6 +660,129 @@ func TestStablePartition(t *testing.T) {
 			assert.Greater(cb, mb)
 			mb = cb
 		}
+	}
+}
+
+func TestSort(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	is := sort.IntSlice(a)
+	assert.Equal(IsSorted(begin(a), end(a)), sort.IsSorted(is))
+	it := IsSortedUntil(begin(a), end(a))
+	if it.Eq(end(a)) {
+		assert.True(sort.IsSorted(is))
+	} else {
+		n := Distance(begin(a), it)
+		assert.True(sort.IsSorted(is[:n]))
+		assert.False(sort.IsSorted(is[:n+1]))
+	}
+
+	Sort(begin(a), end(a))
+	assert.True(sort.IsSorted(is))
+
+	if len(a) == 0 {
+		return
+	}
+	n := r.Intn(len(a)) + 1
+	nth := AdvanceNReadWriter(begin(a), n-1)
+	nv := nth.Read().(int)
+	nth1 := NextRandomReadWriter(nth)
+
+	Shuffle(begin(a), end(a), r)
+	b := make([]int, n)
+	PartialSortCopy(begin(a), end(a), begin(b), end(b))
+	assert.True(sort.IsSorted(sort.IntSlice(b)))
+
+	Shuffle(begin(a), end(a), r)
+	PartialSort(begin(a), nth1, end(a))
+	sliceEqual(assert, a[:n], b)
+	assert.GreaterOrEqual(MinElement(begin(a[n-1:]), end(a[n-1:])).Read().(int), a[n-1])
+
+	Shuffle(begin(a), end(a), r)
+	NthElement(begin(a), nth, end(a))
+	assert.Equal(nth.Read().(int), nv)
+}
+
+func TestStableSort(t *testing.T) {
+	assert := assert.New(t)
+	l := randInt()
+	a := make([]*compareItem, l)
+	var id int
+	GenerateN(begin(a), l, func() Any {
+		id++
+		return &compareItem{
+			a: randInt(),
+			b: id,
+		}
+	})
+	StableSort(begin(a), end(a))
+	assert.True(IsSortedBy(begin(a), end(a), func(x, y Any) bool { return x.(*compareItem).Less2(y) }))
+}
+
+func TestHeap(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	isHeap := func(a []int) bool {
+		for i := 0; i < len(a); i++ {
+			if 2*i+1 < len(a) && a[i] < a[2*i+1] {
+				return false
+			}
+			if 2*i+2 < len(a) && a[i] < a[2*i+2] {
+				return false
+			}
+		}
+		return true
+	}
+	assert.Equal(IsHeap(begin(a), end(a)), isHeap(a))
+	it := IsHeapUntil(begin(a), end(a))
+	if it.Eq(end(a)) {
+		assert.True(isHeap(a))
+	} else {
+		n := Distance(begin(a), it)
+		assert.True(isHeap(a[:n]))
+		assert.False(isHeap(a[:n+1]))
+	}
+	MakeHeap(begin(a), end(a))
+	assert.True(isHeap(a))
+	SortHeap(begin(a), end(a))
+	assert.True(IsSorted(begin(a), end(a)))
+}
+
+type intHeap []int
+
+func (h intHeap) Len() int            { return len(h) }
+func (h intHeap) Less(i, j int) bool  { return h[j] < h[i] }
+func (h intHeap) Swap(i, j int)       { h[i], h[j] = h[j], h[i] }
+func (h *intHeap) Push(x interface{}) { *h = append(*h, x.(int)) }
+func (h *intHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
+}
+
+func TestHeapPP(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	aa := append(a[:0:0], a...)
+	b := (*intHeap)(&aa)
+	heap.Init(b)
+	MakeHeap(begin(a), end(a))
+	sliceEqual(assert, a, *b)
+	n := randInt()
+	for i := 0; i < n; i++ {
+		if r.Intn(2) == 0 || len(a) == 0 {
+			x := randInt()
+			a = append(a, x)
+			PushHeap(begin(a), end(a))
+			heap.Push(b, x)
+		} else {
+			PopHeap(begin(a), end(a))
+			a = a[:len(a)-1]
+			heap.Pop(b)
+		}
+		sliceEqual(assert, a, *b)
 	}
 }
 
