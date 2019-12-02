@@ -2,7 +2,9 @@ package iter
 
 type (
 	// Iter marks an iterator.
-	Iter interface{}
+	Iter interface {
+		Eq(Any) bool
+	}
 	// Reader is a readable iterator.
 	Reader interface {
 		Read() Any
@@ -21,6 +23,7 @@ type (
 type (
 	// ForwardIter is an iterator that moves forward.
 	ForwardIter interface {
+		Iter
 		Next() ForwardIter
 	}
 	// ForwardReader is an interface that groups ForwardIter and Reader.
@@ -59,6 +62,7 @@ func NextReadWriter(rw ForwardReadWriter) ForwardReadWriter {
 type (
 	// BackwardIter is an iterator moves backward.
 	BackwardIter interface {
+		Iter
 		Prev() BackwardIter
 	}
 	// BackwardReader is an interface that groups BackwardIter and Reader.
@@ -97,8 +101,9 @@ func PrevReadWriter(rw BackwardReadWriter) BackwardReadWriter {
 type (
 	// BidiIter is an iterator that moves both direction.
 	BidiIter interface {
-		ForwardIter
-		BackwardIter
+		Iter
+		Next() ForwardIter
+		Prev() BackwardIter
 	}
 	// BidiReader is an interface that groups BidiIter and Reader.
 	BidiReader interface {
@@ -163,6 +168,7 @@ type (
 		BidiIter
 		AdvanceN(n int) RandomIter
 		Distance(RandomIter) int
+		Less(Any) bool
 	}
 	// RandomReader is an interface that groups RandomIter and Reader.
 	RandomReader interface {

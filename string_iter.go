@@ -85,6 +85,13 @@ func (it StringIter) Distance(it2 RandomIter) int {
 	return d
 }
 
+func (it StringIter) Less(it2 Any) bool {
+	if it.backward {
+		return it.i > it2.(StringIter).i
+	}
+	return it.i < it2.(StringIter).i
+}
+
 // MakeString creates a string by range spesified by [first, last). The value
 // type should be byte or rune.
 func MakeString(first, last ForwardReader) string {

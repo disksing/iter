@@ -70,6 +70,13 @@ func (it SliceIter) Eq(it2 Any) bool {
 	return it.i == it2.(SliceIter).i
 }
 
+func (it SliceIter) Less(it2 Any) bool {
+	if it.backward {
+		return it.i > it2.(SliceIter).i
+	}
+	return it.i < it2.(SliceIter).i
+}
+
 func (it SliceIter) Next() ForwardIter {
 	return it.AdvanceN(1)
 }
@@ -105,6 +112,10 @@ func SliceBackInserter(s interface{}) ForwardWriter {
 	return &sliceBackInserter{
 		s: reflect.ValueOf(s).Elem(),
 	}
+}
+
+func (bi *sliceBackInserter) Eq(Any) bool {
+	return false
 }
 
 func (bi *sliceBackInserter) Next() ForwardIter {

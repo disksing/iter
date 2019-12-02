@@ -89,6 +89,11 @@ type listBackInserter struct {
 	l *list.List
 }
 
+func (li *listBackInserter) Eq(x Any) bool {
+	l, ok := x.(*listBackInserter)
+	return ok && l != nil && l.l == li.l
+}
+
 func (li *listBackInserter) Next() ForwardIter {
 	return li
 }
@@ -100,6 +105,11 @@ func (li *listBackInserter) Write(x Any) {
 type listInserter struct {
 	l *list.List
 	e *list.Element
+}
+
+func (li *listInserter) Eq(x Any) bool {
+	l, ok := x.(*listInserter)
+	return ok && l != nil && l.e == li.e
 }
 
 func (li *listInserter) Next() ForwardIter {
