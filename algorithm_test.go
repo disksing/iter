@@ -690,6 +690,8 @@ func TestSort(t *testing.T) {
 
 	Shuffle(begin(a), end(a), r)
 	b := make([]int, n)
+	PartialSortCopy(begin(a), end(a), begin(b), begin(b))
+	sliceEqual(assert, b, make([]int, n))
 	PartialSortCopy(begin(a), end(a), begin(b), end(b))
 	assert.True(sort.IsSorted(sort.IntSlice(b)))
 
@@ -699,8 +701,77 @@ func TestSort(t *testing.T) {
 	assert.GreaterOrEqual(MinElement(begin(a[n-1:]), end(a[n-1:])).Read().(int), a[n-1])
 
 	Shuffle(begin(a), end(a), r)
+	b = append(b[:0:0], a...)
+	NthElement(begin(a), end(a), end(a))
+	sliceEqual(assert, a, b)
 	NthElement(begin(a), nth, end(a))
 	assert.Equal(nth.Read().(int), nv)
+}
+
+func TestSet(t *testing.T) {
+	assert := assert.New(t)
+	a, b := randIntSlice(), randIntSlice()
+	countA := make([]int, randN)
+	ForEach(begin(a), end(a), func(x Iter) { countA[x.(Reader).Read().(int)]++ })
+	countB := make([]int, randN)
+	ForEach(begin(b), end(b), func(x Iter) { countB[x.(Reader).Read().(int)]++ })
+	Sort(begin(a), end(a))
+	Sort(begin(b), end(b))
+	assert.Equal(
+		Includes(begin(a), end(a), begin(b), end(b)),
+		InnerProductBy(begin(countA), end(countA), begin(countB),
+			true,
+			func(acc, cur Any) Any { return acc.(bool) && cur.(bool) },
+			func(a, b Any) Any { return a.(int) >= b.(int) }),
+	)
+	var diff, intersection, symmetric, union []int
+	SetDifference(begin(a), end(a), begin(b), end(b), SliceBackInserter(&diff))
+	SetIntersection(begin(a), end(a), begin(b), end(b), SliceBackInserter(&intersection))
+	SetSymmetricDifference(begin(a), end(a), begin(b), end(b), SliceBackInserter(&symmetric))
+	SetUnion(begin(a), end(a), begin(b), end(b), SliceBackInserter(&union))
+
+	var diff2, intersection2, symmetric2, union2 []int
+	for i := range countA {
+		FillN(SliceBackInserter(&diff2), countA[i]-countB[i], i)
+		FillN(SliceBackInserter(&intersection2), Min(countA[i], countB[i]).(int), i)
+		FillN(SliceBackInserter(&symmetric2), Max(countA[i]-countB[i], countB[i]-countA[i]).(int), i)
+		FillN(SliceBackInserter(&union2), Max(countA[i], countB[i]).(int), i)
+	}
+
+	sliceEqual(assert, diff, diff2)
+	sliceEqual(assert, intersection, intersection2)
+	sliceEqual(assert, symmetric, symmetric2)
+	sliceEqual(assert, union, union2)
+}
+
+func TestBinarySearch(t *testing.T) {
+	assert := assert.New(t)
+	a := randIntSlice()
+	Sort(begin(a), end(a))
+	x := randInt()
+	l, h := LowerBound(begin(a), end(a), x), UpperBound(begin(a), end(a), x)
+	l2, h2 := EqualRange(begin(a), end(a), x)
+	iterEqual(assert, l, l2)
+	iterEqual(assert, h, h2)
+	ok := BinarySearch(begin(a), end(a), x)
+	assert.Equal(ok, !Find(begin(a), end(a), x).Eq(end(a)))
+	if l.Eq(end(a)) {
+		iterEqual(assert, h, end(a))
+		if len(a) > 0 {
+			assert.Less(a[len(a)-1], x)
+		}
+	} else {
+		assert.GreaterOrEqual(l.Read(), x)
+		if !l.Eq(begin(a)) {
+			assert.Less(PrevReader(l.(BackwardReader)).Read(), x)
+		}
+		if !h.Eq(end(a)) {
+			assert.Greater(h.Read(), x)
+		}
+		if !h.Eq(begin(a)) {
+			assert.LessOrEqual(PrevReader(h.(BackwardReader)).Read(), x)
+		}
+	}
 }
 
 func TestStableSort(t *testing.T) {

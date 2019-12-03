@@ -577,7 +577,7 @@ func UniqueIf(first, last ForwardReadWriter, eq EqComparer) ForwardReadWriter {
 }
 
 // UniqueCopy copies the elements from the range [first, last), to another range
-// beginning at d_first in such a way that there are no consecutive equal
+// beginning at dFirst in such a way that there are no consecutive equal
 // elements.
 //
 // Only the first element of each group of equal elements is copied.
@@ -586,7 +586,7 @@ func UniqueCopy(first, last ForwardReader, result ForwardWriter) ForwardWriter {
 }
 
 // UniqueCopyIf copies the elements from the range [first, last), to another
-// range beginning at d_first in such a way that there are no consecutive equal
+// range beginning at dFirst in such a way that there are no consecutive equal
 // elements.
 //
 // Only the first element of each group of equal elements is copied. Elements
@@ -1183,6 +1183,274 @@ Restart:
 			first = NextRandomReadWriter(i)
 		}
 	}
+}
+
+// LowerBound returns an iterator pointing to the first element in the range
+// [first, last) that is not less than (i.e. greater or equal to) value, or last
+// if no such element is found.
+func LowerBound(first, last ForwardReader, v Any) ForwardReader {
+	return LowerBoundBy(first, last, v, _less)
+}
+
+// LowerBoundBy returns an iterator pointing to the first element in the range
+// [first, last) that is not less than (i.e. greater or equal to) value, or last
+// if no such element is found.
+//
+// Elements are compared using the given binary comparer less.
+func LowerBoundBy(first, last ForwardReader, v Any, less LessComparer) ForwardReader {
+	for len := Distance(first, last); len != 0; {
+		l2 := len / 2
+		m := AdvanceN(first, l2).(ForwardReader)
+		if less(m.Read(), v) {
+			first = NextReader(m)
+			len -= l2 + 1
+		} else {
+			len = l2
+		}
+	}
+	return first
+}
+
+// UpperBound returns an iterator pointing to the first element in the range
+// [first, last) that is greater than value, or last if no such element is
+// found.
+func UpperBound(first, last ForwardReader, v Any) ForwardReader {
+	return UpperBoundBy(first, last, v, _less)
+}
+
+// UpperBoundBy returns an iterator pointing to the first element in the range
+// [first, last) that is greater than value, or last if no such element is
+// found.
+//
+// Elements are compared using the given binary comparer less.
+func UpperBoundBy(first, last ForwardReader, v Any, less LessComparer) ForwardReader {
+	for len := Distance(first, last); len != 0; {
+		l2 := len / 2
+		m := AdvanceN(first, l2).(ForwardReader)
+		if less(v, m.Read()) {
+			len = l2
+		} else {
+			first = NextReader(m)
+			len -= l2 + 1
+		}
+	}
+	return first
+}
+
+// BinarySearch checks if an element equivalent to value appears within the
+// range [first, last).
+func BinarySearch(first, last ForwardReader, v Any) bool {
+	return BinarySearchBy(first, last, v, _less)
+}
+
+// BinarySearchBy checks if an element equivalent to value appears within the
+// range [first, last).
+//
+// Elements are compared using the given binary comparer less.
+func BinarySearchBy(first, last ForwardReader, v Any, less LessComparer) bool {
+	first = LowerBoundBy(first, last, v, less)
+	return _ne(first, last) && !(less(v, first.Read()))
+}
+
+// EqualRange returns a range containing all elements equivalent to value in the
+// range [first, last).
+func EqualRange(first, last ForwardReader, v Any) (ForwardReader, ForwardReader) {
+	return EqualRangeBy(first, last, v, _less)
+}
+
+// EqualRangeBy returns a range containing all elements equivalent to value in
+// the range [first, last).
+//
+// Elements are compared using the given binary comparer less.
+func EqualRangeBy(first, last ForwardReader, v Any, less LessComparer) (ForwardReader, ForwardReader) {
+	for len := Distance(first, last); len != 0; {
+		l2 := len / 2
+		m := AdvanceN(first, l2).(ForwardReader)
+		if less(m.Read(), v) {
+			first = NextReader(m)
+			len -= l2 + 1
+		} else if less(v, m.Read()) {
+			last = m
+			len = l2
+		} else {
+			return LowerBoundBy(first, m, v, less), UpperBoundBy(NextReader(m), last, v, less)
+		}
+	}
+	return first, first
+}
+
+// Includes returns true if the sorted range [first2, last2) is a subsequence of
+// the sorted range [first1, last1). (A subsequence need not be contiguous.)
+func Includes(first1, last1, first2, last2 ForwardReader) bool {
+	return IncludesBy(first1, last1, first2, last2, _less)
+}
+
+// IncludesBy returns true if the sorted range [first2, last2) is a subsequence
+// of the sorted range [first1, last1). (A subsequence need not be contiguous.)
+//
+// Elements are compared using the given binary comparer less.
+func IncludesBy(first1, last1, first2, last2 ForwardReader, less LessComparer) bool {
+	for ; _ne(first2, last2); first1 = NextReader(first1) {
+		if _eq(first1, last1) || less(first2.Read(), first1.Read()) {
+			return false
+		}
+		if !less(first1.Read(), first2.Read()) {
+			first2 = NextReader(first2)
+		}
+	}
+	return true
+}
+
+// SetDifference copies the elements from the sorted range [first1, last1) which
+// are not found in the sorted range [first2, last2) to the range beginning at
+// dFirst.
+func SetDifference(first1, last1, first2, last2 ForwardReader, dFirst ForwardWriter) ForwardWriter {
+	return SetDifferenceBy(first1, last1, first2, last2, dFirst, _less)
+}
+
+// SetDifferenceBy copies the elements from the sorted range [first1, last1)
+// which are not found in the sorted range [first2, last2) to the range
+// beginning at dFirst.
+//
+// Elements are compared using the given binary comparer less.
+func SetDifferenceBy(first1, last1, first2, last2 ForwardReader, dFirst ForwardWriter, less LessComparer) ForwardWriter {
+	for _ne(first1, last1) {
+		if _eq(first2, last2) {
+			return Copy(first1, last1, dFirst)
+		}
+		if less(first1.Read(), first2.Read()) {
+			dFirst.Write(first1.Read())
+			first1, dFirst = NextReader(first1), NextWriter(dFirst)
+		} else {
+			if !less(first2.Read(), first1.Read()) {
+				first1 = NextReader(first1)
+			}
+			first2 = NextReader(first2)
+		}
+	}
+	return dFirst
+}
+
+// SetIntersection constructs a sorted range beginning at dFirst consisting of
+// elements that are found in both sorted ranges [first1, last1) and [first2,
+// last2). If some element is found m times in [first1, last1) and n times in
+// [first2, last2), the first Min(m, n) elements will be copied from the first
+// range to the destination range.
+//
+// The order of equivalent elements is preserved. The resulting range cannot
+// overlap with either of the input ranges.
+func SetIntersection(first1, last1, first2, last2 ForwardReader, dFirst ForwardWriter) ForwardWriter {
+	return SetIntersectionBy(first1, last1, first2, last2, dFirst, _less)
+}
+
+// SetIntersectionBy constructs a sorted range beginning at dFirst consisting of
+// elements that are found in both sorted ranges [first1, last1) and [first2,
+// last2). If some element is found m times in [first1, last1) and n times in
+// [first2, last2), the first Min(m, n) elements will be copied from the first
+// range to the destination range.
+//
+// The order of equivalent elements is preserved. The resulting range cannot
+// overlap with either of the input ranges. Elements are compared using the
+// given binary comparer less.
+func SetIntersectionBy(first1, last1, first2, last2 ForwardReader, dFirst ForwardWriter, less LessComparer) ForwardWriter {
+	for _ne(first1, last1) && _ne(first2, last2) {
+		if less(first1.Read(), first2.Read()) {
+			first1 = NextReader(first1)
+		} else {
+			if !less(first2.Read(), first1.Read()) {
+				dFirst.Write(first1.Read())
+				first1, dFirst = NextReader(first1), NextWriter(dFirst)
+			}
+			first2 = NextReader(first2)
+		}
+	}
+	return dFirst
+}
+
+// SetSymmetricDifference computes symmetric difference of two sorted ranges:
+// the elements that are found in either of the ranges, but not in both of them
+// are copied to the range beginning at dFirst. The resulting range is also
+// sorted.
+//
+// If some element is found m times in [first1, last1) and n times in [first2,
+// last2), it will be copied to dFirst exactly Abs(m-n) times. If m>n, then the
+// last m-n of those elements are copied from [first1,last1), otherwise the last
+// n-m elements are copied from [first2,last2). The resulting range cannot
+// overlap with either of the input ranges.
+func SetSymmetricDifference(first1, last1, first2, last2 ForwardReader, dFirst ForwardWriter) ForwardWriter {
+	return SetSymmetricDifferenceBy(first1, last1, first2, last2, dFirst, _less)
+}
+
+// SetSymmetricDifferenceBy computes symmetric difference of two sorted ranges:
+// the elements that are found in either of the ranges, but not in both of them
+// are copied to the range beginning at dFirst. The resulting range is also
+// sorted.
+//
+// If some element is found m times in [first1, last1) and n times in [first2,
+// last2), it will be copied to dFirst exactly Abs(m-n) times. If m>n, then the
+// last m-n of those elements are copied from [first1,last1), otherwise the last
+// n-m elements are copied from [first2,last2). The resulting range cannot
+// overlap with either of the input ranges. Elements are compared using the
+// given binary comparer less.
+func SetSymmetricDifferenceBy(first1, last1, first2, last2 ForwardReader, dFirst ForwardWriter, less LessComparer) ForwardWriter {
+	for _ne(first1, last1) {
+		if _eq(first2, last2) {
+			return Copy(first1, last1, dFirst)
+		}
+		if less(first1.Read(), first2.Read()) {
+			dFirst.Write(first1.Read())
+			first1, dFirst = NextReader(first1), NextWriter(dFirst)
+		} else {
+			if less(first2.Read(), first1.Read()) {
+				dFirst.Write(first2.Read())
+				dFirst = NextWriter(dFirst)
+			} else {
+				first1 = NextReader(first1)
+			}
+			first2 = NextReader(first2)
+		}
+	}
+	return Copy(first2, last2, dFirst)
+}
+
+// SetUnion constructs a sorted union beginning at dFirst consisting of the set
+// of elements present in one or both sorted ranges [first1, last1) and [first2,
+// last2).
+//
+// If some element is found m times in [first1, last1) and n times in [first2,
+// last2), then all m elements will be copied from [first1, last1) to dFirst,
+// preserving order, and then exactly Max(n-m, 0) elements will be copied from
+// [first2, last2) to dFirst, also preserving order.
+func SetUnion(first1, last1, first2, last2 ForwardReader, dFirst ForwardWriter) ForwardWriter {
+	return SetUnionBy(first1, last1, first2, last2, dFirst, _less)
+}
+
+// SetUnionBy constructs a sorted union beginning at dFirst consisting of the
+// set of elements present in one or both sorted ranges [first1, last1) and
+// [first2, last2).
+//
+// If some element is found m times in [first1, last1) and n times in [first2,
+// last2), then all m elements will be copied from [first1, last1) to dFirst,
+// preserving order, and then exactly Max(n-m, 0) elements will be copied from
+// [first2, last2) to dFirst, also preserving order.  Elements are compared
+// using the given binary comparer less.
+func SetUnionBy(first1, last1, first2, last2 ForwardReader, dFirst ForwardWriter, less LessComparer) ForwardWriter {
+	for ; _ne(first1, last1); dFirst = NextWriter(dFirst) {
+		if _eq(first2, last2) {
+			return Copy(first1, last1, dFirst)
+		}
+		if less(first2.Read(), first1.Read()) {
+			dFirst.Write(first2.Read())
+			first2 = NextReader(first2)
+		} else {
+			dFirst.Write(first1.Read())
+			if !less(first1.Read(), first2.Read()) {
+				first2 = NextReader(first2)
+			}
+			first1 = NextReader(first1)
+		}
+	}
+	return Copy(first2, last2, dFirst)
 }
 
 // IsHeap checks if the elements in range [first, last) are a max heap.
