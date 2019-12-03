@@ -92,6 +92,31 @@ func (it StringIter) Less(it2 Any) bool {
 	return it.i < it2.(StringIter).i
 }
 
+type StringBuilderInserter struct {
+	strings.Builder
+}
+
+func (si *StringBuilderInserter) Write(x Any) {
+	switch v := x.(type) {
+	case byte:
+		si.Builder.WriteByte(v)
+	case rune:
+		si.Builder.WriteRune(v)
+	case string:
+		si.Builder.WriteString(v)
+	default:
+		panic("unknown item type")
+	}
+}
+
+func (si *StringBuilderInserter) Next() ForwardIter {
+	return si
+}
+
+func (si *StringBuilderInserter) Eq(Any) bool {
+	return false
+}
+
 // MakeString creates a string by range spesified by [first, last). The value
 // type should be byte or rune.
 func MakeString(first, last ForwardReader) string {
