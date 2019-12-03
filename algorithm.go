@@ -924,7 +924,7 @@ func PartialSortBy(first, middle, last RandomReadWriter, less LessComparer) {
 	SortHeapBy(first, middle, less)
 }
 
-// ParitialSortCopy sorts some of the elements in the range [first, last) in
+// PartialSortCopy sorts some of the elements in the range [first, last) in
 // ascending order, storing the result in the range [dFirst, dLast).
 //
 // At most dLast - dFirst of the elements are placed sorted to the range
@@ -1086,16 +1086,16 @@ Restart:
 							i = NextRandomReadWriter(i)
 						}
 					}
-					// 000000++++++++
+					// 000000+++++++>
 					// f     i      jl
 					if _eq(i, j) {
-						// 0000000000000+
+						// 0000000000000>
 						// f            jl
 						//              i
 						return
 					}
 					for {
-						for !less(first, i) {
+						for !less(first.Read(), i.Read()) {
 							i = NextRandomReadWriter(i)
 						}
 						for j = PrevRandomReadWriter(j); less(first, j); j = PrevRandomReadWriter(j) {

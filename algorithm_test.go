@@ -708,6 +708,20 @@ func TestSort(t *testing.T) {
 	assert.Equal(nth.Read().(int), nv)
 }
 
+func TestNthElement(t *testing.T) {
+	assert := assert.New(t)
+	l := 8 + r.Intn(8)
+	h := 1 + rand.Intn(3)
+	a := make([]int, l)
+	GenerateN(begin(a), l, func() Any { return r.Intn(h) })
+	a[0], a[l/2] = 0, 0
+	b := append(a[:0:0], a...)
+	sort.Ints(b)
+	n := r.Intn(len(b)) + 1
+	NthElement(begin(a), AdvanceNReadWriter(begin(a), n-1), end(a))
+	assert.Equal(a[n-1], b[n-1])
+}
+
 func TestMerge(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randIntSlice(), randIntSlice()
