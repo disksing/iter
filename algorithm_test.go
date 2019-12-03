@@ -708,6 +708,24 @@ func TestSort(t *testing.T) {
 	assert.Equal(nth.Read().(int), nv)
 }
 
+func TestMerge(t *testing.T) {
+	assert := assert.New(t)
+	a, b := randIntSlice(), randIntSlice()
+	Sort(begin(a), end(a))
+	Sort(begin(b), end(b))
+	ab := append(a[:len(a):len(a)], b...)
+
+	c := make([]int, len(a)+len(b))
+	PartialSortCopy(begin(ab), end(ab), begin(c), end(c))
+	var d []int
+	Merge(begin(a), end(a), begin(b), end(b), SliceBackInserter(&d))
+	sliceEqual(assert, c, d)
+
+	middle := AdvanceN(begin(ab), len(a)).(BidiReadWriter)
+	InplaceMerge(begin(ab), middle, end(ab))
+	sliceEqual(assert, c, ab)
+}
+
 func TestSet(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randIntSlice(), randIntSlice()

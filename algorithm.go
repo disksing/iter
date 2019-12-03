@@ -1279,6 +1279,95 @@ func EqualRangeBy(first, last ForwardReader, v Any, less LessComparer) (ForwardR
 	return first, first
 }
 
+// Merge merges two sorted ranges [first1, last1) and [first2, last2) into one
+// sorted range beginning at dFirst.
+func Merge(first1, last1, first2, last2 ForwardReader, dFirst ForwardWriter) ForwardWriter {
+	return MergeBy(first1, last1, first2, last2, dFirst, _less)
+}
+
+// MergeBy merges two sorted ranges [first1, last1) and [first2, last2) into one
+// sorted range beginning at dFirst.
+//
+// Elements are compared using the given binary comparer less.
+func MergeBy(first1, last1, first2, last2 ForwardReader, dFirst ForwardWriter, less LessComparer) ForwardWriter {
+	for ; _ne(first1, last1); dFirst = NextWriter(dFirst) {
+		if _eq(first2, last2) {
+			return Copy(first1, last1, dFirst)
+		}
+		if less(first2.Read(), first1.Read()) {
+			dFirst.Write(first2.Read())
+			first2 = NextReader(first2)
+		} else {
+			dFirst.Write(first1.Read())
+			first1 = NextReader(first1)
+		}
+	}
+	return Copy(first2, last2, dFirst)
+}
+
+// InplaceMerge Merges two consecutive sorted ranges [first, middle) and
+// [middle, last) into one sorted range [first, last). For equivalent elements
+// in the original two ranges, the elements from the first range (preserving
+// their original order) precede the elements from the second range (preserving
+// their original order).
+func InplaceMerge(first, middle, last BidiReadWriter) {
+	InplaceMergeBy(first, middle, last, _less)
+}
+
+// InplaceMergeBy Merges two consecutive sorted ranges [first, middle) and
+// [middle, last) into one sorted range [first, last). For equivalent elements
+// in the original two ranges, the elements from the first range (preserving
+// their original order) precede the elements from the second range (preserving
+// their original order).
+//
+// Elements are compared using the given binary comparer less.
+func InplaceMergeBy(first, middle, last BidiReadWriter, less LessComparer) {
+	len1, len2 := Distance(first, middle), Distance(middle, last)
+	for {
+		if len2 == 0 {
+			return
+		}
+		for {
+			if len1 == 0 {
+				return
+			}
+			if less(middle.Read(), first.Read()) {
+				break
+			}
+			first = NextBidiReadWriter(first)
+			len1--
+		}
+		var len11, len21 int
+		var m1, m2 BidiReadWriter
+		if len1 < len2 {
+			len21 = len2 / 2
+			m2 = AdvanceN(middle, len21).(BidiReadWriter)
+			m1 = UpperBoundBy(first, middle, m2.Read(), less).(BidiReadWriter)
+			len11 = Distance(first, m1)
+		} else {
+			if len1 == 1 {
+				Swap(first, middle)
+				return
+			}
+			len11 = len1 / 2
+			m1 = AdvanceN(first, len11).(BidiReadWriter)
+			m2 = LowerBoundBy(middle, last, m1.Read(), less).(BidiReadWriter)
+			len21 = Distance(middle, m2)
+		}
+		len12, len22 := len1-len11, len2-len21
+		middle = Rotate(m1, middle, m2).(BidiReadWriter)
+		if len11+len21 < len12+len22 {
+			InplaceMergeBy(first, m1, middle, less)
+			first, middle = middle, m2
+			len1, len2 = len12, len22
+		} else {
+			InplaceMergeBy(middle, m2, last, less)
+			middle, last = m1, middle
+			len1, len2 = len11, len21
+		}
+	}
+}
+
 // Includes returns true if the sorted range [first2, last2) is a subsequence of
 // the sorted range [first1, last1). (A subsequence need not be contiguous.)
 func Includes(first1, last1, first2, last2 ForwardReader) bool {
