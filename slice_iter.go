@@ -81,7 +81,7 @@ func (it SliceIter) Next() ForwardIter {
 	return it.AdvanceN(1)
 }
 
-func (it SliceIter) Prev() BackwardIter {
+func (it SliceIter) Prev() BidiIter {
 	return it.AdvanceN(-1)
 }
 

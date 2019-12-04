@@ -62,7 +62,7 @@ func (it StringIter) Next() ForwardIter {
 	return it.AdvanceN(1)
 }
 
-func (it StringIter) Prev() BackwardIter {
+func (it StringIter) Prev() BidiIter {
 	return it.AdvanceN(-1)
 }
 

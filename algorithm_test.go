@@ -795,13 +795,13 @@ func TestBinarySearch(t *testing.T) {
 	} else {
 		assert.GreaterOrEqual(l.Read(), x)
 		if !l.Eq(begin(a)) {
-			assert.Less(PrevReader(l.(BackwardReader)).Read(), x)
+			assert.Less(PrevBidiReader(l.(BidiReader)).Read(), x)
 		}
 		if !h.Eq(end(a)) {
 			assert.Greater(h.Read(), x)
 		}
 		if !h.Eq(begin(a)) {
-			assert.LessOrEqual(PrevReader(h.(BackwardReader)).Read(), x)
+			assert.LessOrEqual(PrevBidiReader(h.(BidiReader)).Read(), x)
 		}
 	}
 }

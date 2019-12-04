@@ -60,50 +60,11 @@ func NextReadWriter(rw ForwardReadWriter) ForwardReadWriter {
 }
 
 type (
-	// BackwardIter is an iterator moves backward.
-	BackwardIter interface {
-		Iter
-		Prev() BackwardIter
-	}
-	// BackwardReader is an interface that groups BackwardIter and Reader.
-	BackwardReader interface {
-		BackwardIter
-		Reader
-	}
-	// BackwardWriter is an interface that groups BackwardIter and Writer.
-	BackwardWriter interface {
-		BackwardIter
-		Writer
-	}
-	// BackwardReadWriter is an interface that groups BackwardIter and
-	// ReadWriter.
-	BackwardReadWriter interface {
-		BackwardIter
-		ReadWriter
-	}
-)
-
-// PrevReader moves a BackwardReader to prev.
-func PrevReader(r BackwardReader) BackwardReader {
-	return r.Prev().(BackwardReader)
-}
-
-// PrevWriter moves a BackwardWriter to prev.
-func PrevWriter(w BackwardWriter) BackwardWriter {
-	return w.Prev().(BackwardWriter)
-}
-
-// PrevReadWriter moves a BackwardReadWriter to prev.
-func PrevReadWriter(rw BackwardReadWriter) BackwardReadWriter {
-	return rw.Prev().(BackwardReadWriter)
-}
-
-type (
-	// BidiIter is an iterator that moves both direction.
+	// BidiIter is an iterator that moves both forward or backward.
 	BidiIter interface {
 		Iter
 		Next() ForwardIter
-		Prev() BackwardIter
+		Prev() BidiIter
 	}
 	// BidiReader is an interface that groups BidiIter and Reader.
 	BidiReader interface {
@@ -259,15 +220,6 @@ func Distance(first, last Iter) int {
 			return d
 		}
 	}
-	if f, ok := first.(BackwardIter); ok {
-		if l, ok := last.(BackwardIter); ok {
-			var d int
-			for ; _ne(f, l); l = l.Prev() {
-				d++
-			}
-			return d
-		}
-	}
 	panic("cannot get distance")
 }
 
@@ -282,7 +234,7 @@ func AdvanceN(it Iter, n int) Iter {
 		}
 		return it2
 	}
-	if it2, ok := it.(BackwardIter); ok && n <= 0 {
+	if it2, ok := it.(BidiIter); ok && n <= 0 {
 		for ; n < 0; n++ {
 			it2 = it2.Prev()
 		}

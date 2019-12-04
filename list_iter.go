@@ -54,7 +54,7 @@ func (l *ListIter) Next() ForwardIter {
 	}
 }
 
-func (l *ListIter) Prev() BackwardIter {
+func (l *ListIter) Prev() BidiIter {
 	var e *list.Element
 	switch {
 	case l.e == nil && l.backward:

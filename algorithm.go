@@ -456,9 +456,9 @@ func Reverse(first, last BidiReadWriter) {
 // ReverseCopy copies the elements from the range [first, last) to another range
 // beginning at dFirst in such a way that the elements in the new range are in
 // reverse order.
-func ReverseCopy(first, last BackwardReader, dFirst ForwardWriter) ForwardWriter {
+func ReverseCopy(first, last BidiReader, dFirst ForwardWriter) ForwardWriter {
 	for _ne(first, last) {
-		last = PrevReader(last)
+		last = PrevBidiReader(last)
 		dFirst.Write(last.Read())
 		dFirst = NextWriter(dFirst)
 	}
