@@ -40,7 +40,7 @@ func _less(x, y Any) bool {
 	if c, ok := x.(iless); ok {
 		return c.Less(y)
 	}
-	return _cmp(x, y) == -1
+	return _cmp(x, y) < 0
 }
 
 func _cmp(x, y Any) int {
@@ -48,7 +48,7 @@ func _cmp(x, y Any) int {
 	if t, ok := x.(icmp); ok {
 		return t.Cmp(y)
 	}
-	return reflectCompare(x, y)
+	return reflectCmp(x, y)
 }
 
 func _inc(x Any) Any {

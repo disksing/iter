@@ -1,274 +1,423 @@
 package iter
 
-// Iter represents an iterator, just an alias of Any.
-type Iter = Any
-
-type (
-	// Reader is a readable iterator.
-	Reader interface {
-		Read() Any
-	}
-	// Writer is a writable iterator.
-	Writer interface {
-		Write(Any)
-	}
-	// ReadWriter is an interface that groups Reader and Writer.
-	ReadWriter interface {
-		Reader
-		Writer
-	}
+import (
+	"container/list"
+	"fmt"
+	"reflect"
+	"strings"
 )
 
-// Incrementable represents iterators that can move forward.
-type Incrementable interface {
-	Next() Incrementable
+type sliceIter struct {
+	s        reflect.Value
+	i        int
+	backward bool
 }
 
-// InputIter is a readable and incrementable iterator.
-type InputIter interface {
-	Reader
-	Incrementable
-	Eq(Iter) bool
-}
-
-// NextInput moves an InputIter forward.
-func NextInput(it InputIter) InputIter {
-	return it.Next().(InputIter)
-}
-
-// OutputIter is a writable and incrementable iterator.
-//
-// It may not implement the incremental interface, in which case the increment
-// logic is done in Write().
-type OutputIter = Writer
-
-func _writeNext(out OutputIter, v Any) OutputIter {
-	out.Write(v)
-	if inc, ok := out.(Incrementable); ok {
-		out = inc.Next().(OutputIter)
+// SliceBegin returns an iterator to the front element of the slice.
+func SliceBegin(s interface{}) RandomReadWriter {
+	return sliceIter{
+		s: reflect.ValueOf(s),
 	}
-	return out
 }
 
-type (
-	// ForwardIter is an iterator that moves forward.
-	ForwardIter interface {
-		Incrementable
-		Eq(Iter) bool
-		AllowMultiplePass() // a marker indicates it can be multiple passed.
+// SliceEnd returns an iterator to the passed last element of the slice.
+func SliceEnd(s interface{}) RandomReadWriter {
+	v := reflect.ValueOf(s)
+	return sliceIter{
+		s: v,
+		i: v.Len(),
 	}
-	// ForwardReader is an interface that groups ForwardIter and Reader.
-	ForwardReader interface {
-		ForwardIter
-		Reader
+}
+
+// SliceRBegin returns an iterator to the back element of the slice.
+func SliceRBegin(s interface{}) RandomReadWriter {
+	v := reflect.ValueOf(s)
+	return sliceIter{
+		s:        v,
+		i:        v.Len() - 1,
+		backward: true,
 	}
-	// ForwardWriter is an interface that groups ForwardIter and Writer.
-	ForwardWriter interface {
-		ForwardIter
-		Writer
+}
+
+// SliceREnd returns an iterator to the passed first element of the slice.
+func SliceREnd(s interface{}) RandomReadWriter {
+	return sliceIter{
+		s:        reflect.ValueOf(s),
+		i:        -1,
+		backward: true,
 	}
-	// ForwardReadWriter is an interface that groups ForwardIter and
-	// ReadWriter.
-	ForwardReadWriter interface {
-		ForwardIter
-		ReadWriter
+}
+
+func (it sliceIter) String() string {
+	dir := "->"
+	if it.backward {
+		dir = "<-"
 	}
-)
-
-// NextForwardReader moves a ForwardReader to next.
-func NextForwardReader(r ForwardReader) ForwardReader {
-	return r.Next().(ForwardReader)
-}
-
-// NextForwardWriter moves a ForwardWriter to next.
-func NextForwardWriter(w ForwardWriter) ForwardWriter {
-	return w.Next().(ForwardWriter)
-}
-
-// NextForwardReadWriter moves a ForwardReadWriter to next.
-func NextForwardReadWriter(rw ForwardReadWriter) ForwardReadWriter {
-	return rw.Next().(ForwardReadWriter)
-}
-
-type (
-	// BidiIter is an iterator that moves both forward or backward.
-	BidiIter interface {
-		ForwardIter
-		Prev() BidiIter
+	var buf []string
+	for i := 0; i < 64 && i < it.s.Len(); i++ {
+		buf = append(buf, fmt.Sprintf("%v", it.s.Index(i)))
 	}
-	// BidiReader is an interface that groups BidiIter and Reader.
-	BidiReader interface {
-		BidiIter
-		Reader
+	if it.s.Len() > 64 {
+		buf = append(buf, "...")
 	}
-	// BidiWriter is an interface that groups BidiIter and Writer.
-	BidiWriter interface {
-		BidiIter
-		Writer
+	return fmt.Sprintf("[%v](len=%d,cap=%d)@%d%s", strings.Join(buf, ","), it.s.Len(), it.s.Cap(), it.i, dir)
+}
+
+func (it sliceIter) Read() Any {
+	return it.s.Index(it.i).Interface()
+}
+
+func (it sliceIter) Write(v Any) {
+	it.s.Index(it.i).Set(reflect.ValueOf(v))
+}
+
+func (it sliceIter) Eq(it2 Iter) bool {
+	return it.i == it2.(sliceIter).i
+}
+
+func (it sliceIter) AllowMultiplePass() {}
+
+func (it sliceIter) Less(it2 Iter) bool {
+	if it.backward {
+		return it.i > it2.(sliceIter).i
 	}
-	// BidiReadWriter is an interface that groups BidiIter and ReadWriter.
-	BidiReadWriter interface {
-		BidiIter
-		ReadWriter
+	return it.i < it2.(sliceIter).i
+}
+
+func (it sliceIter) Next() Incrementable {
+	return it.AdvanceN(1)
+}
+
+func (it sliceIter) Prev() BidiIter {
+	return it.AdvanceN(-1)
+}
+
+func (it sliceIter) AdvanceN(n int) RandomIter {
+	if it.backward {
+		n = -n
 	}
-)
-
-// NextBidiIter moves a BidiIter to next.
-func NextBidiIter(bi BidiIter) BidiIter {
-	return bi.Next().(BidiIter)
-}
-
-// PrevBidiIter moves a BidiIter to prev.
-func PrevBidiIter(bi BidiIter) BidiIter {
-	return bi.Prev().(BidiIter)
-}
-
-// NextBidiReader moves a BidiReader to next.
-func NextBidiReader(br BidiReader) BidiReader {
-	return br.Next().(BidiReader)
-}
-
-// PrevBidiReader moves a BidiReader to prev.
-func PrevBidiReader(br BidiReader) BidiReader {
-	return br.Prev().(BidiReader)
-}
-
-// NextBidiWriter moves a BidiWriter to next.
-func NextBidiWriter(br BidiWriter) BidiWriter {
-	return br.Next().(BidiWriter)
-}
-
-// PrevBidiWriter moves a BidiWriter to prev.
-func PrevBidiWriter(br BidiWriter) BidiWriter {
-	return br.Prev().(BidiWriter)
-}
-
-// NextBidiReadWriter moves a BidiReadWriter to next.
-func NextBidiReadWriter(br BidiReadWriter) BidiReadWriter {
-	return br.Next().(BidiReadWriter)
-}
-
-// PrevBidiReadWriter moves a BidiReadWriter to prev.
-func PrevBidiReadWriter(br BidiReadWriter) BidiReadWriter {
-	return br.Prev().(BidiReadWriter)
-}
-
-type (
-	// RandomIter is a random access iterator.
-	RandomIter interface {
-		BidiIter
-		AdvanceN(n int) RandomIter
-		Distance(RandomIter) int
-		Less(Iter) bool
+	return sliceIter{
+		s:        it.s,
+		i:        it.i + n,
+		backward: it.backward,
 	}
-	// RandomReader is an interface that groups RandomIter and Reader.
-	RandomReader interface {
-		RandomIter
-		Reader
+}
+
+func (it sliceIter) Distance(it2 RandomIter) int {
+	d := it2.(sliceIter).i - it.i
+	if it.backward {
+		return -d
 	}
-	// RandomWriter is an interface that groups RandomIter and Writer.
-	RandomWriter interface {
-		RandomIter
-		Writer
+	return d
+}
+
+type sliceBackInserter struct {
+	s reflect.Value
+}
+
+// SliceBackInserter returns an OutputIter to append elements to the back of the
+// slice.
+func SliceBackInserter(s interface{}) OutputIter {
+	return &sliceBackInserter{
+		s: reflect.ValueOf(s).Elem(),
 	}
-	// RandomReadWriter is an interface that groups RandomIter and
-	// ReadWriter.
-	RandomReadWriter interface {
-		RandomIter
-		ReadWriter
+}
+
+func (bi *sliceBackInserter) Write(x Any) {
+	bi.s.Set(reflect.Append(bi.s, reflect.ValueOf(x)))
+}
+
+// listIter is an iterator works with list.List.
+type listIter struct {
+	l        *list.List
+	e        *list.Element
+	backward bool
+}
+
+// ListBegin returns an iterator to the front element of the list.
+func ListBegin(l *list.List) BidiReadWriter {
+	return listIter{
+		l: l,
+		e: l.Front(),
 	}
-)
-
-// NextRandomIter moves a RandomIter to next.
-func NextRandomIter(bi RandomIter) RandomIter {
-	return bi.Next().(RandomIter)
 }
 
-// PrevRandomIter moves a RandomIter to prev.
-func PrevRandomIter(bi RandomIter) RandomIter {
-	return bi.Prev().(RandomIter)
-}
-
-// NextRandomReader moves a RandomReader to next.
-func NextRandomReader(br RandomReader) RandomReader {
-	return br.Next().(RandomReader)
-}
-
-// PrevRandomReader moves a RandomReader to prev.
-func PrevRandomReader(br RandomReader) RandomReader {
-	return br.Prev().(RandomReader)
-}
-
-// NextRandomWriter moves a RandomWriter to next.
-func NextRandomWriter(br RandomWriter) RandomWriter {
-	return br.Next().(RandomWriter)
-}
-
-// PrevRandomWriter moves a RandomWriter to prev.
-func PrevRandomWriter(br RandomWriter) RandomWriter {
-	return br.Prev().(RandomWriter)
-}
-
-// NextRandomReadWriter moves a RandomReadWriter to next.
-func NextRandomReadWriter(br RandomReadWriter) RandomReadWriter {
-	return br.Next().(RandomReadWriter)
-}
-
-// PrevRandomReadWriter moves a RandomReadWriter to prev.
-func PrevRandomReadWriter(br RandomReadWriter) RandomReadWriter {
-	return br.Prev().(RandomReadWriter)
-}
-
-// AdvanceNReader moves a RandomReader by step N.
-func AdvanceNReader(rr RandomReader, n int) RandomReader {
-	return rr.AdvanceN(n).(RandomReader)
-}
-
-// AdvanceNWriter moves a RandomWriter by step N.
-func AdvanceNWriter(rw RandomWriter, n int) RandomWriter {
-	return rw.AdvanceN(n).(RandomWriter)
-}
-
-// AdvanceNReadWriter moves a RandomReadWriter by step N.
-func AdvanceNReadWriter(rw RandomReadWriter, n int) RandomReadWriter {
-	return rw.AdvanceN(n).(RandomReadWriter)
-}
-
-// Distance returns the distance of two iterators.
-func Distance(first, last Iter) int {
-	if f, ok := first.(RandomIter); ok {
-		if l, ok := last.(RandomIter); ok {
-			return f.Distance(l)
-		}
+// ListEnd returns an iterator to the passed last element of the list.
+func ListEnd(l *list.List) BidiReadWriter {
+	return listIter{
+		l: l,
 	}
-	if f, ok := first.(ForwardIter); ok {
-		if l, ok := last.(ForwardIter); ok {
-			var d int
-			for ; _ne(f, l); f = f.Next().(ForwardIter) {
-				d++
-			}
-			return d
-		}
-	}
-	panic("cannot get distance")
 }
 
-// AdvanceN moves an iterator by step N.
-func AdvanceN(it Iter, n int) Iter {
-	if it2, ok := it.(RandomIter); ok {
-		return it2.AdvanceN(n)
+// ListRBegin returns an iterator to the back element of the list.
+func ListRBegin(l *list.List) BidiReadWriter {
+	return listIter{
+		l:        l,
+		e:        l.Back(),
+		backward: true,
 	}
-	if it2, ok := it.(ForwardIter); ok && n >= 0 {
-		for ; n > 0; n-- {
-			it2 = it2.Next().(ForwardIter)
-		}
-		return it2
+}
+
+// ListREnd returns an iterator to the passed first element of the list.
+func ListREnd(l *list.List) BidiReadWriter {
+	return listIter{
+		l:        l,
+		backward: true,
 	}
-	if it2, ok := it.(BidiIter); ok && n <= 0 {
-		for ; n < 0; n++ {
-			it2 = it2.Prev()
-		}
-		return it2
+}
+
+func (l listIter) Eq(x Iter) bool {
+	return l.e == x.(listIter).e
+}
+
+func (l listIter) AllowMultiplePass() {}
+
+func (l listIter) Next() Incrementable {
+	var e *list.Element
+	if l.backward {
+		e = l.e.Prev()
+	} else {
+		e = l.e.Next()
 	}
-	panic("cannot advance")
+	return &listIter{
+		l:        l.l,
+		e:        e,
+		backward: l.backward,
+	}
+}
+
+func (l listIter) Prev() BidiIter {
+	var e *list.Element
+	switch {
+	case l.e == nil && l.backward:
+		e = l.l.Front()
+	case l.e == nil && !l.backward:
+		e = l.l.Back()
+	case l.e != nil && l.backward:
+		e = l.e.Next()
+	case l.e != nil && !l.backward:
+		e = l.e.Prev()
+	}
+	return &listIter{
+		l:        l.l,
+		e:        e,
+		backward: l.backward,
+	}
+}
+
+func (l listIter) Read() Any {
+	return l.e.Value
+}
+
+func (l listIter) Write(x Any) {
+	l.e.Value = x
+}
+
+// ListBackInserter returns an OutputIter to insert elements to the back of the
+// list.
+func ListBackInserter(l *list.List) OutputIter {
+	return listBackInserter{l: l}
+}
+
+type listBackInserter struct {
+	l *list.List
+}
+
+func (li listBackInserter) Write(x Any) {
+	li.l.PushBack(x)
+}
+
+// ListInserter returns an OutputIter to insert elements before a node.
+func ListInserter(l *list.List, e *list.Element) OutputIter {
+	return listInserter{l: l, e: e}
+}
+
+type listInserter struct {
+	l *list.List
+	e *list.Element
+}
+
+func (li listInserter) Write(x Any) {
+	li.l.InsertBefore(x, li.e)
+}
+
+// stringIter is the iterator to access a string in bytes. To travise a string
+// by rune, convert the string to []rune then use SliceIter.
+type stringIter struct {
+	s        string
+	i        int
+	backward bool
+}
+
+// StringBegin returns an iterator to the front element of the string.
+func StringBegin(s string) RandomReader {
+	return stringIter{
+		s: s,
+	}
+}
+
+// StringEnd returns an iterator to the passed last element of the string.
+func StringEnd(s string) RandomReader {
+	return stringIter{
+		s: s,
+		i: len(s),
+	}
+}
+
+// StringRBegin returns an iterator to the back element of the string.
+func StringRBegin(s string) RandomReader {
+	return stringIter{
+		s:        s,
+		i:        len(s) - 1,
+		backward: true,
+	}
+}
+
+// StringREnd returns an iterator to the passed first element of the string.
+func StringREnd(s string) RandomReader {
+	return stringIter{
+		s:        s,
+		i:        -1,
+		backward: true,
+	}
+}
+
+func (it stringIter) String() string {
+	dir := "->"
+	if it.backward {
+		dir = "<-"
+	}
+	return fmt.Sprintf("%s@%d%s", it.s, it.i, dir)
+}
+
+func (it stringIter) Read() Any {
+	return it.s[it.i]
+}
+
+func (it stringIter) Eq(it2 Iter) bool {
+	return it.i == it2.(stringIter).i
+}
+
+func (it stringIter) AllowMultiplePass() {}
+
+func (it stringIter) Next() Incrementable {
+	return it.AdvanceN(1)
+}
+
+func (it stringIter) Prev() BidiIter {
+	return it.AdvanceN(-1)
+}
+
+func (it stringIter) AdvanceN(n int) RandomIter {
+	if it.backward {
+		n = -n
+	}
+	return stringIter{
+		s:        it.s,
+		i:        it.i + n,
+		backward: it.backward,
+	}
+}
+
+func (it stringIter) Distance(it2 RandomIter) int {
+	d := it2.(stringIter).i - it.i
+	if it.backward {
+		return -d
+	}
+	return d
+}
+
+func (it stringIter) Less(it2 Iter) bool {
+	if it.backward {
+		return it.i > it2.(stringIter).i
+	}
+	return it.i < it2.(stringIter).i
+}
+
+// StringBuilderInserter is an OutputIter that wraps a strings.Builder.
+type StringBuilderInserter struct {
+	strings.Builder
+}
+
+func (si *StringBuilderInserter) Write(x Any) {
+	switch v := x.(type) {
+	case byte:
+		si.Builder.WriteByte(v)
+	case rune:
+		si.Builder.WriteRune(v)
+	case string:
+		si.Builder.WriteString(v)
+	default:
+		panic("unknown item type")
+	}
+}
+
+type eof int
+
+func (e eof) Eq(x Any) bool {
+	if _, ok := x.(eof); ok {
+		return true
+	}
+	return _eq(x, e)
+}
+
+func (e eof) Next() Incrementable { return e }
+
+func (e eof) Read() Any { return nil }
+
+// EOF is a sentinel iterator to terminate iterations.
+var EOF Iter = eof(0)
+
+type chanWrapper struct {
+	ch    reflect.Value
+	cur   interface{}
+	read1 bool
+	eof   bool
+}
+
+func (cw *chanWrapper) Write(x Any) {
+	cw.ch.Send(reflect.ValueOf(x))
+}
+
+func (cw *chanWrapper) recv() {
+	v, ok := cw.ch.Recv()
+	cw.cur, cw.read1, cw.eof = v, true, !ok
+}
+
+func (cw *chanWrapper) Read() Any {
+	if !cw.read1 {
+		cw.recv()
+	}
+	return cw.cur
+}
+
+func (cw *chanWrapper) Next() Incrementable {
+	if !cw.read1 {
+		cw.recv()
+	}
+	if !cw.eof {
+		cw.recv()
+	}
+	return cw
+}
+
+func (cw *chanWrapper) Eq(x Any) bool {
+	if !cw.read1 {
+		cw.recv()
+	}
+	return cw.eof && x == EOF
+}
+
+// ChanReader returns an InputIter that reads from a channel.
+func ChanReader(c interface{}) InputIter {
+	return &chanWrapper{
+		ch: reflect.ValueOf(c),
+	}
+}
+
+// ChanWriter returns an OutIter that writes to a channel.
+func ChanWriter(c interface{}) OutputIter {
+	return &chanWrapper{
+		ch: reflect.ValueOf(c),
+	}
 }

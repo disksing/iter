@@ -9,6 +9,8 @@ import (
 )
 
 func TestSliceIterator(t *testing.T) {
+	skipAfter(t, 1)
+
 	assert := assert.New(t)
 	a := make([]int, 100)
 	b := SliceBegin(a)

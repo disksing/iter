@@ -23,24 +23,19 @@ func randInt() int {
 }
 
 func randIntSlice() []int {
-	l, h := randInt(), randInt()
-	if l > h {
-		l, h = h, l
-	}
+	lh := []int{randInt(), randInt()}
+	Sort(begin(lh), end(lh))
 	s := make([]int, randInt())
-	for i := range s {
-		s[i] = l + r.Intn(h-l+1)
-	}
+	GenerateN(SliceBackInserter(&s), len(s), func() Any { return lh[0] + r.Intn(lh[1]-lh[0]+1) })
 	return s
 }
 
 func randString() string {
-	l := randInt()
-	var s strings.Builder
-	for i := 0; i < l; i++ {
-		s.WriteByte('a' + byte(r.Intn(26)))
-	}
-	return s.String()
+	alphabets := make([]byte, 26)
+	Iota(begin(alphabets), end(alphabets), byte('a'))
+	var bs StringBuilderInserter
+	GenerateN(&bs, randInt(), RandomGenerator(alphabets, r))
+	return bs.String()
 }
 
 var (
@@ -63,10 +58,6 @@ func _eq(x, y Any) bool {
 		return e.Eq(y)
 	}
 	return x == y
-}
-
-func iterEqual(assert *assert.Assertions, a, b Iter) {
-	assert.True(_eq(a, b), "a=%v\nb=%v", a, b)
 }
 
 func TestAllAnyNoneOf(t *testing.T) {
@@ -173,7 +164,7 @@ func TestFindEnd(t *testing.T) {
 		assert.True(Equal(begin(b), end(b), it, nil))
 		it = FindEnd(NextForwardReader(it), end(a), begin(b), end(b))
 	}
-	iterEqual(assert, it, end(a))
+	assert.True(_eq(it, end(a)))
 }
 
 func TestFindFirstOf(t *testing.T) {
@@ -182,10 +173,10 @@ func TestFindFirstOf(t *testing.T) {
 	if i == -1 {
 		i = len(a)
 	}
-	iterEqual(assert.New(t),
+	assert.New(t).True(_eq(
 		FindFirstOf(strBegin(a), strEnd(a), strBegin(b), strEnd(b)),
 		AdvanceN(strBegin(a), i),
-	)
+	))
 }
 
 func TestAdjacentFind(t *testing.T) {
@@ -197,10 +188,10 @@ func TestAdjacentFind(t *testing.T) {
 			break
 		}
 	}
-	iterEqual(assert.New(t),
+	assert.New(t).True(_eq(
 		AdjacentFind(begin(a), end(a)),
 		AdvanceN(begin(a), res),
-	)
+	))
 }
 
 func TestSearch(t *testing.T) {
@@ -209,10 +200,10 @@ func TestSearch(t *testing.T) {
 	if i == -1 {
 		i = len(a)
 	}
-	iterEqual(assert.New(t),
+	assert.New(t).True(_eq(
 		Search(strBegin(a), strEnd(a), strBegin(b), strEnd(b)),
 		AdvanceN(strBegin(a), i),
-	)
+	))
 }
 
 func TestSearchN(t *testing.T) {
@@ -224,10 +215,10 @@ func TestSearchN(t *testing.T) {
 	if i == -1 {
 		i = len(a)
 	}
-	iterEqual(assert.New(t),
+	assert.New(t).True(_eq(
 		SearchN(strBegin(a), strEnd(a), n, c),
 		AdvanceN(strBegin(a), i),
-	)
+	))
 }
 
 func TestCopy(t *testing.T) {
@@ -355,8 +346,8 @@ func TestRemove(t *testing.T) {
 
 	count1 := Count(begin(a), end(a), 1)
 	countf := CountIf(begin(a), end(a), f)
-	SliceErase(&a, Remove(begin(a), end(a), 1))
-	SliceErase(&b, RemoveIf(begin(b), end(b), f))
+	Erase(&a, Remove(begin(a), end(a), 1))
+	Erase(&b, RemoveIf(begin(b), end(b), f))
 	RemoveCopy(begin(c), end(c), SliceBackInserter(&d), 1)
 	RemoveCopyIf(begin(c), end(c), SliceBackInserter(&e), f)
 
@@ -510,8 +501,8 @@ func TestUnique(t *testing.T) {
 	a := randIntSlice()
 	b := append(a[:0:0], a...)
 	c := make([]int, len(a))
-	SliceErase(&b, Unique(begin(b), end(b)))
-	SliceErase(&c, UniqueCopy(begin(a), end(a), begin(c)))
+	Erase(&b, Unique(begin(b), end(b)))
+	Erase(&c, UniqueCopy(begin(a), end(a), begin(c)))
 	sliceEqual(assert, b, c)
 	for i := 0; i < len(b)-1; i++ {
 		assert.NotEqual(b[i], b[i+1])
@@ -785,12 +776,12 @@ func TestBinarySearch(t *testing.T) {
 	x := randInt()
 	l, h := LowerBound(begin(a), end(a), x), UpperBound(begin(a), end(a), x)
 	l2, h2 := EqualRange(begin(a), end(a), x)
-	iterEqual(assert, l, l2)
-	iterEqual(assert, h, h2)
+	assert.True(_eq(l, l2))
+	assert.True(_eq(h, h2))
 	ok := BinarySearch(begin(a), end(a), x)
 	assert.Equal(ok, !Find(begin(a), end(a), x).Eq(end(a)))
 	if l.Eq(end(a)) {
-		iterEqual(assert, h, end(a))
+		assert.True(_eq(h, end(a)))
 		if len(a) > 0 {
 			assert.Less(a[len(a)-1], x)
 		}
@@ -910,10 +901,10 @@ func TestMinmaxElement(t *testing.T) {
 		assert.Equal(min.Read(), min2.Read())
 		assert.Equal(max.Read(), max2.Read())
 	} else {
-		iterEqual(assert, min, end(s))
-		iterEqual(assert, max, end(s))
-		iterEqual(assert, min2, end(s))
-		iterEqual(assert, max2, end(s))
+		assert.True(_eq(min, end(s)))
+		assert.True(_eq(max, end(s)))
+		assert.True(_eq(min2, end(s)))
+		assert.True(_eq(max2, end(s)))
 	}
 }
 
@@ -935,9 +926,9 @@ func TestEqual(t *testing.T) {
 	if len(a) > len(b) {
 		a, b = b, a
 	}
-	assert.Equal(Equal(StringBegin(a), StringEnd(a), StringBegin(b), nil), a == b[:len(a)])
+	assert.Equal(Equal(strBegin(a), strEnd(a), strBegin(b), nil), a == b[:len(a)])
 	a, b = randString(), randString()
-	assert.Equal(Equal(StringBegin(a), StringEnd(a), StringBegin(b), StringEnd(b)), a == b)
+	assert.Equal(Equal(strBegin(a), strEnd(a), strBegin(b), strEnd(b)), a == b)
 }
 
 func TestCompare(t *testing.T) {
@@ -946,7 +937,7 @@ func TestCompare(t *testing.T) {
 	if randInt() == 0 {
 		b = a
 	}
-	x, y, z, w := StringBegin(a), StringEnd(a), StringBegin(b), StringEnd(b)
+	x, y, z, w := strBegin(a), strEnd(a), strBegin(b), strEnd(b)
 	if a == b {
 		assert.True(Equal(x, y, z, w))
 		assert.False(LexicographicalCompare(x, y, z, w))
