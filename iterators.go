@@ -1,10 +1,9 @@
 package iter
 
+// Iter represents an iterator, just an alias of Any.
+type Iter = Any
+
 type (
-	// Iter marks an iterator.
-	Iter interface {
-		Eq(Any) bool
-	}
 	// Reader is a readable iterator.
 	Reader interface {
 		Read() Any
@@ -20,11 +19,43 @@ type (
 	}
 )
 
+// Incrementable represents iterators that can move forward.
+type Incrementable interface {
+	Next() Incrementable
+}
+
+// InputIter is a readable and incrementable iterator.
+type InputIter interface {
+	Reader
+	Incrementable
+	Eq(Iter) bool
+}
+
+// NextInput moves an InputIter forward.
+func NextInput(it InputIter) InputIter {
+	return it.Next().(InputIter)
+}
+
+// OutputIter is a writable and incrementable iterator.
+//
+// It may not implement the incremental interface, in which case the increment
+// logic is done in Write().
+type OutputIter = Writer
+
+func _writeNext(out OutputIter, v Any) OutputIter {
+	out.Write(v)
+	if inc, ok := out.(Incrementable); ok {
+		out = inc.Next().(OutputIter)
+	}
+	return out
+}
+
 type (
 	// ForwardIter is an iterator that moves forward.
 	ForwardIter interface {
-		Iter
-		Next() ForwardIter
+		Incrementable
+		Eq(Iter) bool
+		AllowMultiplePass() // a marker indicates it can be multiple passed.
 	}
 	// ForwardReader is an interface that groups ForwardIter and Reader.
 	ForwardReader interface {
@@ -44,26 +75,25 @@ type (
 	}
 )
 
-// NextReader moves a ForwardReader to next.
-func NextReader(r ForwardReader) ForwardReader {
+// NextForwardReader moves a ForwardReader to next.
+func NextForwardReader(r ForwardReader) ForwardReader {
 	return r.Next().(ForwardReader)
 }
 
-// NextWriter moves a ForwardWriter to next.
-func NextWriter(w ForwardWriter) ForwardWriter {
+// NextForwardWriter moves a ForwardWriter to next.
+func NextForwardWriter(w ForwardWriter) ForwardWriter {
 	return w.Next().(ForwardWriter)
 }
 
-// NextReadWriter moves a ReadWriter to next.
-func NextReadWriter(rw ForwardReadWriter) ForwardReadWriter {
+// NextForwardReadWriter moves a ForwardReadWriter to next.
+func NextForwardReadWriter(rw ForwardReadWriter) ForwardReadWriter {
 	return rw.Next().(ForwardReadWriter)
 }
 
 type (
 	// BidiIter is an iterator that moves both forward or backward.
 	BidiIter interface {
-		Iter
-		Next() ForwardIter
+		ForwardIter
 		Prev() BidiIter
 	}
 	// BidiReader is an interface that groups BidiIter and Reader.
@@ -129,7 +159,7 @@ type (
 		BidiIter
 		AdvanceN(n int) RandomIter
 		Distance(RandomIter) int
-		Less(Any) bool
+		Less(Iter) bool
 	}
 	// RandomReader is an interface that groups RandomIter and Reader.
 	RandomReader interface {
@@ -214,7 +244,7 @@ func Distance(first, last Iter) int {
 	if f, ok := first.(ForwardIter); ok {
 		if l, ok := last.(ForwardIter); ok {
 			var d int
-			for ; _ne(f, l); f = f.Next() {
+			for ; _ne(f, l); f = f.Next().(ForwardIter) {
 				d++
 			}
 			return d
@@ -230,7 +260,7 @@ func AdvanceN(it Iter, n int) Iter {
 	}
 	if it2, ok := it.(ForwardIter); ok && n >= 0 {
 		for ; n > 0; n-- {
-			it2 = it2.Next()
+			it2 = it2.Next().(ForwardIter)
 		}
 		return it2
 	}

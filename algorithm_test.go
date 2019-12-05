@@ -171,7 +171,7 @@ func TestFindEnd(t *testing.T) {
 		}
 	} else {
 		assert.True(Equal(begin(b), end(b), it, nil))
-		it = FindEnd(NextReader(it), end(a), begin(b), end(b))
+		it = FindEnd(NextForwardReader(it), end(a), begin(b), end(b))
 	}
 	iterEqual(assert, it, end(a))
 }
@@ -599,7 +599,9 @@ func (l *forwardListIter) Eq(x Any) bool {
 	return l.e == x.(*forwardListIter).e
 }
 
-func (l *forwardListIter) Next() ForwardIter {
+func (l *forwardListIter) AllowMultiplePass() {}
+
+func (l *forwardListIter) Next() Incrementable {
 	return &forwardListIter{
 		l: l.l,
 		e: l.e.Next(),

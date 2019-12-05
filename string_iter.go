@@ -54,11 +54,13 @@ func (it StringIter) Read() Any {
 	return it.s[it.i]
 }
 
-func (it StringIter) Eq(it2 Any) bool {
+func (it StringIter) Eq(it2 Iter) bool {
 	return it.i == it2.(StringIter).i
 }
 
-func (it StringIter) Next() ForwardIter {
+func (it StringIter) AllowMultiplePass() {}
+
+func (it StringIter) Next() Incrementable {
 	return it.AdvanceN(1)
 }
 
@@ -85,7 +87,7 @@ func (it StringIter) Distance(it2 RandomIter) int {
 	return d
 }
 
-func (it StringIter) Less(it2 Any) bool {
+func (it StringIter) Less(it2 Iter) bool {
 	if it.backward {
 		return it.i > it2.(StringIter).i
 	}
@@ -109,19 +111,11 @@ func (si *StringBuilderInserter) Write(x Any) {
 	}
 }
 
-func (si *StringBuilderInserter) Next() ForwardIter {
-	return si
-}
-
-func (si *StringBuilderInserter) Eq(Any) bool {
-	return false
-}
-
 // MakeString creates a string by range spesified by [first, last). The value
 // type should be byte or rune.
 func MakeString(first, last ForwardReader) string {
 	var s strings.Builder
-	for ; _ne(first, last); first = NextReader(first) {
+	for ; _ne(first, last); first = NextForwardReader(first) {
 		switch v := first.Read().(type) {
 		case byte:
 			s.WriteByte(v)

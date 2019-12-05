@@ -36,11 +36,13 @@ func ListREnd(l *list.List) *ListIter {
 	}
 }
 
-func (l *ListIter) Eq(x Any) bool {
+func (l *ListIter) Eq(x Iter) bool {
 	return l.e == x.(*ListIter).e
 }
 
-func (l *ListIter) Next() ForwardIter {
+func (l *ListIter) AllowMultiplePass() {}
+
+func (l *ListIter) Next() Incrementable {
 	var e *list.Element
 	if l.backward {
 		e = l.e.Prev()
@@ -81,21 +83,12 @@ func (l *ListIter) Write(x Any) {
 	l.e.Value = x
 }
 
-func ListBackInserter(l *list.List) ForwardWriter {
+func ListBackInserter(l *list.List) OutputIter {
 	return &listBackInserter{l: l}
 }
 
 type listBackInserter struct {
 	l *list.List
-}
-
-func (li *listBackInserter) Eq(x Any) bool {
-	l, ok := x.(*listBackInserter)
-	return ok && l != nil && l.l == li.l
-}
-
-func (li *listBackInserter) Next() ForwardIter {
-	return li
 }
 
 func (li *listBackInserter) Write(x Any) {
@@ -105,15 +98,6 @@ func (li *listBackInserter) Write(x Any) {
 type listInserter struct {
 	l *list.List
 	e *list.Element
-}
-
-func (li *listInserter) Eq(x Any) bool {
-	l, ok := x.(*listInserter)
-	return ok && l != nil && l.e == li.e
-}
-
-func (li *listInserter) Next() ForwardIter {
-	return li
 }
 
 func (li *listInserter) Write(x Any) {

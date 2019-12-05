@@ -66,18 +66,20 @@ func (it SliceIter) Write(v Any) {
 	it.s.Index(it.i).Set(reflect.ValueOf(v))
 }
 
-func (it SliceIter) Eq(it2 Any) bool {
+func (it SliceIter) Eq(it2 Iter) bool {
 	return it.i == it2.(SliceIter).i
 }
 
-func (it SliceIter) Less(it2 Any) bool {
+func (it SliceIter) AllowMultiplePass() {}
+
+func (it SliceIter) Less(it2 Iter) bool {
 	if it.backward {
 		return it.i > it2.(SliceIter).i
 	}
 	return it.i < it2.(SliceIter).i
 }
 
-func (it SliceIter) Next() ForwardIter {
+func (it SliceIter) Next() Incrementable {
 	return it.AdvanceN(1)
 }
 
@@ -108,18 +110,10 @@ type sliceBackInserter struct {
 	s reflect.Value
 }
 
-func SliceBackInserter(s interface{}) ForwardWriter {
+func SliceBackInserter(s interface{}) OutputIter {
 	return &sliceBackInserter{
 		s: reflect.ValueOf(s).Elem(),
 	}
-}
-
-func (bi *sliceBackInserter) Eq(Any) bool {
-	return false
-}
-
-func (bi *sliceBackInserter) Next() ForwardIter {
-	return bi
 }
 
 func (bi *sliceBackInserter) Write(x Any) {
