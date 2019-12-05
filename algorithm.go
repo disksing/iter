@@ -28,7 +28,7 @@ func NoneOf(first, last InputIter, pred UnaryPredicate) bool {
 // iterator in the range [first, last), in order.
 func ForEach(first, last InputIter, f IteratorFunction) IteratorFunction {
 	for ; _ne(first, last); first = NextInput(first) {
-		f(first)
+		f(first.Read())
 	}
 	return f
 }
@@ -37,7 +37,7 @@ func ForEach(first, last InputIter, f IteratorFunction) IteratorFunction {
 // iterator in the range [first, first + n), in order.
 func ForEachN(first InputIter, n int, f IteratorFunction) IteratorFunction {
 	for ; n > 0; n, first = n-1, NextInput(first) {
-		f(first)
+		f(first.Read())
 	}
 	return f
 }

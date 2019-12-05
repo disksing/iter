@@ -2,69 +2,6 @@ package iter
 
 import "reflect"
 
-// Any represents any type.
-type Any interface{}
-
-func _eq(x, y Any) bool {
-	type ieq interface{ Eq(Any) bool }
-	if e, ok := x.(ieq); ok {
-		return e.Eq(y)
-	}
-	return x == y
-}
-
-func _ne(x, y Any) bool {
-	return !_eq(x, y)
-}
-
-func _less(x, y Any) bool {
-	type iless interface{ Less(Any) bool }
-	if c, ok := x.(iless); ok {
-		return c.Less(y)
-	}
-	return _cmp(x, y) == -1
-}
-
-func _cmp(x, y Any) int {
-	type icmp interface{ Cmp(Any) int }
-	if t, ok := x.(icmp); ok {
-		return t.Cmp(y)
-	}
-	return reflectCompare(x, y)
-}
-
-func _inc(x Any) Any {
-	type iinc interface{ Inc() Any }
-	if i, ok := x.(iinc); ok {
-		return i.Inc()
-	}
-	return reflectInc(x)
-}
-
-func _add(x, y Any) Any {
-	type iadd interface{ Add(Any) Any }
-	if a, ok := x.(iadd); ok {
-		return a.Add(y)
-	}
-	return reflectAdd(x, y)
-}
-
-func _sub(x, y Any) Any {
-	type isub interface{ Sub(Any) Any }
-	if s, ok := x.(isub); ok {
-		return s.Sub(y)
-	}
-	return reflectSub(x, y)
-}
-
-func _mul(x, y Any) Any {
-	type imul interface{ Mul(Any) Any }
-	if m, ok := x.(imul); ok {
-		return m.Mul(y)
-	}
-	return reflectMul(x, y)
-}
-
 // Borrow from https://github.com/stretchr/testify/blob/master/assert/assertion_order.go
 func reflectCompare(obj1, obj2 Any) int {
 	k1 := reflect.ValueOf(obj1).Kind()

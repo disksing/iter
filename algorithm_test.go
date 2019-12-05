@@ -106,7 +106,7 @@ func TestForEach(t *testing.T) {
 	assert := assert.New(t)
 	a := randIntSlice()
 	var b []int
-	f := func(x Iter) { b = append(b, x.(Reader).Read().(int)) }
+	f := func(x Any) { b = append(b, x.(int)) }
 	ForEach(begin(a), end(a), f)
 	sliceEqual(assert, a, b)
 	n := r.Intn(len(a) + 1)
@@ -119,7 +119,7 @@ func TestCount(t *testing.T) {
 	assert := assert.New(t)
 	a := randIntSlice()
 	count := make([]int, randN)
-	ForEach(begin(a), end(a), func(x Iter) { count[x.(Reader).Read().(int)]++ })
+	ForEach(begin(a), end(a), func(x Any) { count[x.(int)]++ })
 	for i := 0; i < 100; i++ {
 		assert.Equal(Count(begin(a), end(a), i), count[i])
 	}
@@ -746,9 +746,9 @@ func TestSet(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randIntSlice(), randIntSlice()
 	countA := make([]int, randN)
-	ForEach(begin(a), end(a), func(x Iter) { countA[x.(Reader).Read().(int)]++ })
+	ForEach(begin(a), end(a), func(x Any) { countA[x.(int)]++ })
 	countB := make([]int, randN)
-	ForEach(begin(b), end(b), func(x Iter) { countB[x.(Reader).Read().(int)]++ })
+	ForEach(begin(b), end(b), func(x Any) { countB[x.(int)]++ })
 	Sort(begin(a), end(a))
 	Sort(begin(b), end(b))
 	assert.Equal(
@@ -1051,8 +1051,8 @@ func TestAccumulate(t *testing.T) {
 	a := randIntSlice()
 	sum := Accumulate(begin(a), end(a), 0)
 	sum2 := 0
-	ForEach(begin(a), end(a), func(it Iter) {
-		sum2 += it.(Reader).Read().(int)
+	ForEach(begin(a), end(a), func(it Any) {
+		sum2 += it.(int)
 	})
 	assert.New(t).Equal(sum, sum2)
 }
