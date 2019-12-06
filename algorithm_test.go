@@ -38,13 +38,6 @@ func randString() string {
 	return bs.String()
 }
 
-var (
-	begin    = SliceBegin
-	end      = SliceEnd
-	strBegin = StringBegin
-	strEnd   = StringEnd
-)
-
 func sliceEqual(assert *assert.Assertions, a, b []int) {
 	if len(a) == 0 && len(b) == 0 {
 		return
@@ -174,8 +167,8 @@ func TestFindFirstOf(t *testing.T) {
 		i = len(a)
 	}
 	assert.New(t).True(_eq(
-		FindFirstOf(strBegin(a), strEnd(a), strBegin(b), strEnd(b)),
-		AdvanceN(strBegin(a), i),
+		FindFirstOf(sBegin(a), sEnd(a), sBegin(b), sEnd(b)),
+		AdvanceN(sBegin(a), i),
 	))
 }
 
@@ -201,8 +194,8 @@ func TestSearch(t *testing.T) {
 		i = len(a)
 	}
 	assert.New(t).True(_eq(
-		Search(strBegin(a), strEnd(a), strBegin(b), strEnd(b)),
-		AdvanceN(strBegin(a), i),
+		Search(sBegin(a), sEnd(a), sBegin(b), sEnd(b)),
+		AdvanceN(sBegin(a), i),
 	))
 }
 
@@ -216,8 +209,8 @@ func TestSearchN(t *testing.T) {
 		i = len(a)
 	}
 	assert.New(t).True(_eq(
-		SearchN(strBegin(a), strEnd(a), n, c),
-		AdvanceN(strBegin(a), i),
+		SearchN(sBegin(a), sEnd(a), n, c),
+		AdvanceN(sBegin(a), i),
 	))
 }
 
@@ -485,7 +478,7 @@ func TestSampleReservoir(t *testing.T) {
 	b := list.New()
 	Copy(begin(a), end(a), ListBackInserter(b))
 	c := make([]int, n)
-	Sample(ListBegin(b), ListEnd(b), begin(c), n, r)
+	Sample(lBegin(b), lEnd(b), begin(c), n, r)
 	count := make([]int, randN)
 	for _, x := range a {
 		count[x]++
@@ -949,9 +942,9 @@ func TestEqual(t *testing.T) {
 	if len(a) > len(b) {
 		a, b = b, a
 	}
-	assert.Equal(Equal(strBegin(a), strEnd(a), strBegin(b), nil), a == b[:len(a)])
+	assert.Equal(Equal(sBegin(a), sEnd(a), sBegin(b), nil), a == b[:len(a)])
 	a, b = randString(), randString()
-	assert.Equal(Equal(strBegin(a), strEnd(a), strBegin(b), strEnd(b)), a == b)
+	assert.Equal(Equal(sBegin(a), sEnd(a), sBegin(b), sEnd(b)), a == b)
 }
 
 func TestCompare(t *testing.T) {
@@ -960,7 +953,7 @@ func TestCompare(t *testing.T) {
 	if randInt() == 0 {
 		b = a
 	}
-	x, y, z, w := strBegin(a), strEnd(a), strBegin(b), strEnd(b)
+	x, y, z, w := sBegin(a), sEnd(a), sBegin(b), sEnd(b)
 	if a == b {
 		assert.True(Equal(x, y, z, w))
 		assert.False(LexicographicalCompare(x, y, z, w))

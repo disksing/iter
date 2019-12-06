@@ -15,7 +15,7 @@ func TestSliceIterator(t *testing.T) {
 
 	assert := assert.New(t)
 	a := make([]int, 100)
-	b := SliceBegin(a)
+	b := begin(a)
 	b.AllowMultiplePass()
 	assert.Implements((*ReadWriter)(nil), b)
 	assert.Implements((*InputIter)(nil), b)
@@ -61,7 +61,7 @@ func TestSliceIterator(t *testing.T) {
 	assert.True(NextRandomReadWriter(rb).Eq(rb1))
 	assert.True(PrevRandomReadWriter(rb1).Eq(rb))
 
-	e := SliceEnd(a)
+	e := end(a)
 	assert.True(AdvanceN(b, 100).(ForwardIter).Eq(e))
 	assert.True(AdvanceN(e, -100).(ForwardIter).Eq(b))
 	assert.Equal(Distance(b, e), 100)
@@ -83,7 +83,7 @@ func TestSliceIterator(t *testing.T) {
 }
 
 func listEq(assert *assert.Assertions, lst *list.List, v ...Any) {
-	assert.True(Equal(ListBegin(lst), ListEnd(lst), begin(v), end(v)))
+	assert.True(Equal(lBegin(lst), lEnd(lst), begin(v), end(v)))
 }
 
 func TestListIterator(t *testing.T) {
@@ -95,7 +95,7 @@ func TestListIterator(t *testing.T) {
 	GenerateN(ListBackInserter(lst), 3, IotaGenerator(1))
 	listEq(assert, lst, 1, 2, 3)
 
-	b := ListBegin(lst)
+	b := lBegin(lst)
 	assert.Implements((*ReadWriter)(nil), b)
 	assert.Implements((*InputIter)(nil), b)
 	assert.Implements((*OutputIter)(nil), b)
@@ -120,11 +120,11 @@ func TestListIterator(t *testing.T) {
 	assert.Equal(rb1.Read(), 2)
 	assert.True(_eq(rb.Next(), rb1))
 	assert.True(_eq(rb1.Prev(), rb))
-	assert.True(ListEnd(lst).Prev().Prev().Eq(b1))
+	assert.True(lEnd(lst).Prev().Prev().Eq(b1))
 	assert.Equal(ListREnd(lst).Prev().(Reader).Read(), 1)
 
-	assert.True(AdvanceN(b, 3).(BidiReader).Eq(ListEnd(lst)))
-	assert.True(AdvanceN(ListEnd(lst), -3).(BidiReader).Eq(b))
+	assert.True(AdvanceN(b, 3).(BidiReader).Eq(lEnd(lst)))
+	assert.True(AdvanceN(lEnd(lst), -3).(BidiReader).Eq(b))
 
 	b.Write(2)
 	listEq(assert, lst, 2, 2, 3)
@@ -139,16 +139,16 @@ func TestStringIterator(t *testing.T) {
 	s := "abcdefg"
 	assert.Equal(MakeString(StringRBegin(s), StringREnd(s)), "gfedcba")
 
-	StringBegin(s).AllowMultiplePass()
+	sBegin(s).AllowMultiplePass()
 
-	assert.Contains(fmt.Sprint(StringBegin(s)), "->")
+	assert.Contains(fmt.Sprint(sBegin(s)), "->")
 	assert.Contains(fmt.Sprint(StringRBegin(s)), "<-")
 
-	assert.Equal(PrevBidiReader(StringEnd(s)).Read(), byte('g'))
+	assert.Equal(PrevBidiReader(sEnd(s)).Read(), byte('g'))
 	assert.Equal(PrevBidiReader(StringREnd(s)).Read(), byte('a'))
 
 	assert.Equal(
-		AdvanceNReader(StringBegin(s), 3).Read(),
+		AdvanceNReader(sBegin(s), 3).Read(),
 		byte('d'),
 	)
 	assert.Equal(
@@ -156,7 +156,7 @@ func TestStringIterator(t *testing.T) {
 		byte('d'),
 	)
 	assert.Equal(
-		AdvanceNReader(StringEnd(s), -3).Read(),
+		AdvanceNReader(sEnd(s), -3).Read(),
 		byte('e'),
 	)
 	assert.Equal(
@@ -164,13 +164,13 @@ func TestStringIterator(t *testing.T) {
 		byte('c'),
 	)
 
-	assert.Equal(StringBegin(s).Distance(StringEnd(s)), len(s))
-	assert.Equal(StringEnd(s).Distance(StringBegin(s)), -len(s))
+	assert.Equal(sBegin(s).Distance(sEnd(s)), len(s))
+	assert.Equal(sEnd(s).Distance(sBegin(s)), -len(s))
 	assert.Equal(StringRBegin(s).Distance(StringREnd(s)), len(s))
 	assert.Equal(StringREnd(s).Distance(StringRBegin(s)), -len(s))
 
-	assert.True(StringBegin(s).Less(StringEnd(s)))
-	assert.False(StringEnd(s).Less(StringBegin(s)))
+	assert.True(sBegin(s).Less(sEnd(s)))
+	assert.False(sEnd(s).Less(sBegin(s)))
 	assert.True(StringRBegin(s).Less(StringREnd(s)))
 	assert.False(StringREnd(s).Less(StringRBegin(s)))
 }

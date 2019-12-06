@@ -72,9 +72,9 @@ func TestErase(t *testing.T) {
 
 	lst := list.New()
 	GenerateN(ListBackInserter(lst), 6, IotaGenerator(1))
-	Erase(lst, AdvanceN(ListBegin(lst), 1), AdvanceN(ListBegin(lst), 3))
+	Erase(lst, AdvanceN(lBegin(lst), 1), AdvanceN(lBegin(lst), 3))
 	listEq(assert, lst, 1, 4, 5, 6)
-	Erase(lst, AdvanceN(ListBegin(lst), 2))
+	Erase(lst, AdvanceN(lBegin(lst), 2))
 	listEq(assert, lst, 1, 4)
 	Erase(lst)
 	listEq(assert, lst)
