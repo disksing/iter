@@ -702,17 +702,40 @@ func TestSort(t *testing.T) {
 }
 
 func TestNthElement(t *testing.T) {
+	skipAfter(t, 1)
 	assert := assert.New(t)
-	l := 8 + r.Intn(8)
-	h := 1 + rand.Intn(3)
-	a := make([]int, l)
-	GenerateN(begin(a), l, func() Any { return r.Intn(h) })
-	a[0], a[l/2] = 0, 0
-	b := append(a[:0:0], a...)
-	sort.Ints(b)
-	n := r.Intn(len(b)) + 1
-	NthElement(begin(a), AdvanceNReadWriter(begin(a), n-1), end(a))
-	assert.Equal(a[n-1], b[n-1])
+
+	cases := []string{
+		"",
+		"a",
+		"aaaaaaaaa",
+		"aaaaaaaaX",
+		"baaaaaaaX",
+		"baaaXaaaa",
+		"abcamaaaz",
+		"abcdefghi",
+		"acccmxccz",
+		"mmmmmmmcz",
+		"aaabaaaaa",
+		"aaaaaaaba",
+		"aaabaaabaaa",
+		"aaabaaabbaa",
+	}
+	for _, c := range cases {
+		a := make([]int, 0, len(c))
+		for _, x := range c {
+			a = append(a, int(x))
+		}
+		s := append(a[:0:0], a...)
+		sort.Ints(s)
+		for i := 0; i <= len(a); i++ {
+			b := append(a[:0:0], a...)
+			NthElement(begin(b), AdvanceNReadWriter(begin(b), i), end(b))
+			if i < len(a) {
+				assert.Equal(b[i], s[i])
+			}
+		}
+	}
 }
 
 func TestMerge(t *testing.T) {

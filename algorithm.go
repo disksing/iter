@@ -1088,7 +1088,7 @@ Restart:
 						for !less(first.Read(), i.Read()) {
 							i = NextRandomReadWriter(i)
 						}
-						for j = PrevRandomReadWriter(j); less(first, j); j = PrevRandomReadWriter(j) {
+						for j = PrevRandomReadWriter(j); less(first.Read(), j.Read()); j = PrevRandomReadWriter(j) {
 						}
 						// 000000>+++++0++
 						// f     i     j  l
