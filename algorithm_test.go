@@ -1099,3 +1099,66 @@ func TestPartialSum(t *testing.T) {
 	TransformInclusiveScan(begin(a), end(a), begin(g), 4, func(x Any) Any { return x.(int) * x.(int) })
 	sliceEqual(assert, g, inct)
 }
+
+type dummyObj struct {
+	s string
+}
+
+func (obj dummyObj) Eq(x Any) bool {
+	return len(obj.s) == len(x.(dummyObj).s)
+}
+
+func (obj dummyObj) Less(x Any) bool {
+	return len(obj.s) < len(x.(dummyObj).s)
+}
+
+func (obj dummyObj) Cmp(x Any) int {
+	if obj.Eq(x) {
+		return 0
+	}
+	if obj.Less(x) {
+		return -1
+	}
+	return 1
+}
+
+func (obj dummyObj) Inc() Any {
+	return dummyObj{s: obj.s + "a"}
+}
+
+func (obj dummyObj) Add(x Any) Any {
+	return dummyObj{s: obj.s + x.(dummyObj).s}
+}
+
+func (obj dummyObj) Sub(x Any) Any {
+	return dummyObj{s: obj.s[:len(obj.s)-len(x.(dummyObj).s)]}
+}
+
+func (obj dummyObj) Mul(x Any) Any {
+	return dummyObj{s: strings.Repeat(obj.s, len(x.(dummyObj).s))}
+}
+
+func TestCustomType(t *testing.T) {
+	skipAfter(t, 1)
+	assert := assert.New(t)
+
+	a, b, c := []dummyObj{{"abc"}}, []dummyObj{{"xxxx"}}, []dummyObj{{"xyz"}}
+	// _eq
+	assert.False(Equal(begin(a), end(a), begin(b), nil))
+	assert.True(Equal(begin(a), end(a), begin(c), nil))
+	// _cmp
+	assert.Equal(LexicographicalCompareThreeWay(begin(a), end(a), begin(b), end(b)), -1)
+	assert.Equal(LexicographicalCompareThreeWay(begin(a), end(a), begin(c), end(c)), 0)
+	// _inc
+	d := make([]dummyObj, 2)
+	Iota(begin(d), end(d), a[0])
+	assert.True(Equal(begin(b), end(b), begin(d[1:]), nil))
+	// _add
+	assert.True(Accumulate(begin(d), end(d), dummyObj{""}).(dummyObj).Eq(dummyObj{"1234567"}))
+	// _sub
+	e := make([]dummyObj, 2)
+	AdjacentDifference(begin(d), end(d), begin(e))
+	assert.True(e[1].Eq(dummyObj{"b"}))
+	// _mul
+	assert.True(InnerProduct(begin(d), end(d), begin(e), dummyObj{}).(dummyObj).Eq(dummyObj{strings.Repeat("x", 13)}))
+}
