@@ -10,6 +10,14 @@ import (
 	. "github.com/disksing/iter"
 )
 
+// Reverse a string.
+func ExampleMakeString() {
+	s := "!dlrow olleH"
+	fmt.Println(MakeString(StringRBegin(s), StringREnd(s)))
+	// Output:
+	// Hello world!
+}
+
 // Print all list items to console.
 func ExampleIOWriter() {
 	l := list.New()
@@ -35,8 +43,7 @@ func ExampleChanReader() {
 func ExampleUniqueCopyIf() {
 	str := "  a  quick   brown  fox    jumps  over the   lazy dog.  "
 	var sb StringBuilderInserter
-	UniqueCopyIf(StringBegin(str), StringEnd(str),
-		&sb,
+	UniqueCopyIf(StringBegin(str), StringEnd(str), &sb,
 		func(x, y Any) bool { return x.(byte) == ' ' && y.(byte) == ' ' })
 	fmt.Println(sb.String())
 	// Output:
@@ -54,10 +61,24 @@ func ExamplePartialSortCopyBy() {
 		close(ch)
 	}()
 	top := make([]int, 5)
-	PartialSortCopyBy(ChanReader(ch), ChanEOF,
-		SliceBegin(top), SliceEnd(top),
+	PartialSortCopyBy(ChanReader(ch), ChanEOF, SliceBegin(top), SliceEnd(top),
 		func(x, y Any) bool { return x.(int) > y.(int) })
 	Copy(SliceBegin(top), SliceEnd(top), IOWriter(os.Stdout, ", "))
 	// Output:
 	// 100, 99, 98, 97, 96
+}
+
+// Print all permutations of ["a", "b", "c"].
+func ExampleNextPermutation() {
+	s := []string{"a", "b", "c"}
+	for ok := true; ok; ok = NextPermutation(SliceBegin(s), SliceEnd(s)) {
+		fmt.Println(s)
+	}
+	// Output:
+	// [a b c]
+	// [a c b]
+	// [b a c]
+	// [b c a]
+	// [c a b]
+	// [c b a]
 }
