@@ -179,7 +179,7 @@ func (l listIter) Next() Incrementable {
 	} else {
 		e = l.e.Next()
 	}
-	return &listIter{
+	return listIter{
 		l:        l.l,
 		e:        e,
 		backward: l.backward,
@@ -198,7 +198,7 @@ func (l listIter) Prev() BidiIter {
 	case l.e != nil && !l.backward:
 		e = l.e.Prev()
 	}
-	return &listIter{
+	return listIter{
 		l:        l.l,
 		e:        e,
 		backward: l.backward,
@@ -337,18 +337,24 @@ func (it stringIter) Less(it2 Iter) bool {
 // StringBuilderInserter is an OutputIter that wraps a strings.Builder.
 type StringBuilderInserter struct {
 	strings.Builder
+	Delimiter string
 }
 
 func (si *StringBuilderInserter) Write(x Any) {
+	if si.Builder.Len() > 0 && si.Delimiter != "" {
+		si.Builder.WriteString(si.Delimiter)
+	}
 	switch v := x.(type) {
 	case byte:
 		si.Builder.WriteByte(v)
 	case rune:
 		si.Builder.WriteRune(v)
+	case []byte:
+		si.Builder.Write(v)
 	case string:
 		si.Builder.WriteString(v)
 	default:
-		panic("unknown item type")
+		si.Builder.WriteString(fmt.Sprint(x))
 	}
 }
 
@@ -365,59 +371,63 @@ func (e eof) Next() Incrementable { return e }
 
 func (e eof) Read() Any { return nil }
 
-// EOF is a sentinel iterator to terminate iterations.
-var EOF Iter = eof(0)
+// ChanEOF is a sentinel iterator to terminate chan reader.
+var ChanEOF InputIter = eof(0)
 
-type chanWrapper struct {
+type chanReader struct {
 	ch    reflect.Value
 	cur   interface{}
 	read1 bool
 	eof   bool
 }
 
-func (cw *chanWrapper) Write(x Any) {
-	cw.ch.Send(reflect.ValueOf(x))
+func (cr *chanReader) recv() {
+	v, ok := cr.ch.Recv()
+	cr.cur, cr.read1, cr.eof = v.Interface(), true, !ok
 }
 
-func (cw *chanWrapper) recv() {
-	v, ok := cw.ch.Recv()
-	cw.cur, cw.read1, cw.eof = v, true, !ok
+func (cr *chanReader) Read() Any {
+	if !cr.read1 {
+		cr.recv()
+	}
+	return cr.cur
 }
 
-func (cw *chanWrapper) Read() Any {
-	if !cw.read1 {
-		cw.recv()
+func (cr *chanReader) Next() Incrementable {
+	if !cr.read1 {
+		cr.recv()
 	}
-	return cw.cur
+	if !cr.eof {
+		cr.recv()
+	}
+	return cr
 }
 
-func (cw *chanWrapper) Next() Incrementable {
-	if !cw.read1 {
-		cw.recv()
+func (cr *chanReader) Eq(x Any) bool {
+	if !cr.read1 {
+		cr.recv()
 	}
-	if !cw.eof {
-		cw.recv()
-	}
-	return cw
+	return cr.eof && x == ChanEOF
 }
 
-func (cw *chanWrapper) Eq(x Any) bool {
-	if !cw.read1 {
-		cw.recv()
-	}
-	return cw.eof && x == EOF
+type chanWriter struct {
+	ch reflect.Value
+}
+
+func (cr *chanWriter) Write(x Any) {
+	cr.ch.Send(reflect.ValueOf(x))
 }
 
 // ChanReader returns an InputIter that reads from a channel.
 func ChanReader(c interface{}) InputIter {
-	return &chanWrapper{
+	return &chanReader{
 		ch: reflect.ValueOf(c),
 	}
 }
 
 // ChanWriter returns an OutIter that writes to a channel.
 func ChanWriter(c interface{}) OutputIter {
-	return &chanWrapper{
+	return &chanWriter{
 		ch: reflect.ValueOf(c),
 	}
 }

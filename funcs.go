@@ -17,7 +17,7 @@ type (
 	IteratorFunction func(Any)
 	// UnaryOperation transforms a value to another.
 	UnaryOperation func(Any) Any
-	// BinaryOperation trasnfoms 2 values to 1 value.
+	// BinaryOperation transforms 2 values to 1 value.
 	BinaryOperation func(Any, Any) Any
 	// Generator creates a value on each call.
 	Generator func() Any
@@ -96,4 +96,4 @@ func _not1(p UnaryPredicate) UnaryPredicate {
 
 func _true1(Any) bool { return true }
 
-func _notrans(x Any) Any { return x }
+func _noop(x Any) Any { return x }

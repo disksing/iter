@@ -2012,14 +2012,14 @@ func IotaBy(first, last ForwardWriter, v Any, inc UnaryOperation) {
 
 // Accumulate computes the sum of the given value v and the elements in the
 // range [first, last), using v+=x or v=v.Add(x).
-func Accumulate(first, last ForwardReader, v Any) Any {
+func Accumulate(first, last InputIter, v Any) Any {
 	return AccumulateBy(first, last, v, _add)
 }
 
 // AccumulateBy computes the sum of the given value v and the elements in the
 // range [first, last), using v=add(v,x).
-func AccumulateBy(first, last ForwardReader, v Any, add BinaryOperation) Any {
-	for ; _ne(first, last); first = NextForwardReader(first) {
+func AccumulateBy(first, last InputIter, v Any, add BinaryOperation) Any {
+	for ; _ne(first, last); first = NextInput(first) {
 		v = add(v, first.Read())
 	}
 	return v
@@ -2028,15 +2028,15 @@ func AccumulateBy(first, last ForwardReader, v Any, add BinaryOperation) Any {
 // InnerProduct computes inner product (i.e. sum of products) or performs
 // ordered map/reduce operation on the range [first1, last1), using v=v+x*y or
 // v=v.Add(x.Mul(y)).
-func InnerProduct(first1, last1, first2 ForwardReader, v Any) Any {
+func InnerProduct(first1, last1, first2 InputIter, v Any) Any {
 	return InnerProductBy(first1, last1, first2, v, _add, _mul)
 }
 
 // InnerProductBy computes inner product (i.e. sum of products) or performs
 // ordered map/reduce operation on the range [first1, last1), using
 // v=add(v,mul(x,y)).
-func InnerProductBy(first1, last1, first2 ForwardReader, v Any, add, mul BinaryOperation) Any {
-	for ; _ne(first1, last1); first1, first2 = NextForwardReader(first1), NextForwardReader(first2) {
+func InnerProductBy(first1, last1, first2 InputIter, v Any, add, mul BinaryOperation) Any {
+	for ; _ne(first1, last1); first1, first2 = NextInput(first1), NextInput(first2) {
 		v = add(v, mul(first1.Read(), first2.Read()))
 	}
 	return v
@@ -2046,7 +2046,7 @@ func InnerProductBy(first1, last1, first2 ForwardReader, v Any, add, mul BinaryO
 // of each adjacent pair of elements of the range [first, last) and writes them
 // to the range beginning at dFirst + 1. An unmodified copy of first is
 // written to dFirst. Differences are calculated by cur-prev or cur.Sub(prev).
-func AdjacentDifference(first, last ForwardReader, dFirst OutputIter) OutputIter {
+func AdjacentDifference(first, last InputIter, dFirst OutputIter) OutputIter {
 	return AdjacentDifferenceBy(first, last, dFirst, _sub)
 }
 
@@ -2054,13 +2054,13 @@ func AdjacentDifference(first, last ForwardReader, dFirst OutputIter) OutputIter
 // first of each adjacent pair of elements of the range [first, last) and writes
 // them to the range beginning at dFirst + 1. An unmodified copy of first is
 // written to dFirst. Differences are calculated by sub(cur,prev).
-func AdjacentDifferenceBy(first, last ForwardReader, dFirst OutputIter, sub BinaryOperation) OutputIter {
+func AdjacentDifferenceBy(first, last InputIter, dFirst OutputIter, sub BinaryOperation) OutputIter {
 	if _eq(first, last) {
 		return dFirst
 	}
 	prev := first.Read()
 	dFirst = _writeNext(dFirst, prev)
-	for first = NextForwardReader(first); _ne(first, last); first = NextForwardReader(first) {
+	for first = NextInput(first); _ne(first, last); first = NextInput(first) {
 		cur := first.Read()
 		dFirst = _writeNext(dFirst, sub(cur, prev))
 		prev = cur
@@ -2071,20 +2071,20 @@ func AdjacentDifferenceBy(first, last ForwardReader, dFirst OutputIter, sub Bina
 // PartialSum computes the partial sums of the elements in the subranges of the
 // range [first, last) and writes them to the range beginning at dFirst. Sums
 // are calculated by sum=sum+cur or sum=sum.Add(cur).
-func PartialSum(first, last ForwardReader, dFirst OutputIter) OutputIter {
+func PartialSum(first, last InputIter, dFirst OutputIter) OutputIter {
 	return PartialSumBy(first, last, dFirst, _add)
 }
 
 // PartialSumBy computes the partial sums of the elements in the subranges of
 // the range [first, last) and writes them to the range beginning at dFirst.
 // Sums are calculated by sum=add(sum,cur).
-func PartialSumBy(first, last ForwardReader, dFirst OutputIter, add BinaryOperation) OutputIter {
+func PartialSumBy(first, last InputIter, dFirst OutputIter, add BinaryOperation) OutputIter {
 	if _eq(first, last) {
 		return dFirst
 	}
 	sum := first.Read()
 	dFirst = _writeNext(dFirst, sum)
-	for first = NextForwardReader(first); _ne(first, last); first = NextForwardReader(first) {
+	for first = NextInput(first); _ne(first, last); first = NextInput(first) {
 		sum = add(sum, first.Read())
 		dFirst = _writeNext(dFirst, sum)
 	}
@@ -2095,7 +2095,7 @@ func PartialSumBy(first, last ForwardReader, dFirst OutputIter, add BinaryOperat
 // v=v.Add(cur) for the range [first, last), using v as the initial value, and
 // writes the results to the range beginning at dFirst. "exclusive" means that
 // the i-th input element is not included in the i-th sum.
-func ExclusiveScan(first, last ForwardReader, dFirst OutputIter, v Any) OutputIter {
+func ExclusiveScan(first, last InputIter, dFirst OutputIter, v Any) OutputIter {
 	return ExclusiveScanBy(first, last, dFirst, v, _add)
 }
 
@@ -2103,15 +2103,15 @@ func ExclusiveScan(first, last ForwardReader, dFirst OutputIter, v Any) OutputIt
 // for the range [first, last), using v as the initial value, and writes the
 // results to the range beginning at dFirst. "exclusive" means that the i-th
 // input element is not included in the i-th sum.
-func ExclusiveScanBy(first, last ForwardReader, dFirst OutputIter, v Any, add BinaryOperation) OutputIter {
-	return TransformExclusiveScanBy(first, last, dFirst, v, add, _notrans)
+func ExclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, add BinaryOperation) OutputIter {
+	return TransformExclusiveScanBy(first, last, dFirst, v, add, _noop)
 }
 
 // InclusiveScan computes an inclusive prefix sum operation using v=v+cur or
 // v=v.Add(cur) for the range [first, last), using v as the initial value (if
 // provided), and writes the results to the range beginning at dFirst.
 // "inclusive" means that the i-th input element is included in the i-th sum.
-func InclusiveScan(first, last ForwardReader, dFirst OutputIter, v Any) OutputIter {
+func InclusiveScan(first, last InputIter, dFirst OutputIter, v Any) OutputIter {
 	return InclusiveScanBy(first, last, dFirst, v, _add)
 }
 
@@ -2119,8 +2119,8 @@ func InclusiveScan(first, last ForwardReader, dFirst OutputIter, v Any) OutputIt
 // for the range [first, last), using v as the initial value (if provided), and
 // writes the results to the range beginning at dFirst. "inclusive" means that
 // the i-th input element is included in the i-th sum.
-func InclusiveScanBy(first, last ForwardReader, dFirst OutputIter, v Any, add BinaryOperation) OutputIter {
-	return TransformInclusiveScanBy(first, last, dFirst, v, add, _notrans)
+func InclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, add BinaryOperation) OutputIter {
+	return TransformInclusiveScanBy(first, last, dFirst, v, add, _noop)
 }
 
 // TransformExclusiveScan transforms each element in the range [first, last)
@@ -2128,7 +2128,7 @@ func InclusiveScanBy(first, last ForwardReader, dFirst OutputIter, v Any, add Bi
 // v=v.Add(cur) for the range [first, last), using v as the initial value, and
 // writes the results to the range beginning at dFirst. "exclusive" means that
 // the i-th input element is not included in the i-th sum.
-func TransformExclusiveScan(first, last ForwardReader, dFirst OutputIter, v Any, op UnaryOperation) OutputIter {
+func TransformExclusiveScan(first, last InputIter, dFirst OutputIter, v Any, op UnaryOperation) OutputIter {
 	return TransformExclusiveScanBy(first, last, dFirst, v, _add, op)
 }
 
@@ -2137,7 +2137,7 @@ func TransformExclusiveScan(first, last ForwardReader, dFirst OutputIter, v Any,
 // for the range [first, last), using v as the initial value, and writes the
 // results to the range beginning at dFirst. "exclusive" means that the i-th
 // input element is not included in the i-th sum.
-func TransformExclusiveScanBy(first, last ForwardReader, dFirst OutputIter, v Any, add BinaryOperation, op UnaryOperation) OutputIter {
+func TransformExclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, add BinaryOperation, op UnaryOperation) OutputIter {
 	if _eq(first, last) {
 		return dFirst
 	}
@@ -2146,7 +2146,7 @@ func TransformExclusiveScanBy(first, last ForwardReader, dFirst OutputIter, v An
 		v = add(v, op(first.Read()))
 		dFirst = _writeNext(dFirst, saved)
 		saved = v
-		first = NextForwardReader(first)
+		first = NextInput(first)
 		if _eq(first, last) {
 			break
 		}
@@ -2159,7 +2159,7 @@ func TransformExclusiveScanBy(first, last ForwardReader, dFirst OutputIter, v An
 // v=v.Add(cur) for the range [first, last), using v as the initial value (if
 // provided), and writes the results to the range beginning at dFirst.
 // "inclusive" means that the i-th input element is included in the i-th sum.
-func TransformInclusiveScan(first, last ForwardReader, dFirst OutputIter, v Any, op UnaryOperation) OutputIter {
+func TransformInclusiveScan(first, last InputIter, dFirst OutputIter, v Any, op UnaryOperation) OutputIter {
 	return TransformInclusiveScanBy(first, last, dFirst, v, _add, op)
 }
 
@@ -2168,8 +2168,8 @@ func TransformInclusiveScan(first, last ForwardReader, dFirst OutputIter, v Any,
 // for the range [first, last), using v as the initial value (if provided), and
 // writes the results to the range beginning at dFirst. "inclusive" means that
 // the i-th input element is included in the i-th sum.
-func TransformInclusiveScanBy(first, last ForwardReader, dFirst OutputIter, v Any, add BinaryOperation, op UnaryOperation) OutputIter {
-	for ; _ne(first, last); first = NextForwardReader(first) {
+func TransformInclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, add BinaryOperation, op UnaryOperation) OutputIter {
+	for ; _ne(first, last); first = NextInput(first) {
 		v = add(v, op(first.Read()))
 		dFirst = _writeNext(dFirst, v)
 	}

@@ -1,6 +1,7 @@
 package iter
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -164,7 +165,7 @@ func reflectAdd(obj1, obj2 Any) Any {
 	k1 := reflect.ValueOf(obj1).Kind()
 	k2 := reflect.ValueOf(obj2).Kind()
 	if k2 != k1 {
-		panic("cannot add different types")
+		panic(fmt.Sprintf("cannot add different types: %v vs %v", k1, k2))
 	}
 	switch k1 {
 	case reflect.Int:

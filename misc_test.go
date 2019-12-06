@@ -14,6 +14,6 @@ func skipAfter(t *testing.T, count int) {
 
 var testCounter int32
 
-func TestTouchSkip(t *testing.T) {
+func TestTouchSkipCounter(t *testing.T) {
 	atomic.AddInt32(&testCounter, 1)
 }
