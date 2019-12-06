@@ -139,6 +139,8 @@ func TestStringIterator(t *testing.T) {
 	s := "abcdefg"
 	assert.Equal(MakeString(StringRBegin(s), StringREnd(s)), "gfedcba")
 
+	StringBegin(s).AllowMultiplePass()
+
 	assert.Contains(fmt.Sprint(StringBegin(s)), "->")
 	assert.Contains(fmt.Sprint(StringRBegin(s)), "<-")
 
