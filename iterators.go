@@ -3,7 +3,7 @@ package iter
 import (
 	"container/list"
 	"fmt"
-	"os"
+	"io"
 	"reflect"
 	"strings"
 )
@@ -433,15 +433,15 @@ func ChanWriter(c interface{}) OutputIter {
 	}
 }
 
-type fileWriter struct {
-	f         *os.File
+type ioWriter struct {
+	w         io.Writer
 	written   bool
-	delimiter string
+	delimiter []byte
 }
 
-func (w *fileWriter) Write(x Any) {
-	if w.written {
-		_, err := w.f.WriteString(w.delimiter)
+func (w *ioWriter) Write(x Any) {
+	if w.written && len(w.delimiter) > 0 {
+		_, err := w.w.Write(w.delimiter)
 		if err != nil {
 			panic(err)
 		}
@@ -449,14 +449,14 @@ func (w *fileWriter) Write(x Any) {
 		w.written = true
 	}
 
-	_, err := fmt.Fprint(w.f, x)
+	_, err := fmt.Fprint(w.w, x)
 	if err != nil {
 		panic(err)
 	}
 }
 
-// FileWriter returns an OutputIter that writes values to a File (or os.Stdin /
-// os.Stderr).
-func FileWriter(f *os.File, delimiter string) OutputIter {
-	return &fileWriter{f: f, delimiter: delimiter}
+// IOWriter returns an OutputIter that writes values to an io.Writer.
+// It panics if meet any error.
+func IOWriter(w io.Writer, delimiter string) OutputIter {
+	return &ioWriter{w: w, delimiter: []byte(delimiter)}
 }

@@ -11,10 +11,10 @@ import (
 )
 
 // Print all list items to console.
-func ExampleFileWriter() {
+func ExampleIOWriter() {
 	l := list.New()
 	GenerateN(ListBackInserter(l), 5, IotaGenerator(1))
-	Copy(ListBegin(l), ListEnd(l), FileWriter(os.Stdout, ", "))
+	Copy(ListBegin(l), ListEnd(l), IOWriter(os.Stdout, ", "))
 	// Output:
 	// 1, 2, 3, 4, 5
 }
@@ -57,7 +57,7 @@ func ExamplePartialSortCopyBy() {
 	PartialSortCopyBy(ChanReader(ch), ChanEOF,
 		SliceBegin(top), SliceEnd(top),
 		func(x, y Any) bool { return x.(int) > y.(int) })
-	Copy(SliceBegin(top), SliceEnd(top), FileWriter(os.Stdout, ", "))
+	Copy(SliceBegin(top), SliceEnd(top), IOWriter(os.Stdout, ", "))
 	// Output:
 	// 100, 99, 98, 97, 96
 }

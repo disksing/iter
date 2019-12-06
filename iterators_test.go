@@ -2,10 +2,10 @@ package iter_test
 
 import (
 	"container/list"
+	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/disksing/iter"
 	. "github.com/disksing/iter"
 	"github.com/stretchr/testify/assert"
 )
@@ -212,19 +212,19 @@ func TestChanIterator(t *testing.T) {
 		CopyN(IotaReader(1), 10, ChanWriter(ch))
 		close(ch)
 	}()
-	assert.Equal(Accumulate(ChanReader(ch), iter.ChanEOF, 0), 55)
+	assert.Equal(Accumulate(ChanReader(ch), ChanEOF, 0), 55)
 
 	ch = make(chan int)
 	close(ch)
-	assert.True(ChanReader(ch).Eq(iter.ChanEOF))
+	assert.True(ChanReader(ch).Eq(ChanEOF))
 
 	ch = make(chan int)
 	close(ch)
-	assert.True(iter.ChanEOF.Eq(ChanReader(ch)))
+	assert.True(ChanEOF.Eq(ChanReader(ch)))
 
-	assert.Nil(iter.ChanEOF.Read())
-	assert.Equal(iter.ChanEOF.Next(), iter.ChanEOF)
-	assert.True(iter.ChanEOF.Eq(iter.ChanEOF))
+	assert.Nil(ChanEOF.Read())
+	assert.Equal(ChanEOF.Next(), ChanEOF)
+	assert.True(ChanEOF.Eq(ChanEOF))
 
 	ch = make(chan int, 1)
 	ch <- 100
@@ -249,4 +249,26 @@ func TestChanIterator(t *testing.T) {
 	w := ChanWriter(ch)
 	assert.Panics(func() { AdvanceN(w, 1) })
 	assert.Panics(func() { Distance(w, ChanEOF) })
+}
+
+type dummyWriter struct {
+	tick int
+}
+
+func (w *dummyWriter) Write(b []byte) (int, error) {
+	w.tick--
+	if w.tick < 0 {
+		return 0, errors.New("boom!")
+	}
+	return len(b), nil
+}
+
+func TestIOWriterPanics(t *testing.T) {
+	assert := assert.New(t)
+	assert.Panics(func() {
+		CopyN(IotaReader(0), 10, IOWriter(&dummyWriter{}, ","))
+	})
+	assert.Panics(func() {
+		CopyN(IotaReader(0), 10, IOWriter(&dummyWriter{tick: 1}, ","))
+	})
 }
