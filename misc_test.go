@@ -2,7 +2,6 @@ package iter_test
 
 import (
 	"container/list"
-	"fmt"
 	"sync/atomic"
 	"testing"
 
@@ -76,7 +75,6 @@ func TestErase(t *testing.T) {
 	Erase(lst, AdvanceN(ListBegin(lst), 1), AdvanceN(ListBegin(lst), 3))
 	listEq(assert, lst, 1, 4, 5, 6)
 	Erase(lst, AdvanceN(ListBegin(lst), 2))
-	ForEach(ListBegin(lst), ListEnd(lst), func(x Any) { fmt.Println(x) })
 	listEq(assert, lst, 1, 4)
 	Erase(lst)
 	listEq(assert, lst)
