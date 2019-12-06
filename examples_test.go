@@ -35,12 +35,15 @@ func ExampleChanReader() {
 func ExampleUniqueCopyIf() {
 	str := "  a  quick   brown  fox    jumps  over the   lazy dog.  "
 	var sb StringBuilderInserter
-	UniqueCopyIf(StringBegin(str), StringEnd(str), &sb, func(x, y Any) bool { return x.(byte) == ' ' && y.(byte) == ' ' })
+	UniqueCopyIf(StringBegin(str), StringEnd(str),
+		&sb,
+		func(x, y Any) bool { return x.(byte) == ' ' && y.(byte) == ' ' })
 	fmt.Println(sb.String())
 	// Output:
 	// a quick brown fox jumps over the lazy dog.
 }
 
+// Collect N maximum elements from a channel.
 func ExamplePartialSortCopyBy() {
 	ch := make(chan int)
 	go func() {
@@ -51,7 +54,9 @@ func ExamplePartialSortCopyBy() {
 		close(ch)
 	}()
 	top := make([]int, 5)
-	PartialSortCopyBy(ChanReader(ch), ChanEOF, SliceBegin(top), SliceEnd(top), func(x, y Any) bool { return x.(int) > y.(int) })
+	PartialSortCopyBy(ChanReader(ch), ChanEOF,
+		SliceBegin(top), SliceEnd(top),
+		func(x, y Any) bool { return x.(int) > y.(int) })
 	Copy(SliceBegin(top), SliceEnd(top), FileWriter(os.Stdout, ", "))
 	// Output:
 	// 100, 99, 98, 97, 96
