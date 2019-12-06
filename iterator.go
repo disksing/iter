@@ -31,8 +31,8 @@ type InputIter interface {
 	Eq(Iter) bool
 }
 
-// NextInput moves an InputIter forward.
-func NextInput(it InputIter) InputIter {
+// NextInputIter moves an InputIter forward.
+func NextInputIter(it InputIter) InputIter {
 	return it.Next().(InputIter)
 }
 
@@ -74,6 +74,11 @@ type (
 		ReadWriter
 	}
 )
+
+// NextForwardIter moves a ForwardIter to next.
+func NextForwardIter(r ForwardIter) ForwardIter {
+	return r.Next().(ForwardIter)
+}
 
 // NextForwardReader moves a ForwardReader to next.
 func NextForwardReader(r ForwardReader) ForwardReader {
@@ -244,11 +249,18 @@ func Distance(first, last Iter) int {
 	if f, ok := first.(ForwardIter); ok {
 		if l, ok := last.(ForwardIter); ok {
 			var d int
-			for ; _ne(f, l); f = f.Next().(ForwardIter) {
+			for ; _ne(f, l); f = NextForwardIter(f) {
 				d++
 			}
 			return d
 		}
+	}
+	if i, ok := first.(InputIter); ok {
+		var d int
+		for ; _ne(i, last); i = NextInputIter(i) {
+			d++
+		}
+		return d
 	}
 	panic("cannot get distance")
 }
@@ -260,7 +272,13 @@ func AdvanceN(it Iter, n int) Iter {
 	}
 	if it2, ok := it.(ForwardIter); ok && n >= 0 {
 		for ; n > 0; n-- {
-			it2 = it2.Next().(ForwardIter)
+			it2 = NextForwardIter(it2)
+		}
+		return it2
+	}
+	if it2, ok := it.(InputIter); ok && n >= 0 {
+		for ; n > 0; n-- {
+			it2 = NextInputIter(it2)
 		}
 		return it2
 	}

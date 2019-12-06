@@ -27,7 +27,7 @@ func NoneOf(first, last InputIter, pred UnaryPredicate) bool {
 // ForEach applies the given function f to the result of dereferencing every
 // iterator in the range [first, last), in order.
 func ForEach(first, last InputIter, f IteratorFunction) IteratorFunction {
-	for ; _ne(first, last); first = NextInput(first) {
+	for ; _ne(first, last); first = NextInputIter(first) {
 		f(first.Read())
 	}
 	return f
@@ -36,7 +36,7 @@ func ForEach(first, last InputIter, f IteratorFunction) IteratorFunction {
 // ForEachN applies the given function f to the result of dereferencing every
 // iterator in the range [first, first + n), in order.
 func ForEachN(first InputIter, n int, f IteratorFunction) IteratorFunction {
-	for ; n > 0; n, first = n-1, NextInput(first) {
+	for ; n > 0; n, first = n-1, NextInputIter(first) {
 		f(first.Read())
 	}
 	return f
@@ -50,7 +50,7 @@ func Count(first, last InputIter, v Any) int {
 // CountIf counts elements for which predicate pred returns true.
 func CountIf(first, last InputIter, pred UnaryPredicate) int {
 	var ret int
-	for ; _ne(first, last); first = NextInput(first) {
+	for ; _ne(first, last); first = NextInputIter(first) {
 		if pred(first.Read()) {
 			ret++
 		}
@@ -73,7 +73,7 @@ func Mismatch(first1, last1, first2, last2 InputIter) (InputIter, InputIter) {
 // using the given comparer eq.
 func MismatchBy(first1, last1, first2, last2 InputIter, eq EqComparer) (InputIter, InputIter) {
 	for _ne(first1, last1) && (last2 == nil || _ne(first2, last2)) && eq(first1.Read(), first2.Read()) {
-		first1, first2 = NextInput(first1), NextInput(first2)
+		first1, first2 = NextInputIter(first1), NextInputIter(first2)
 	}
 	return first1, first2
 }
@@ -87,7 +87,7 @@ func Find(first, last InputIter, v Any) InputIter {
 // FindIf returns the first element in the range [first, last) which predicate
 // pred returns true.
 func FindIf(first, last InputIter, pred UnaryPredicate) InputIter {
-	for ; _ne(first, last); first = NextInput(first) {
+	for ; _ne(first, last); first = NextInputIter(first) {
 		if pred(first.Read()) {
 			return first
 		}
@@ -249,7 +249,7 @@ func Copy(first, last InputIter, dFirst OutputIter) OutputIter {
 // It returns an iterator in the destination range, pointing past the last
 // element copied.
 func CopyIf(first, last InputIter, dFirst OutputIter, pred UnaryPredicate) OutputIter {
-	for ; _ne(first, last); first = NextInput(first) {
+	for ; _ne(first, last); first = NextInputIter(first) {
 		if v := first.Read(); pred(v) {
 			dFirst = _writeNext(dFirst, v)
 		}
@@ -265,7 +265,7 @@ func CopyIf(first, last InputIter, dFirst OutputIter, pred UnaryPredicate) Outpu
 func CopyN(first InputIter, count int, dFirst OutputIter) OutputIter {
 	for ; count > 0; count-- {
 		dFirst = _writeNext(dFirst, first.Read())
-		first = NextInput(first)
+		first = NextInputIter(first)
 	}
 	return dFirst
 }
@@ -304,7 +304,7 @@ func FillN(dFirst OutputIter, count int, v Any) {
 // Transform applies the given function to the range [first, last) and stores
 // the result in another range, beginning at dFirst.
 func Transform(first, last InputIter, dFirst OutputIter, op UnaryOperation) OutputIter {
-	for ; _ne(first, last); first = NextInput(first) {
+	for ; _ne(first, last); first = NextInputIter(first) {
 		dFirst = _writeNext(dFirst, op(first.Read()))
 	}
 	return dFirst
@@ -375,7 +375,7 @@ func RemoveCopy(first, last InputIter, dFirst OutputIter, v Any) OutputIter {
 //
 // Source and destination ranges cannot overlap.
 func RemoveCopyIf(first, last InputIter, dFirst OutputIter, pred UnaryPredicate) OutputIter {
-	for ; _ne(first, last); first = NextInput(first) {
+	for ; _ne(first, last); first = NextInputIter(first) {
 		if v := first.Read(); !pred(v) {
 			dFirst = _writeNext(dFirst, v)
 		}
@@ -412,7 +412,7 @@ func ReplaceCopy(first, last InputIter, dFirst OutputIter, old, new Any) OutputI
 //
 // The source and destination ranges cannot overlap.
 func ReplaceCopyIf(first, last InputIter, dFirst OutputIter, pred UnaryPredicate, v Any) OutputIter {
-	for ; _ne(first, last); first = NextInput(first) {
+	for ; _ne(first, last); first = NextInputIter(first) {
 		if v0 := first.Read(); pred(v0) {
 			dFirst = _writeNext(dFirst, v)
 		} else {
@@ -589,7 +589,7 @@ func UniqueCopyIf(first, last InputIter, dFirst OutputIter, eq EqComparer) Outpu
 	if _ne(first, last) {
 		v := first.Read()
 		dFirst = _writeNext(dFirst, v)
-		for first = NextInput(first); _ne(first, last); first = NextInput(first) {
+		for first = NextInputIter(first); _ne(first, last); first = NextInputIter(first) {
 			if v1 := first.Read(); !eq(v, v1) {
 				v = v1
 				dFirst = _writeNext(dFirst, v)
@@ -631,7 +631,7 @@ func Partition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWr
 // outTrue. The rest of the elements are copied to the range beginning at
 // outFalse.
 func PartitionCopy(first, last InputIter, outTrue, outFalse OutputIter, pred UnaryPredicate) (OutputIter, OutputIter) {
-	for ; _ne(first, last); first = NextInput(first) {
+	for ; _ne(first, last); first = NextInputIter(first) {
 		if v := first.Read(); pred(v) {
 			outTrue = _writeNext(outTrue, v)
 		} else {
@@ -937,11 +937,11 @@ func PartialSortCopyBy(first, last InputIter, dFirst, dLast RandomReadWriter, le
 		return
 	}
 	r, len := dFirst, dFirst.Distance(dLast)
-	for ; _ne(first, last) && _ne(r, dLast); first, r = NextInput(first), NextRandomReadWriter(r) {
+	for ; _ne(first, last) && _ne(r, dLast); first, r = NextInputIter(first), NextRandomReadWriter(r) {
 		r.Write(first.Read())
 	}
 	MakeHeapBy(dFirst, dLast, less)
-	for ; _ne(first, last); first = NextInput(first) {
+	for ; _ne(first, last); first = NextInputIter(first) {
 		if less(first.Read(), dFirst.Read()) {
 			dFirst.Write(first.Read())
 			heap.Fix(&heapHelper{
@@ -1286,10 +1286,10 @@ func MergeBy(first1, last1, first2, last2 InputIter, dFirst OutputIter, less Les
 		}
 		if v1, v2 := first1.Read(), first2.Read(); less(v2, v1) {
 			dFirst = _writeNext(dFirst, v2)
-			first2 = NextInput(first2)
+			first2 = NextInputIter(first2)
 		} else {
 			dFirst = _writeNext(dFirst, v1)
-			first1 = NextInput(first1)
+			first1 = NextInputIter(first1)
 		}
 	}
 	return Copy(first2, last2, dFirst)
@@ -1369,12 +1369,12 @@ func Includes(first1, last1, first2, last2 InputIter) bool {
 //
 // Elements are compared using the given binary comparer less.
 func IncludesBy(first1, last1, first2, last2 InputIter, less LessComparer) bool {
-	for ; _ne(first2, last2); first1 = NextInput(first1) {
+	for ; _ne(first2, last2); first1 = NextInputIter(first1) {
 		if _eq(first1, last1) || less(first2.Read(), first1.Read()) {
 			return false
 		}
 		if !less(first1.Read(), first2.Read()) {
-			first2 = NextInput(first2)
+			first2 = NextInputIter(first2)
 		}
 	}
 	return true
@@ -1399,12 +1399,12 @@ func SetDifferenceBy(first1, last1, first2, last2 InputIter, dFirst OutputIter, 
 		}
 		if v1, v2 := first1.Read(), first2.Read(); less(v1, v2) {
 			dFirst = _writeNext(dFirst, v1)
-			first1 = NextInput(first1)
+			first1 = NextInputIter(first1)
 		} else {
 			if !less(v2, v1) {
-				first1 = NextInput(first1)
+				first1 = NextInputIter(first1)
 			}
-			first2 = NextInput(first2)
+			first2 = NextInputIter(first2)
 		}
 	}
 	return dFirst
@@ -1434,13 +1434,13 @@ func SetIntersection(first1, last1, first2, last2 InputIter, dFirst OutputIter) 
 func SetIntersectionBy(first1, last1, first2, last2 InputIter, dFirst OutputIter, less LessComparer) OutputIter {
 	for _ne(first1, last1) && _ne(first2, last2) {
 		if v1, v2 := first1.Read(), first2.Read(); less(v1, v2) {
-			first1 = NextInput(first1)
+			first1 = NextInputIter(first1)
 		} else {
 			if !less(v2, v1) {
 				dFirst = _writeNext(dFirst, v1)
-				first1 = NextInput(first1)
+				first1 = NextInputIter(first1)
 			}
-			first2 = NextInput(first2)
+			first2 = NextInputIter(first2)
 		}
 	}
 	return dFirst
@@ -1478,14 +1478,14 @@ func SetSymmetricDifferenceBy(first1, last1, first2, last2 InputIter, dFirst Out
 		}
 		if v1, v2 := first1.Read(), first2.Read(); less(v1, v2) {
 			dFirst = _writeNext(dFirst, v1)
-			first1 = NextInput(first1)
+			first1 = NextInputIter(first1)
 		} else {
 			if less(v2, v1) {
 				dFirst = _writeNext(dFirst, v2)
 			} else {
-				first1 = NextInput(first1)
+				first1 = NextInputIter(first1)
 			}
-			first2 = NextInput(first2)
+			first2 = NextInputIter(first2)
 		}
 	}
 	return Copy(first2, last2, dFirst)
@@ -1519,13 +1519,13 @@ func SetUnionBy(first1, last1, first2, last2 InputIter, dFirst OutputIter, less 
 		}
 		if v1, v2 := first1.Read(), first2.Read(); less(v2, v1) {
 			dFirst = _writeNext(dFirst, v2)
-			first2 = NextInput(first2)
+			first2 = NextInputIter(first2)
 		} else {
 			dFirst = _writeNext(dFirst, v1)
 			if !less(v1, v2) {
-				first2 = NextInput(first2)
+				first2 = NextInputIter(first2)
 			}
-			first1 = NextInput(first1)
+			first1 = NextInputIter(first1)
 		}
 	}
 	return Copy(first2, last2, dFirst)
@@ -1814,7 +1814,7 @@ func Equal(first1, last1, first2, last2 InputIter) bool {
 // If last2 is nil, it denotes first2 + (last1 - first1). Elements are compared
 // using the given binary comparer eq.
 func EqualBy(first1, last1, first2, last2 InputIter, eq EqComparer) bool {
-	for ; _ne(first1, last1); first1, first2 = NextInput(first1), NextInput(first2) {
+	for ; _ne(first1, last1); first1, first2 = NextInputIter(first1), NextInputIter(first2) {
 		if (last2 != nil && _eq(first2, last2)) || !eq(first1.Read(), first2.Read()) {
 			return false
 		}
@@ -1833,7 +1833,7 @@ func LexicographicalCompare(first1, last1, first2, last2 InputIter) bool {
 //
 // Elements are compared using the given binary comparer less.
 func LexicographicalCompareBy(first1, last1, first2, last2 InputIter, less LessComparer) bool {
-	for ; _ne(first2, last2); first1, first2 = NextInput(first1), NextInput(first2) {
+	for ; _ne(first2, last2); first1, first2 = NextInputIter(first1), NextInputIter(first2) {
 		if _eq(first1, last1) || less(first1.Read(), first2.Read()) {
 			return true
 		}
@@ -1859,7 +1859,7 @@ func LexicographicalCompareThreeWay(first1, last1, first2, last2 InputIter) int 
 //
 // Elements are compared using the given binary predicate cmp.
 func LexicographicalCompareThreeWayBy(first1, last1, first2, last2 InputIter, cmp ThreeWayComparer) int {
-	for ; _ne(first2, last2); first1, first2 = NextInput(first1), NextInput(first2) {
+	for ; _ne(first2, last2); first1, first2 = NextInputIter(first1), NextInputIter(first2) {
 		if _eq(first1, last1) {
 			return -1
 		}
@@ -2019,7 +2019,7 @@ func Accumulate(first, last InputIter, v Any) Any {
 // AccumulateBy computes the sum of the given value v and the elements in the
 // range [first, last), using v=add(v,x).
 func AccumulateBy(first, last InputIter, v Any, add BinaryOperation) Any {
-	for ; _ne(first, last); first = NextInput(first) {
+	for ; _ne(first, last); first = NextInputIter(first) {
 		v = add(v, first.Read())
 	}
 	return v
@@ -2036,7 +2036,7 @@ func InnerProduct(first1, last1, first2 InputIter, v Any) Any {
 // ordered map/reduce operation on the range [first1, last1), using
 // v=add(v,mul(x,y)).
 func InnerProductBy(first1, last1, first2 InputIter, v Any, add, mul BinaryOperation) Any {
-	for ; _ne(first1, last1); first1, first2 = NextInput(first1), NextInput(first2) {
+	for ; _ne(first1, last1); first1, first2 = NextInputIter(first1), NextInputIter(first2) {
 		v = add(v, mul(first1.Read(), first2.Read()))
 	}
 	return v
@@ -2060,7 +2060,7 @@ func AdjacentDifferenceBy(first, last InputIter, dFirst OutputIter, sub BinaryOp
 	}
 	prev := first.Read()
 	dFirst = _writeNext(dFirst, prev)
-	for first = NextInput(first); _ne(first, last); first = NextInput(first) {
+	for first = NextInputIter(first); _ne(first, last); first = NextInputIter(first) {
 		cur := first.Read()
 		dFirst = _writeNext(dFirst, sub(cur, prev))
 		prev = cur
@@ -2084,7 +2084,7 @@ func PartialSumBy(first, last InputIter, dFirst OutputIter, add BinaryOperation)
 	}
 	sum := first.Read()
 	dFirst = _writeNext(dFirst, sum)
-	for first = NextInput(first); _ne(first, last); first = NextInput(first) {
+	for first = NextInputIter(first); _ne(first, last); first = NextInputIter(first) {
 		sum = add(sum, first.Read())
 		dFirst = _writeNext(dFirst, sum)
 	}
@@ -2146,7 +2146,7 @@ func TransformExclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, a
 		v = add(v, op(first.Read()))
 		dFirst = _writeNext(dFirst, saved)
 		saved = v
-		first = NextInput(first)
+		first = NextInputIter(first)
 		if _eq(first, last) {
 			break
 		}
@@ -2169,7 +2169,7 @@ func TransformInclusiveScan(first, last InputIter, dFirst OutputIter, v Any, op 
 // writes the results to the range beginning at dFirst. "inclusive" means that
 // the i-th input element is included in the i-th sum.
 func TransformInclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, add BinaryOperation, op UnaryOperation) OutputIter {
-	for ; _ne(first, last); first = NextInput(first) {
+	for ; _ne(first, last); first = NextInputIter(first) {
 		v = add(v, op(first.Read()))
 		dFirst = _writeNext(dFirst, v)
 	}

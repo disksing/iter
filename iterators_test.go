@@ -24,7 +24,7 @@ func TestSliceIterator(t *testing.T) {
 	assert.Implements((*BidiReadWriter)(nil), b)
 	assert.Implements((*RandomReadWriter)(nil), b)
 
-	b1 := b.Next().(RandomReadWriter)
+	b1 := NextRandomReadWriter(b)
 	assert.True(NextBidiIter(b).Eq(b1))
 	assert.True(PrevBidiIter(b1).Eq(b))
 	assert.True(NextBidiReader(b).Eq(b1))
@@ -43,7 +43,7 @@ func TestSliceIterator(t *testing.T) {
 	assert.True(PrevRandomReadWriter(b1).Eq(b))
 
 	rb := SliceRBegin(a)
-	rb1 := SliceRBegin(a).Next().(RandomReadWriter)
+	rb1 := NextRandomReadWriter(SliceRBegin(a))
 	assert.True(NextBidiIter(rb).Eq(rb1))
 	assert.True(PrevBidiIter(rb1).Eq(rb))
 	assert.True(NextBidiReader(rb).Eq(rb1))
@@ -104,7 +104,7 @@ func TestListIterator(t *testing.T) {
 	_, ok := b.(RandomIter)
 	assert.False(ok)
 	b.AllowMultiplePass()
-	b1 := b.Next().(BidiReadWriter)
+	b1 := NextBidiReadWriter(b)
 	assert.True(NextBidiIter(b).Eq(b1))
 	assert.True(PrevBidiIter(b1).Eq(b))
 	assert.True(NextBidiReader(b).Eq(b1))
@@ -116,7 +116,7 @@ func TestListIterator(t *testing.T) {
 
 	rb := ListRBegin(lst)
 	assert.Equal(rb.Read(), 3)
-	rb1 := rb.Next().(BidiReadWriter)
+	rb1 := NextBidiReadWriter(rb)
 	assert.Equal(rb1.Read(), 2)
 	assert.True(_eq(rb.Next(), rb1))
 	assert.True(_eq(rb1.Prev(), rb))
@@ -236,4 +236,17 @@ func TestChanIterator(t *testing.T) {
 	it := ChanReader(ch)
 	it.Next()
 	assert.Equal(it.Read(), 43)
+
+	ch = make(chan int, 10)
+	CopyN(IotaReader(1), 5, ChanWriter(ch))
+	close(ch)
+	it = ChanReader(ch)
+	it = AdvanceN(it, 3).(InputIter)
+	assert.Equal(it.Read(), 4)
+	assert.Equal(Distance(it, ChanEOF), 2)
+
+	ch = make(chan int)
+	w := ChanWriter(ch)
+	assert.Panics(func() { AdvanceN(w, 1) })
+	assert.Panics(func() { Distance(w, ChanEOF) })
 }

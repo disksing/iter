@@ -30,13 +30,13 @@ func TestMisc(t *testing.T) {
 	it := IotaReader(100)
 	assert.Equal(it.Read(), 100)
 	assert.False(it.Eq(IotaReader(100)))
-	it = NextInput(it)
+	it = NextInputIter(it)
 	assert.Equal(it.Read(), 101)
 
 	it = RepeatReader(100)
 	assert.Equal(it.Read(), 100)
 	assert.False(it.Eq(RepeatReader(100)))
-	it = NextInput(it)
+	it = NextInputIter(it)
 	assert.Equal(it.Read(), 100)
 
 	g := IotaGenerator(100)

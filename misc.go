@@ -33,7 +33,7 @@ func IotaGenerator(x Any) Generator {
 	r := IotaReader(x)
 	return func() Any {
 		v := r.Read()
-		r = r.Next().(InputIter)
+		r = NextInputIter(r)
 		return v
 	}
 }
