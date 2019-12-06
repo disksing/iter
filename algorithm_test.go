@@ -25,8 +25,8 @@ func randInt() int {
 func randIntSlice() []int {
 	lh := []int{randInt(), randInt()}
 	Sort(begin(lh), end(lh))
-	s := make([]int, randInt())
-	GenerateN(SliceBackInserter(&s), len(s), func() Any { return lh[0] + r.Intn(lh[1]-lh[0]+1) })
+	var s []int
+	GenerateN(SliceBackInserter(&s), randInt(), func() Any { return lh[0] + r.Intn(lh[1]-lh[0]+1) })
 	return s
 }
 
@@ -126,7 +126,7 @@ func TestMismatch(t *testing.T) {
 	it1, it2 := Mismatch(begin(a), end(a), begin(b), last2)
 	n1, n2 := Distance(begin(a), it1), Distance(begin(b), it2)
 	assert.Equal(n1, n2)
-	assert.Equal(a[:n1], b[:n1])
+	sliceEqual(assert, a[:n1], b[:n1])
 	assert.True((n1 >= len(a)) || (n1 >= len(b)) || a[n1] != b[n1])
 }
 
