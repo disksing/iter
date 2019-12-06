@@ -1,6 +1,7 @@
 package iter
 
 import (
+	"container/list"
 	"math/rand"
 	"reflect"
 	"strings"
@@ -77,25 +78,50 @@ func Erase(c interface{}, it ...Iter) {
 	if len(it) > 2 {
 		panic("too many iterators, expect <=2")
 	}
-	val := reflect.ValueOf(c)
-	switch val.Elem().Type().Kind() {
-	case reflect.Slice:
+	if val := reflect.ValueOf(c); val.Elem().Type().Kind() == reflect.Slice {
+		v := val.Elem()
 		switch len(it) {
 		case 0:
-			sliceErase(c, SliceBegin(val.Elem().Interface()), SliceEnd(val.Elem().Interface()))
+			v.Set(v.Slice(0, 0))
 		case 1:
-			sliceErase(c, it[0], SliceEnd(val.Elem().Interface()))
+			l := Distance(SliceBegin(c), it[0])
+			v.Set(v.Slice(0, l))
 		case 2:
-			sliceErase(c, it[0], it[1])
+			l, h := Distance(SliceBegin(c), it[0]), Distance(SliceBegin(c), it[1])
+			v.Set(reflect.AppendSlice(v.Slice(0, l), v.Slice(h, v.Len())))
 		}
+	} else if lst, ok := c.(*list.List); ok {
+		switch len(it) {
+		case 0:
+			for lst.Len() > 0 {
+				lst.Remove(lst.Front())
+			}
+		case 1:
+			if it, ok := it[0].(listIter); ok {
+				for e := it.e; e != nil; {
+					next := e.Next()
+					it.l.Remove(e)
+					e = next
+				}
+				return
+			}
+			panic("iterator is not listIter")
+		case 2:
+			if it1, ok := it[0].(listIter); ok {
+				if it2, ok := it[1].(listIter); ok {
+					for e := it1.e; e != it2.e; {
+						next := e.Next()
+						it1.l.Remove(e)
+						e = next
+					}
+					return
+				}
+			}
+			panic("iterator is not listIter")
+		}
+	} else {
+		panic("c is not *[]T or *list.List")
 	}
-}
-
-func sliceErase(s interface{}, first, last Iter) {
-	v := reflect.ValueOf(s).Elem()
-	begin := SliceBegin(s)
-	m, h := Distance(begin, first), Distance(begin, last)
-	v.Set(reflect.AppendSlice(v.Slice(0, m), v.Slice(h, v.Len())))
 }
 
 // MakeString creates a string by range spesified by [first, last). The value

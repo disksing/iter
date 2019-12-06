@@ -82,7 +82,7 @@ func TestSliceIterator(t *testing.T) {
 	assert.NotEqual(fmt.Sprintf("%s", e1), fmt.Sprintf("%s", rb))
 }
 
-func listEq(assert *assert.Assertions, lst *list.List, v ...int) {
+func listEq(assert *assert.Assertions, lst *list.List, v ...Any) {
 	assert.True(Equal(ListBegin(lst), ListEnd(lst), begin(v), end(v)))
 }
 
