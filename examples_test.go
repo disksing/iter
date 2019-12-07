@@ -18,21 +18,35 @@ var (
 	sEnd   = StringEnd
 )
 
-// Reverse a string.
-func ExampleMakeString() {
-	s := "!dlrow olleH"
-	fmt.Println(MakeString(StringRBegin(s), StringREnd(s)))
-	// Output:
-	// Hello world!
-}
-
 // Print all list items to console.
 func ExampleIOWriter() {
 	l := list.New()
 	GenerateN(ListBackInserter(l), 5, IotaGenerator(1))
-	Copy(lBegin(l), lEnd(l), IOWriter(os.Stdout, ", "))
+	Copy(lBegin(l), lEnd(l), IOWriter(os.Stdout, "->"))
 	// Output:
-	// 1, 2, 3, 4, 5
+	// 1->2->3->4->5
+}
+
+// Reverse a string.
+func ExampleMakeString() {
+	s := "!dlrow olleH"
+	fmt.Println(MakeString(StringRBegin(s), StringREnd(s)))
+	b := []byte(s)
+	Reverse(begin(b), end(b))
+	fmt.Println(string(b))
+	// Output:
+	// Hello world!
+	// Hello world!
+}
+
+// Deduplicate elements.
+func ExampleUnique() {
+	in := []int{3, 2, 1, 4, 3, 2, 1, 4, 1}
+	Sort(begin(in), end(in))
+	Erase(&in, Unique(begin(in), end(in)))
+	fmt.Println(in)
+	// Output:
+	// [1 2 3 4]
 }
 
 // Sum all integers received from a channel.
@@ -49,13 +63,13 @@ func ExampleChanReader() {
 
 // Remove consecutive spaces in a string.
 func ExampleUniqueCopyIf() {
-	str := "  a  quick   brown  fox    jumps  over the   lazy dog.  "
+	str := "  a  quick   brown  fox  "
 	var sb StringBuilderInserter
 	UniqueCopyIf(sBegin(str), sEnd(str), &sb,
 		func(x, y Any) bool { return x.(byte) == ' ' && y.(byte) == ' ' })
 	fmt.Println(sb.String())
 	// Output:
-	// a quick brown fox jumps over the lazy dog.
+	// a quick brown fox
 }
 
 // Collect N maximum elements from a channel.
