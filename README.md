@@ -1,6 +1,6 @@
 # iter
 
-C++ STL alike Go iterators and algorithms.
+GO implementation of C++ STL iterators and algorithms.
 
 Less hand-written loops, more expressive code.
 
