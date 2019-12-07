@@ -11,7 +11,7 @@ Less hand-written loops, more expressive code.
 
 ### Motivation
 
-Due to the absence of generics, the Go world has been lacking scheme to reuse routine, repetitive, and templated code snippets (or in other words, algorithms). With iterators and algorithms borrowed from C++, we will be able to improve Go code in these areas:
+Although Go doesn't have generics, we deserve to have reuseable general algorithms. `iter` can help improve Go code in several ways:
 
 - Some simple loops are unlikely to be wrong or inefficient, but calling algorithm instead will **make the code more concise and easier to comprehend**. Such as [AllOf](https://godoc.org/github.com/disksing/iter#AllOf), [FindIf](https://godoc.org/github.com/disksing/iter#FindIf), [Accumulate](https://godoc.org/github.com/disksing/iter#Accumulate).
 
