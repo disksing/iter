@@ -1,40 +1,38 @@
 # iter
 
-GO implementation of C++ STL iterators and algorithms.
+C++ STL 迭代器和算法库的 Go 语言实现。
 
-Less hand-written loops, more expressive code.
-
-README translations: [简体中文](README_ZH.md)
+更少的手写循环，更多富有表达力的代码。
 
 [![GoDoc](https://godoc.org/github.com/disksing/iter?status.svg)](https://godoc.org/github.com/disksing/iter)
 [![Build Status](https://travis-ci.com/disksing/iter.svg?branch=master)](https://travis-ci.com/disksing/iter)
 [![codecov](https://codecov.io/gh/disksing/iter/branch/master/graph/badge.svg)](https://codecov.io/gh/disksing/iter)
 [![Go Report Card](https://goreportcard.com/badge/github.com/disksing/iter)](https://goreportcard.com/report/github.com/disksing/iter)
 
-## Motivation
+## 动机
 
-Although Go doesn't have generics, we deserve to have reuseable general algorithms. `iter` helps improving Go code in several ways:
+虽然 Go 不支持泛型，我们值得拥有可复用的通用算法。`iter` 可以在以下方面帮助改善代码：
 
-- Some simple loops are unlikely to be wrong or inefficient, but calling algorithm instead will **make the code more concise and easier to comprehend**. Such as [AllOf](https://godoc.org/github.com/disksing/iter#AllOf), [FindIf](https://godoc.org/github.com/disksing/iter#FindIf), [Accumulate](https://godoc.org/github.com/disksing/iter#Accumulate).
+- 一些简单的循环逻辑不太可能写错或者低效，但使用算法调用将**使得代码更简洁和易于理解**。例如 [AllOf](https://godoc.org/github.com/disksing/iter#AllOf)，[FindIf](https://godoc.org/github.com/disksing/iter#FindIf)，[Accumulate](https://godoc.org/github.com/disksing/iter#Accumulate)。
 
-- Some algorithms are not complicated, but it is not easy to write them correctly. **Reusing code makes them easier to reason for correctness**. Such as [Shuffle](https://godoc.org/github.com/disksing/iter#Shuffle), [Sample](https://godoc.org/github.com/disksing/iter#Sample), [Partition](https://godoc.org/github.com/disksing/iter#Partition).
+- 一些算法并不是很复杂，但不太容易写对。使用算法库**让代码“一眼看上去就是对的”**。例如 [Shuffle](https://godoc.org/github.com/disksing/iter#Shuffle)，[Sample](https://godoc.org/github.com/disksing/iter#Sample)，[Partition](https://godoc.org/github.com/disksing/iter#Partition)。
 
-- STL also includes some complicated algorithms that may take hours to make it correct. **Implementing it manually is impractical**. Such as [NthElement](https://godoc.org/github.com/disksing/iter#NthElement), [StablePartition](https://godoc.org/github.com/disksing/iter#StablePartition), [NextPermutation](https://godoc.org/github.com/disksing/iter#NextPermutation).
+- STL 还包含一些复杂算法，可能需要数小时才能搞对。**手动实现它们并不现实**。例如 [NthElement](https://godoc.org/github.com/disksing/iter#NthElement)，[StablePartition](https://godoc.org/github.com/disksing/iter#StablePartition)，[NextPermutation](https://godoc.org/github.com/disksing/iter#NextPermutation)。
 
-- The implementation in the library contains some **imperceptible performance optimizations**. For instance, [MinmaxElement](https://godoc.org/github.com/disksing/iter#MinmaxElement) is done by taking two elements at a time. In this way, the overall number of comparisons is significantly reduced.
+- STL 的实现还有一些**鲜为人知的性能优化**。比如，[MinmaxElement](https://godoc.org/github.com/disksing/iter#MinmaxElement) 被实现为每次取两个元素进行比较，这样做可以大幅减少整体比较次数。
 
-There are alternative libraries have similar goals, such as [gostl](https://github.com/liyue201/gostl), [gods](https://github.com/emirpasic/gods) and [go-stp](https://github.com/itrabbit/go-stp). What makes `iter` unique is:
+有一些开源项目在做类似的事情，比如 [gostl](https://github.com/liyue201/gostl)，[gods](https://github.com/emirpasic/gods) 和 [go-stp](https://github.com/itrabbit/go-stp)。`iter` 的独特之处在于：
 
-- **None-intrusive**. Instead of introducing new containers, `iter` tends to reuse existed containers in Go (slice, string, list.List, etc.) and use iterators to adapt them to algorithms.
+- **非侵入性**。`iter` 避免重复造轮子，尽可能地复用 Go 里已有的容器（slice，string，list.List 等），使用迭代器将它们适配给算法库。
 
-- **Full algorithms (>100)**. It includes almost all algorithms come before C++17. Check the [Full List](https://godoc.org/github.com/disksing/iter).
+- **完整的算法库（>100）**。它实现了几乎所有 C++17 之前的算法。在[这里](https://godoc.org/github.com/disksing/iter)可以查看完整列表。
 
-## Examples
+## 示例
 
-> The examples are run with some function alias to make it simple. See [example_test.go](https://github.com/disksing/iter/blob/master/examples_test.go) for the detail.
+> 这些示例给一些函数定义了别名来使代码更美观，详情见 [example_test.go](https://github.com/disksing/iter/blob/master/examples_test.go)。
 
 <table>
-<thead><tr><th colspan="2">Print a list.List</th></tr></thead>
+<thead><tr><th colspan="2">控制台输出 list.List</th></tr></thead>
 <tbody><td>
 
 ```go
@@ -64,7 +62,7 @@ Copy(lBegin(l), lEnd(l), IOWriter(os.Stdout, "->"))
 
 </td></tr></tbody>
 
-<thead><tr><th colspan="2">Reverse a string</th></tr></thead>
+<thead><tr><th colspan="2">反转 string</th></tr></thead>
 <tbody><tr><td>
 
 ```go
@@ -102,7 +100,7 @@ fmt.Println(string(b))
 
 </td></tr></tbody>
 
-<thead><tr><th colspan="2">In-place deduplicate (from <a href="https://github.com/golang/go/wiki/SliceTricks#in-place-deduplicate-comparable">SliceTricks</a>, with minor change)</th></tr></thead>
+<thead><tr><th colspan="2">去重（来自 <a href="https://github.com/golang/go/wiki/SliceTricks#in-place-deduplicate-comparable">SliceTricks</a>，略微调整）</th></tr></thead>
 <tbody><tr><td>
 
 ```go
@@ -135,7 +133,7 @@ fmt.Println(in)
 
 </td></tr></tbody>
 
-<thead><tr><th colspan="2">Sum all integers received from a channel</th></tr></thead>
+<thead><tr><th colspan="2">对 channel 中的所有整数求和</th></tr></thead>
 <tbody><tr><td>
 
 ```go
@@ -170,7 +168,7 @@ fmt.Println(Accumulate(ChanReader(ch), ChanEOF, 0))
 
 </td></tr></tbody>
 
-<thead><tr><th colspan="2">Remove consecutive spaces in a string</th></tr></thead>
+<thead><tr><th colspan="2">删除字符串中的连续空格</th></tr></thead>
 <tbody><tr><td>
 
 ```go
@@ -202,11 +200,11 @@ fmt.Println(sb.String())
 
 </td></tr></tbody>
 
-<thead><tr><th colspan="2">Collect N maximum elements from a channel</th></tr></thead>
+<thead><tr><th colspan="2">收集 channel 中最大的 N 个整数</th></tr></thead>
 <tbody><tr><td>
 
 ```go
-// Need to manually mantain a min-heap.
+// 需要手动维护小顶堆。
 ```
 
 </td><td>
@@ -220,11 +218,11 @@ Copy(begin(top), end(top), IOWriter(os.Stdout, ", "))
 
 </td></tr></tbody>
 
-<thead><tr><th colspan="2">Print all permutations of ["a", "b", "c"]</th></tr></thead>
+<thead><tr><th colspan="2">输出 ["a", "b", "c"] 的所有排列</th></tr></thead>
 <tbody><tr><td>
 
 ```go
-// Usually requires some sort of recursion
+// 通常需要引入递归来完成。
 ```
 
 </td><td>
@@ -246,11 +244,11 @@ for ok := true; ok; ok = NextPermutation(begin(s), end(s)) {
 </td></tr></tbody>
 </table>
 
-## Thanks
+## 致谢
 
 - [cppreference.com](https://en.cppreference.com/)
 - [LLVM libc++](https://libcxx.llvm.org/)
 
-## License
+## 开源许可证
 
 BSD 3-Clause
