@@ -58,10 +58,6 @@ func RepeatGenerator(x Any) Generator {
 	return func() Any { return x }
 }
 
-type randomGenerator struct {
-	candidates []interface{}
-}
-
 // RandomGenerator creates a generator that returns random item of a slice.
 func RandomGenerator(s interface{}, r *rand.Rand) Generator {
 	v := reflect.ValueOf(s)

@@ -266,7 +266,7 @@ func TestFillN(t *testing.T) {
 		a = randIntSlice()
 	}
 	b := append(a[:0:0], a...)
-	n := r.Intn(len(a)) - r.Intn(len(a))
+	n := r.Intn(len(a)) - randInt()
 	x := randInt()
 	FillN(begin(a), n, x)
 	for i, v := range a {
