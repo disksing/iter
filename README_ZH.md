@@ -173,7 +173,7 @@ fmt.Println(Accumulate(ChanReader(ch), ChanEOF, 0))
 
 ```go
 str := "  a  quick   brown  fox  "
-var sb StringBuilderInserter
+var sb strings.Builder
 var prevIsSpace bool
 for i := 0; i < len(str); i++ {
   if str[i] != ' ' || !prevIsSpace {
