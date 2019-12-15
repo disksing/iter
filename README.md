@@ -27,7 +27,7 @@ There are alternative libraries have similar goals, such as [gostl](https://gith
 
 - **Non-intrusive**. Instead of introducing new containers, `iter` tends to reuse existed containers in Go (slice, string, list.List, etc.) and use iterators to adapt them to algorithms.
 
-- **Full algorithms (>100)**. It includes almost all algorithms come before C++17. Check the [Full List](https://godoc.org/github.com/disksing/iter).
+- **Full algorithms (>100)**. It includes almost all algorithms come before C++17. Check the [Full List](https://github.com/disksing/iter/wiki/Algorithms).
 
 ## Examples
 
