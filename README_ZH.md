@@ -25,7 +25,7 @@ C++ STL 迭代器和算法库的 Go 语言实现。
 
 - **非侵入性**。`iter` 避免重复造轮子，尽可能地复用 Go 里已有的容器（slice，string，list.List 等），使用迭代器将它们适配给算法库。
 
-- **完整的算法库（>100）**。它实现了几乎所有 C++17 之前的算法。在[这里](https://godoc.org/github.com/disksing/iter)可以查看完整列表。
+- **完整的算法库（>100）**。它实现了几乎所有 C++17 之前的算法。在[这里](https://github.com/disksing/iter/wiki/Algorithms)可以查看完整列表。
 
 ## 示例
 
