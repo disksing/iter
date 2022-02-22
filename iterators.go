@@ -64,11 +64,11 @@ func (it sliceIter) String() string {
 	return fmt.Sprintf("[%v](len=%d,cap=%d)@%d%s", strings.Join(buf, ","), it.s.Len(), it.s.Cap(), it.i, dir)
 }
 
-func (it sliceIter) Read() Any {
+func (it sliceIter) Read() any {
 	return it.s.Index(it.i).Interface()
 }
 
-func (it sliceIter) Write(v Any) {
+func (it sliceIter) Write(v any) {
 	it.s.Index(it.i).Set(reflect.ValueOf(v))
 }
 
@@ -124,7 +124,7 @@ func SliceBackInserter(s interface{}) OutputIter {
 	}
 }
 
-func (bi *sliceBackInserter) Write(x Any) {
+func (bi *sliceBackInserter) Write(x any) {
 	bi.s.Set(reflect.Append(bi.s, reflect.ValueOf(x)))
 }
 
@@ -206,11 +206,11 @@ func (l listIter) Prev() BidiIter {
 	}
 }
 
-func (l listIter) Read() Any {
+func (l listIter) Read() any {
 	return l.e.Value
 }
 
-func (l listIter) Write(x Any) {
+func (l listIter) Write(x any) {
 	l.e.Value = x
 }
 
@@ -224,7 +224,7 @@ type listBackInserter struct {
 	l *list.List
 }
 
-func (li listBackInserter) Write(x Any) {
+func (li listBackInserter) Write(x any) {
 	li.l.PushBack(x)
 }
 
@@ -238,7 +238,7 @@ type listInserter struct {
 	e *list.Element
 }
 
-func (li listInserter) Write(x Any) {
+func (li listInserter) Write(x any) {
 	li.l.InsertBefore(x, li.e)
 }
 
@@ -291,7 +291,7 @@ func (it stringIter) String() string {
 	return fmt.Sprintf("%s@%d%s", it.s, it.i, dir)
 }
 
-func (it stringIter) Read() Any {
+func (it stringIter) Read() any {
 	return it.s[it.i]
 }
 
@@ -341,7 +341,7 @@ type StringBuilderInserter struct {
 	Delimiter string
 }
 
-func (si *StringBuilderInserter) Write(x Any) {
+func (si *StringBuilderInserter) Write(x any) {
 	if si.Builder.Len() > 0 && si.Delimiter != "" {
 		si.Builder.WriteString(si.Delimiter)
 	}
@@ -361,7 +361,7 @@ func (si *StringBuilderInserter) Write(x Any) {
 
 type eof int
 
-func (e eof) Eq(x Any) bool {
+func (e eof) Eq(x any) bool {
 	if _, ok := x.(eof); ok {
 		return true
 	}
@@ -370,7 +370,7 @@ func (e eof) Eq(x Any) bool {
 
 func (e eof) Next() Incrementable { return e }
 
-func (e eof) Read() Any { return nil }
+func (e eof) Read() any { return nil }
 
 // ChanEOF is a sentinel iterator to terminate chan reader.
 var ChanEOF InputIter = eof(0)
@@ -387,7 +387,7 @@ func (cr *chanReader) recv() {
 	cr.cur, cr.read1, cr.eof = v.Interface(), true, !ok
 }
 
-func (cr *chanReader) Read() Any {
+func (cr *chanReader) Read() any {
 	if !cr.read1 {
 		cr.recv()
 	}
@@ -404,7 +404,7 @@ func (cr *chanReader) Next() Incrementable {
 	return cr
 }
 
-func (cr *chanReader) Eq(x Any) bool {
+func (cr *chanReader) Eq(x any) bool {
 	if !cr.read1 {
 		cr.recv()
 	}
@@ -415,7 +415,7 @@ type chanWriter struct {
 	ch reflect.Value
 }
 
-func (cr *chanWriter) Write(x Any) {
+func (cr *chanWriter) Write(x any) {
 	cr.ch.Send(reflect.ValueOf(x))
 }
 
@@ -439,7 +439,7 @@ type ioWriter struct {
 	delimiter []byte
 }
 
-func (w *ioWriter) Write(x Any) {
+func (w *ioWriter) Write(x any) {
 	if w.written && len(w.delimiter) > 0 {
 		_, err := w.w.Write(w.delimiter)
 		if err != nil {

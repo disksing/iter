@@ -1,16 +1,16 @@
 package iter
 
-// Iter represents an iterator, just an alias of Any.
-type Iter = Any
+// Iter represents an iterator, just an alias of any.
+type Iter = any
 
 type (
 	// Reader is a readable iterator.
 	Reader interface {
-		Read() Any
+		Read() any
 	}
 	// Writer is a writable iterator.
 	Writer interface {
-		Write(Any)
+		Write(any)
 	}
 	// ReadWriter is an interface that groups Reader and Writer.
 	ReadWriter interface {
@@ -42,7 +42,7 @@ func NextInputIter(it InputIter) InputIter {
 // logic is done in Write().
 type OutputIter = Writer
 
-func _writeNext(out OutputIter, v Any) OutputIter {
+func _writeNext(out OutputIter, v any) OutputIter {
 	out.Write(v)
 	if inc, ok := out.(Incrementable); ok {
 		out = inc.Next().(OutputIter)

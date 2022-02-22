@@ -66,7 +66,7 @@ func ExampleUniqueCopyIf() {
 	str := "  a  quick   brown  fox  "
 	var sb StringBuilderInserter
 	UniqueCopyIf(sBegin(str), sEnd(str), &sb,
-		func(x, y Any) bool { return x.(byte) == ' ' && y.(byte) == ' ' })
+		func(x, y any) bool { return x.(byte) == ' ' && y.(byte) == ' ' })
 	fmt.Println(sb.String())
 	// Output:
 	// a quick brown fox
@@ -84,7 +84,7 @@ func ExamplePartialSortCopyBy() {
 	}()
 	top := make([]int, 5)
 	PartialSortCopyBy(ChanReader(ch), ChanEOF, begin(top), end(top),
-		func(x, y Any) bool { return x.(int) > y.(int) })
+		func(x, y any) bool { return x.(int) > y.(int) })
 	Copy(begin(top), end(top), IOWriter(os.Stdout, ", "))
 	// Output:
 	// 100, 99, 98, 97, 96

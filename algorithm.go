@@ -43,7 +43,7 @@ func ForEachN(first InputIter, n int, f IteratorFunction) IteratorFunction {
 }
 
 // Count counts the elements that are equal to value.
-func Count(first, last InputIter, v Any) int {
+func Count(first, last InputIter, v any) int {
 	return CountIf(first, last, _eq1(v))
 }
 
@@ -80,7 +80,7 @@ func MismatchBy(first1, last1, first2, last2 InputIter, eq EqComparer) (InputIte
 
 // Find returns the first element in the range [first, last) that is equal to
 // value.
-func Find(first, last InputIter, v Any) InputIter {
+func Find(first, last InputIter, v any) InputIter {
 	return FindIf(first, last, _eq1(v))
 }
 
@@ -141,8 +141,8 @@ func FindFirstOf(first, last, sFirst, sLast ForwardReader) ForwardReader {
 //
 // Elements are compared using the given binary comparer eq.
 func FindFirstOfBy(first, last, sFirst, sLast ForwardReader, eq EqComparer) ForwardReader {
-	return FindIf(first, last, func(x Any) bool {
-		return AnyOf(sFirst, sLast, func(s Any) bool {
+	return FindIf(first, last, func(x any) bool {
+		return AnyOf(sFirst, sLast, func(s any) bool {
 			return eq(x, s)
 		})
 	}).(ForwardReader)
@@ -200,7 +200,7 @@ func SearchBy(first, last, sFirst, sLast ForwardReader, eq EqComparer) ForwardRe
 
 // SearchN searches the range [first, last) for the first sequence of count
 // identical elements, each equal to the given value.
-func SearchN(first, last ForwardReader, count int, v Any) ForwardReader {
+func SearchN(first, last ForwardReader, count int, v any) ForwardReader {
 	return SearchNBy(first, last, count, v, _eq)
 }
 
@@ -208,7 +208,7 @@ func SearchN(first, last ForwardReader, count int, v Any) ForwardReader {
 // identical elements.
 //
 // Elements are compared using the given binary comparer eq.
-func SearchNBy(first, last ForwardReader, count int, v Any, eq EqComparer) ForwardReader {
+func SearchNBy(first, last ForwardReader, count int, v any, eq EqComparer) ForwardReader {
 	if count <= 0 {
 		return first
 	}
@@ -285,7 +285,7 @@ func CopyBackward(first, last BidiReader, dLast BidiWriter) BidiWriter {
 }
 
 // Fill assigns the given value to the elements in the range [first, last).
-func Fill(first, last ForwardWriter, v Any) {
+func Fill(first, last ForwardWriter, v any) {
 	for ; _ne(first, last); first = NextForwardWriter(first) {
 		first.Write(v)
 	}
@@ -295,7 +295,7 @@ func Fill(first, last ForwardWriter, v Any) {
 // beginning at dFirst.
 //
 // If count <= 0, it does nothing.
-func FillN(dFirst OutputIter, count int, v Any) {
+func FillN(dFirst OutputIter, count int, v any) {
 	for ; count > 0; count-- {
 		dFirst = _writeNext(dFirst, v)
 	}
@@ -341,7 +341,7 @@ func GenerateN(dFirst OutputIter, count int, g Generator) OutputIter {
 
 // Remove removes all elements equal to v from the range [first, last) and
 // returns a past-the-end iterator for the new end of the range.
-func Remove(first, last ForwardReadWriter, v Any) ForwardReadWriter {
+func Remove(first, last ForwardReadWriter, v any) ForwardReadWriter {
 	return RemoveIf(first, last, _eq1(v))
 }
 
@@ -365,7 +365,7 @@ func RemoveIf(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWri
 // beginning at dFirst, omitting the elements equal to v.
 //
 // Source and destination ranges cannot overlap.
-func RemoveCopy(first, last InputIter, dFirst OutputIter, v Any) OutputIter {
+func RemoveCopy(first, last InputIter, dFirst OutputIter, v any) OutputIter {
 	return RemoveCopyIf(first, last, dFirst, _eq1(v))
 }
 
@@ -385,13 +385,13 @@ func RemoveCopyIf(first, last InputIter, dFirst OutputIter, pred UnaryPredicate)
 
 // Replace replaces all elements equal to old with new in the range [first,
 // last).
-func Replace(first, last ForwardReadWriter, old, new Any) {
+func Replace(first, last ForwardReadWriter, old, new any) {
 	ReplaceIf(first, last, _eq1(old), new)
 }
 
 // ReplaceIf replaces all elements satisfy pred with new in the range [first,
 // last).
-func ReplaceIf(first, last ForwardReadWriter, pred UnaryPredicate, v Any) {
+func ReplaceIf(first, last ForwardReadWriter, pred UnaryPredicate, v any) {
 	for ; _ne(first, last); first = NextForwardReadWriter(first) {
 		if pred(first.Read()) {
 			first.Write(v)
@@ -403,7 +403,7 @@ func ReplaceIf(first, last ForwardReadWriter, pred UnaryPredicate, v Any) {
 // beginning at dFirst replacing all elements equal to old with new.
 //
 // The source and destination ranges cannot overlap.
-func ReplaceCopy(first, last InputIter, dFirst OutputIter, old, new Any) OutputIter {
+func ReplaceCopy(first, last InputIter, dFirst OutputIter, old, new any) OutputIter {
 	return ReplaceCopyIf(first, last, dFirst, _eq1(old), new)
 }
 
@@ -411,7 +411,7 @@ func ReplaceCopy(first, last InputIter, dFirst OutputIter, old, new Any) OutputI
 // range beginning at dFirst replacing all elements satisfy pred with new.
 //
 // The source and destination ranges cannot overlap.
-func ReplaceCopyIf(first, last InputIter, dFirst OutputIter, pred UnaryPredicate, v Any) OutputIter {
+func ReplaceCopyIf(first, last InputIter, dFirst OutputIter, pred UnaryPredicate, v any) OutputIter {
 	for ; _ne(first, last); first = NextInputIter(first) {
 		if v0 := first.Read(); pred(v0) {
 			dFirst = _writeNext(dFirst, v)
@@ -1178,7 +1178,7 @@ Restart:
 // LowerBound returns an iterator pointing to the first element in the range
 // [first, last) that is not less than (i.e. greater or equal to) value, or last
 // if no such element is found.
-func LowerBound(first, last ForwardReader, v Any) ForwardReader {
+func LowerBound(first, last ForwardReader, v any) ForwardReader {
 	return LowerBoundBy(first, last, v, _less)
 }
 
@@ -1187,7 +1187,7 @@ func LowerBound(first, last ForwardReader, v Any) ForwardReader {
 // if no such element is found.
 //
 // Elements are compared using the given binary comparer less.
-func LowerBoundBy(first, last ForwardReader, v Any, less LessComparer) ForwardReader {
+func LowerBoundBy(first, last ForwardReader, v any, less LessComparer) ForwardReader {
 	for len := Distance(first, last); len != 0; {
 		l2 := len / 2
 		m := AdvanceN(first, l2).(ForwardReader)
@@ -1204,7 +1204,7 @@ func LowerBoundBy(first, last ForwardReader, v Any, less LessComparer) ForwardRe
 // UpperBound returns an iterator pointing to the first element in the range
 // [first, last) that is greater than value, or last if no such element is
 // found.
-func UpperBound(first, last ForwardReader, v Any) ForwardReader {
+func UpperBound(first, last ForwardReader, v any) ForwardReader {
 	return UpperBoundBy(first, last, v, _less)
 }
 
@@ -1213,7 +1213,7 @@ func UpperBound(first, last ForwardReader, v Any) ForwardReader {
 // found.
 //
 // Elements are compared using the given binary comparer less.
-func UpperBoundBy(first, last ForwardReader, v Any, less LessComparer) ForwardReader {
+func UpperBoundBy(first, last ForwardReader, v any, less LessComparer) ForwardReader {
 	for len := Distance(first, last); len != 0; {
 		l2 := len / 2
 		m := AdvanceN(first, l2).(ForwardReader)
@@ -1229,7 +1229,7 @@ func UpperBoundBy(first, last ForwardReader, v Any, less LessComparer) ForwardRe
 
 // BinarySearch checks if an element equivalent to value appears within the
 // range [first, last).
-func BinarySearch(first, last ForwardReader, v Any) bool {
+func BinarySearch(first, last ForwardReader, v any) bool {
 	return BinarySearchBy(first, last, v, _less)
 }
 
@@ -1237,14 +1237,14 @@ func BinarySearch(first, last ForwardReader, v Any) bool {
 // range [first, last).
 //
 // Elements are compared using the given binary comparer less.
-func BinarySearchBy(first, last ForwardReader, v Any, less LessComparer) bool {
+func BinarySearchBy(first, last ForwardReader, v any, less LessComparer) bool {
 	first = LowerBoundBy(first, last, v, less)
 	return _ne(first, last) && !(less(v, first.Read()))
 }
 
 // EqualRange returns a range containing all elements equivalent to value in the
 // range [first, last).
-func EqualRange(first, last ForwardReader, v Any) (ForwardReader, ForwardReader) {
+func EqualRange(first, last ForwardReader, v any) (ForwardReader, ForwardReader) {
 	return EqualRangeBy(first, last, v, _less)
 }
 
@@ -1252,7 +1252,7 @@ func EqualRange(first, last ForwardReader, v Any) (ForwardReader, ForwardReader)
 // the range [first, last).
 //
 // Elements are compared using the given binary comparer less.
-func EqualRangeBy(first, last ForwardReader, v Any, less LessComparer) (ForwardReader, ForwardReader) {
+func EqualRangeBy(first, last ForwardReader, v any, less LessComparer) (ForwardReader, ForwardReader) {
 	for len := Distance(first, last); len != 0; {
 		l2 := len / 2
 		m := AdvanceN(first, l2).(ForwardReader)
@@ -1652,14 +1652,14 @@ func SortHeapBy(first, last RandomReadWriter, less LessComparer) {
 }
 
 // Max returns the greater of the given values.
-func Max(a, b Any) Any {
+func Max(a, b any) any {
 	return MaxBy(a, b, _less)
 }
 
 // MaxBy returns the greater of the given values.
 //
 // Values are compared using the given binary comparer less.
-func MaxBy(a, b Any, less LessComparer) Any {
+func MaxBy(a, b any, less LessComparer) any {
 	if less(a, b) {
 		return b
 	}
@@ -1688,14 +1688,14 @@ func MaxElementBy(first, last ForwardReader, less LessComparer) ForwardReader {
 }
 
 // Min returns the smaller of the given values.
-func Min(a, b Any) Any {
+func Min(a, b any) any {
 	return MinBy(a, b, _less)
 }
 
 // MinBy returns the smaller of the given values.
 //
 // Values are compared using the given binary comparer less.
-func MinBy(a, b Any, less LessComparer) Any {
+func MinBy(a, b any, less LessComparer) any {
 	if less(a, b) {
 		return a
 	}
@@ -1724,14 +1724,14 @@ func MinElementBy(first, last ForwardReader, less LessComparer) ForwardReader {
 }
 
 // Minmax returns the smaller and larger of two elements.
-func Minmax(a, b Any) (Any, Any) {
+func Minmax(a, b any) (any, any) {
 	return MinmaxBy(a, b, _less)
 }
 
 // MinmaxBy returns the smaller and larger of two elements.
 //
 // Values are compared using the given binary comparer less.
-func MinmaxBy(a, b Any, less LessComparer) (Any, Any) {
+func MinmaxBy(a, b any, less LessComparer) (any, any) {
 	if less(b, a) {
 		return b, a
 	}
@@ -1783,14 +1783,14 @@ func MinmaxElementBy(first, last ForwardReader, less LessComparer) (ForwardReade
 }
 
 // Clamp clamps a value between a pair of boundary values.
-func Clamp(v, lo, hi Any) Any {
+func Clamp(v, lo, hi any) any {
 	return ClampBy(v, lo, hi, _less)
 }
 
 // ClampBy clamps a value between a pair of boundary values.
 //
 // Values are compared using the given binary comparer less.
-func ClampBy(v, lo, hi Any, less LessComparer) Any {
+func ClampBy(v, lo, hi any, less LessComparer) any {
 	if less(v, lo) {
 		return lo
 	}
@@ -1998,13 +1998,13 @@ func PrevPermutationBy(first, last BidiReadWriter, less LessComparer) bool {
 
 // Iota fills the range [first, last) with sequentially increasing values,
 // starting with v and repetitively evaluating v++/v.Inc().
-func Iota(first, last ForwardWriter, v Any) {
+func Iota(first, last ForwardWriter, v any) {
 	IotaBy(first, last, v, _inc)
 }
 
 // IotaBy fills the range [first, last) with sequentially increasing values,
 // starting with v and repetitively evaluating inc(v).
-func IotaBy(first, last ForwardWriter, v Any, inc UnaryOperation) {
+func IotaBy(first, last ForwardWriter, v any, inc UnaryOperation) {
 	for ; _ne(first, last); first, v = NextForwardWriter(first), inc(v) {
 		first.Write(v)
 	}
@@ -2012,13 +2012,13 @@ func IotaBy(first, last ForwardWriter, v Any, inc UnaryOperation) {
 
 // Accumulate computes the sum of the given value v and the elements in the
 // range [first, last), using v+=x or v=v.Add(x).
-func Accumulate(first, last InputIter, v Any) Any {
+func Accumulate(first, last InputIter, v any) any {
 	return AccumulateBy(first, last, v, _add)
 }
 
 // AccumulateBy computes the sum of the given value v and the elements in the
 // range [first, last), using v=add(v,x).
-func AccumulateBy(first, last InputIter, v Any, add BinaryOperation) Any {
+func AccumulateBy(first, last InputIter, v any, add BinaryOperation) any {
 	for ; _ne(first, last); first = NextInputIter(first) {
 		v = add(v, first.Read())
 	}
@@ -2028,14 +2028,14 @@ func AccumulateBy(first, last InputIter, v Any, add BinaryOperation) Any {
 // InnerProduct computes inner product (i.e. sum of products) or performs
 // ordered map/reduce operation on the range [first1, last1), using v=v+x*y or
 // v=v.Add(x.Mul(y)).
-func InnerProduct(first1, last1, first2 InputIter, v Any) Any {
+func InnerProduct(first1, last1, first2 InputIter, v any) any {
 	return InnerProductBy(first1, last1, first2, v, _add, _mul)
 }
 
 // InnerProductBy computes inner product (i.e. sum of products) or performs
 // ordered map/reduce operation on the range [first1, last1), using
 // v=add(v,mul(x,y)).
-func InnerProductBy(first1, last1, first2 InputIter, v Any, add, mul BinaryOperation) Any {
+func InnerProductBy(first1, last1, first2 InputIter, v any, add, mul BinaryOperation) any {
 	for ; _ne(first1, last1); first1, first2 = NextInputIter(first1), NextInputIter(first2) {
 		v = add(v, mul(first1.Read(), first2.Read()))
 	}
@@ -2095,7 +2095,7 @@ func PartialSumBy(first, last InputIter, dFirst OutputIter, add BinaryOperation)
 // v=v.Add(cur) for the range [first, last), using v as the initial value, and
 // writes the results to the range beginning at dFirst. "exclusive" means that
 // the i-th input element is not included in the i-th sum.
-func ExclusiveScan(first, last InputIter, dFirst OutputIter, v Any) OutputIter {
+func ExclusiveScan(first, last InputIter, dFirst OutputIter, v any) OutputIter {
 	return ExclusiveScanBy(first, last, dFirst, v, _add)
 }
 
@@ -2103,7 +2103,7 @@ func ExclusiveScan(first, last InputIter, dFirst OutputIter, v Any) OutputIter {
 // for the range [first, last), using v as the initial value, and writes the
 // results to the range beginning at dFirst. "exclusive" means that the i-th
 // input element is not included in the i-th sum.
-func ExclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, add BinaryOperation) OutputIter {
+func ExclusiveScanBy(first, last InputIter, dFirst OutputIter, v any, add BinaryOperation) OutputIter {
 	return TransformExclusiveScanBy(first, last, dFirst, v, add, _noop)
 }
 
@@ -2111,7 +2111,7 @@ func ExclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, add Binary
 // v=v.Add(cur) for the range [first, last), using v as the initial value (if
 // provided), and writes the results to the range beginning at dFirst.
 // "inclusive" means that the i-th input element is included in the i-th sum.
-func InclusiveScan(first, last InputIter, dFirst OutputIter, v Any) OutputIter {
+func InclusiveScan(first, last InputIter, dFirst OutputIter, v any) OutputIter {
 	return InclusiveScanBy(first, last, dFirst, v, _add)
 }
 
@@ -2119,7 +2119,7 @@ func InclusiveScan(first, last InputIter, dFirst OutputIter, v Any) OutputIter {
 // for the range [first, last), using v as the initial value (if provided), and
 // writes the results to the range beginning at dFirst. "inclusive" means that
 // the i-th input element is included in the i-th sum.
-func InclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, add BinaryOperation) OutputIter {
+func InclusiveScanBy(first, last InputIter, dFirst OutputIter, v any, add BinaryOperation) OutputIter {
 	return TransformInclusiveScanBy(first, last, dFirst, v, add, _noop)
 }
 
@@ -2128,7 +2128,7 @@ func InclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, add Binary
 // v=v.Add(cur) for the range [first, last), using v as the initial value, and
 // writes the results to the range beginning at dFirst. "exclusive" means that
 // the i-th input element is not included in the i-th sum.
-func TransformExclusiveScan(first, last InputIter, dFirst OutputIter, v Any, op UnaryOperation) OutputIter {
+func TransformExclusiveScan(first, last InputIter, dFirst OutputIter, v any, op UnaryOperation) OutputIter {
 	return TransformExclusiveScanBy(first, last, dFirst, v, _add, op)
 }
 
@@ -2137,7 +2137,7 @@ func TransformExclusiveScan(first, last InputIter, dFirst OutputIter, v Any, op 
 // for the range [first, last), using v as the initial value, and writes the
 // results to the range beginning at dFirst. "exclusive" means that the i-th
 // input element is not included in the i-th sum.
-func TransformExclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, add BinaryOperation, op UnaryOperation) OutputIter {
+func TransformExclusiveScanBy(first, last InputIter, dFirst OutputIter, v any, add BinaryOperation, op UnaryOperation) OutputIter {
 	if _eq(first, last) {
 		return dFirst
 	}
@@ -2159,7 +2159,7 @@ func TransformExclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, a
 // v=v.Add(cur) for the range [first, last), using v as the initial value (if
 // provided), and writes the results to the range beginning at dFirst.
 // "inclusive" means that the i-th input element is included in the i-th sum.
-func TransformInclusiveScan(first, last InputIter, dFirst OutputIter, v Any, op UnaryOperation) OutputIter {
+func TransformInclusiveScan(first, last InputIter, dFirst OutputIter, v any, op UnaryOperation) OutputIter {
 	return TransformInclusiveScanBy(first, last, dFirst, v, _add, op)
 }
 
@@ -2168,7 +2168,7 @@ func TransformInclusiveScan(first, last InputIter, dFirst OutputIter, v Any, op 
 // for the range [first, last), using v as the initial value (if provided), and
 // writes the results to the range beginning at dFirst. "inclusive" means that
 // the i-th input element is included in the i-th sum.
-func TransformInclusiveScanBy(first, last InputIter, dFirst OutputIter, v Any, add BinaryOperation, op UnaryOperation) OutputIter {
+func TransformInclusiveScanBy(first, last InputIter, dFirst OutputIter, v any, add BinaryOperation, op UnaryOperation) OutputIter {
 	for ; _ne(first, last); first = NextInputIter(first) {
 		v = add(v, op(first.Read()))
 		dFirst = _writeNext(dFirst, v)

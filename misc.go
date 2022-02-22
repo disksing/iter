@@ -8,10 +8,10 @@ import (
 )
 
 type iotaReader struct {
-	x Any
+	x any
 }
 
-func (r iotaReader) Read() Any {
+func (r iotaReader) Read() any {
 	return r.x
 }
 
@@ -24,14 +24,14 @@ func (r iotaReader) Eq(Iter) bool {
 }
 
 // IotaReader creates an InputIter that returns [x, x+1, x+2...).
-func IotaReader(x Any) InputIter {
+func IotaReader(x any) InputIter {
 	return iotaReader{x: x}
 }
 
 // IotaGenerator creates a Generator that returns [x, x+1, x+2...).
-func IotaGenerator(x Any) Generator {
+func IotaGenerator(x any) Generator {
 	r := IotaReader(x)
-	return func() Any {
+	return func() any {
 		v := r.Read()
 		r = NextInputIter(r)
 		return v
@@ -39,30 +39,30 @@ func IotaGenerator(x Any) Generator {
 }
 
 type repeatReader struct {
-	x Any
+	x any
 }
 
-func (r repeatReader) Read() Any { return r.x }
+func (r repeatReader) Read() any { return r.x }
 
 func (r repeatReader) Next() Incrementable { return r }
 
 func (r repeatReader) Eq(Iter) bool { return false }
 
 // RepeatReader creates an InputIter that returns [x, x, x...).
-func RepeatReader(x Any) InputIter {
+func RepeatReader(x any) InputIter {
 	return repeatReader{x: x}
 }
 
 // RepeatGenerator creates an Generator that returns [x, x, x...).
-func RepeatGenerator(x Any) Generator {
-	return func() Any { return x }
+func RepeatGenerator(x any) Generator {
+	return func() any { return x }
 }
 
 // RandomGenerator creates a generator that returns random item of a slice.
 func RandomGenerator(s interface{}, r *rand.Rand) Generator {
 	v := reflect.ValueOf(s)
 	l := v.Len()
-	return func() Any { return v.Index(r.Intn(l)).Interface() }
+	return func() any { return v.Index(r.Intn(l)).Interface() }
 }
 
 // Erase removes a range from a container.

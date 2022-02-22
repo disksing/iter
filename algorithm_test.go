@@ -26,7 +26,7 @@ func randIntSlice() []int {
 	lh := []int{randInt(), randInt()}
 	Sort(begin(lh), end(lh))
 	var s []int
-	GenerateN(SliceBackInserter(&s), randInt(), func() Any { return lh[0] + r.Intn(lh[1]-lh[0]+1) })
+	GenerateN(SliceBackInserter(&s), randInt(), func() any { return lh[0] + r.Intn(lh[1]-lh[0]+1) })
 	return s
 }
 
@@ -45,8 +45,8 @@ func sliceEqual(assert *assert.Assertions, a, b []int) {
 	assert.Equal(a, b)
 }
 
-func _eq(x, y Any) bool {
-	type ieq interface{ Eq(Any) bool }
+func _eq(x, y any) bool {
+	type ieq interface{ Eq(any) bool }
 	if e, ok := x.(ieq); ok {
 		return e.Eq(y)
 	}
@@ -55,7 +55,7 @@ func _eq(x, y Any) bool {
 
 func TestAllAnyNoneOf(t *testing.T) {
 	assert := assert.New(t)
-	pred := func(x Any) bool { return x.(int)%2 == 0 }
+	pred := func(x any) bool { return x.(int)%2 == 0 }
 	allOf := func(x []int) bool {
 		for _, v := range x {
 			if !pred(v) {
@@ -90,7 +90,7 @@ func TestForEach(t *testing.T) {
 	assert := assert.New(t)
 	a := randIntSlice()
 	var b []int
-	f := func(x Any) { b = append(b, x.(int)) }
+	f := func(x any) { b = append(b, x.(int)) }
 	ForEach(begin(a), end(a), f)
 	sliceEqual(assert, a, b)
 	n := r.Intn(len(a) + 1)
@@ -103,7 +103,7 @@ func TestCount(t *testing.T) {
 	assert := assert.New(t)
 	a := randIntSlice()
 	count := make([]int, randN)
-	ForEach(begin(a), end(a), func(x Any) { count[x.(int)]++ })
+	ForEach(begin(a), end(a), func(x any) { count[x.(int)]++ })
 	for i := 0; i < 100; i++ {
 		assert.Equal(Count(begin(a), end(a), i), count[i])
 	}
@@ -126,10 +126,10 @@ func TestMismatch(t *testing.T) {
 func TestFind(t *testing.T) {
 	assert := assert.New(t)
 	a := randIntSlice()
-	f := func(x Any) bool { return x.(int)%2 == 0 }
+	f := func(x any) bool { return x.(int)%2 == 0 }
 	v := randInt()
 	it := Find(begin(a), end(a), v)
-	assert.True(NoneOf(begin(a), it, func(x Any) bool { return x.(int) == v }))
+	assert.True(NoneOf(begin(a), it, func(x any) bool { return x.(int) == v }))
 	if n := Distance(begin(a), it); n < len(a) {
 		assert.Equal(a[n], v)
 	}
@@ -224,7 +224,7 @@ func TestCopy(t *testing.T) {
 func TestCopyIf(t *testing.T) {
 	a := randIntSlice()
 	var b []int
-	f := func(x Any) bool { return x.(int)%2 == 0 }
+	f := func(x any) bool { return x.(int)%2 == 0 }
 	var c []int
 	for _, x := range a {
 		if f(x) {
@@ -256,7 +256,7 @@ func TestFill(t *testing.T) {
 	a := randIntSlice()
 	x := randInt()
 	Fill(begin(a), end(a), x)
-	assert.True(AllOf(begin(a), end(a), func(v Any) bool { return v.(int) == x }))
+	assert.True(AllOf(begin(a), end(a), func(v any) bool { return v.(int) == x }))
 }
 
 func TestFillN(t *testing.T) {
@@ -284,7 +284,7 @@ func TestTransform(t *testing.T) {
 	for _, x := range a {
 		b = append(b, x*2)
 	}
-	Transform(begin(a), end(a), begin(a), func(x Any) Any { return x.(int) * 2 })
+	Transform(begin(a), end(a), begin(a), func(x any) any { return x.(int) * 2 })
 	sliceEqual(assert.New(t), a, b)
 }
 
@@ -294,7 +294,7 @@ func TestTransformBinary(t *testing.T) {
 		a, b = b, a
 	}
 	c := make([]int, len(a))
-	TransformBinary(begin(a), end(a), begin(b), begin(c), func(x, y Any) Any { return x.(int) * y.(int) })
+	TransformBinary(begin(a), end(a), begin(b), begin(c), func(x, y any) any { return x.(int) * y.(int) })
 	for i := range a {
 		a[i] *= b[i]
 	}
@@ -304,7 +304,7 @@ func TestTransformBinary(t *testing.T) {
 func TestGenerate(t *testing.T) {
 	assert := assert.New(t)
 	var i int
-	g := func() Any { i++; return i }
+	g := func() any { i++; return i }
 	a := randIntSlice()
 	Generate(begin(a), end(a), g)
 	for i := range a {
@@ -315,7 +315,7 @@ func TestGenerate(t *testing.T) {
 func TestGenerateN(t *testing.T) {
 	assert := assert.New(t)
 	var i int
-	g := func() Any { i++; return i }
+	g := func() any { i++; return i }
 	a := randIntSlice()
 	b := append(a[:0:0], a...)
 	n := r.Intn(len(a) + 1)
@@ -335,7 +335,7 @@ func TestRemove(t *testing.T) {
 	b := append(a[:0:0], a...)
 	c := append(a[:0:0], a...)
 	var d, e []int
-	f := func(x Any) bool { return x.(int)%2 == 0 }
+	f := func(x any) bool { return x.(int)%2 == 0 }
 
 	count1 := Count(begin(a), end(a), 1)
 	countf := CountIf(begin(a), end(a), f)
@@ -360,7 +360,7 @@ func TestReplace(t *testing.T) {
 	b := append(a[:0:0], a...)
 	c := append(a[:0:0], a...)
 	var d, e []int
-	f := func(x Any) bool { return x.(int)%2 == 0 }
+	f := func(x any) bool { return x.(int)%2 == 0 }
 
 	Replace(begin(a), end(a), 1, 2)
 	ReplaceIf(begin(b), end(b), f, 1)
@@ -506,8 +506,8 @@ func TestPartition(t *testing.T) {
 	assert := assert.New(t)
 	l := randInt()
 	a := make([]bool, l)
-	GenerateN(begin(a), l, func() Any { return r.Intn(2) == 0 })
-	f := func(x Any) bool { return x.(bool) }
+	GenerateN(begin(a), l, func() any { return r.Intn(2) == 0 })
+	f := func(x any) bool { return x.(bool) }
 	checkPartition := func(a []bool) bool {
 		var i int
 		for ; i < len(a) && a[i]; i++ {
@@ -543,15 +543,15 @@ type compareItem struct {
 	a, b int
 }
 
-func (ci *compareItem) Equal(x Any) bool {
+func (ci *compareItem) Equal(x any) bool {
 	return ci.a == x.(*compareItem).a
 }
 
-func (ci *compareItem) Less(x Any) bool {
+func (ci *compareItem) Less(x any) bool {
 	return ci.a < x.(*compareItem).a
 }
 
-func (ci *compareItem) Less2(x Any) bool {
+func (ci *compareItem) Less2(x any) bool {
 	return ci.Less(x) ||
 		(ci.a == x.(*compareItem).a && ci.b < x.(*compareItem).b)
 }
@@ -579,7 +579,7 @@ func forwardListEnd(l *list.List) *forwardListIter {
 	}
 }
 
-func (l *forwardListIter) Eq(x Any) bool {
+func (l *forwardListIter) Eq(x any) bool {
 	return l.e == x.(*forwardListIter).e
 }
 
@@ -592,11 +592,11 @@ func (l *forwardListIter) Next() Incrementable {
 	}
 }
 
-func (l *forwardListIter) Read() Any {
+func (l *forwardListIter) Read() any {
 	return l.e.Value
 }
 
-func (l *forwardListIter) Write(x Any) {
+func (l *forwardListIter) Write(x any) {
 	l.e.Value = x
 }
 
@@ -605,14 +605,14 @@ func TestStablePartition(t *testing.T) {
 	l := randInt()
 	a := make([]*compareItem, l)
 	var id int
-	GenerateN(begin(a), l, func() Any {
+	GenerateN(begin(a), l, func() any {
 		id++
 		return &compareItem{
 			a: r.Intn(2),
 			b: id,
 		}
 	})
-	f := func(x Any) bool { return x.(*compareItem).a > 0 }
+	f := func(x any) bool { return x.(*compareItem).a > 0 }
 	b := list.New()
 	Copy(begin(a), end(a), ListBackInserter(b))
 
@@ -753,17 +753,17 @@ func TestSet(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randIntSlice(), randIntSlice()
 	countA := make([]int, randN)
-	ForEach(begin(a), end(a), func(x Any) { countA[x.(int)]++ })
+	ForEach(begin(a), end(a), func(x any) { countA[x.(int)]++ })
 	countB := make([]int, randN)
-	ForEach(begin(b), end(b), func(x Any) { countB[x.(int)]++ })
+	ForEach(begin(b), end(b), func(x any) { countB[x.(int)]++ })
 	Sort(begin(a), end(a))
 	Sort(begin(b), end(b))
 	assert.Equal(
 		Includes(begin(a), end(a), begin(b), end(b)),
 		InnerProductBy(begin(countA), end(countA), begin(countB),
 			true,
-			func(acc, cur Any) Any { return acc.(bool) && cur.(bool) },
-			func(a, b Any) Any { return a.(int) >= b.(int) }),
+			func(acc, cur any) any { return acc.(bool) && cur.(bool) },
+			func(a, b any) any { return a.(int) >= b.(int) }),
 	)
 	var diff, intersection, symmetric, union []int
 	SetDifference(begin(a), end(a), begin(b), end(b), SliceBackInserter(&diff))
@@ -820,7 +820,7 @@ func TestStableSort(t *testing.T) {
 	l := randInt()
 	a := make([]*compareItem, l)
 	var id int
-	GenerateN(begin(a), l, func() Any {
+	GenerateN(begin(a), l, func() any {
 		id++
 		return &compareItem{
 			a: randInt(),
@@ -828,7 +828,7 @@ func TestStableSort(t *testing.T) {
 		}
 	})
 	StableSort(begin(a), end(a))
-	assert.True(IsSortedBy(begin(a), end(a), func(x, y Any) bool { return x.(*compareItem).Less2(y) }))
+	assert.True(IsSortedBy(begin(a), end(a), func(x, y any) bool { return x.(*compareItem).Less2(y) }))
 }
 
 func TestHeap(t *testing.T) {
@@ -912,7 +912,7 @@ func TestMinmaxElement(t *testing.T) {
 	s := randIntSlice()
 	min, max := MinmaxElement(begin(s), end(s))
 	min2, max2 := MinElement(begin(s), end(s)), MaxElement(begin(s), end(s))
-	assert.True(NoneOf(begin(s), end(s), func(v Any) bool { return v.(int) > max.Read().(int) || v.(int) < min.Read().(int) }))
+	assert.True(NoneOf(begin(s), end(s), func(v any) bool { return v.(int) > max.Read().(int) || v.(int) < min.Read().(int) }))
 	if len(s) > 0 {
 		assert.Equal(min.Read(), min2.Read())
 		assert.Equal(max.Read(), max2.Read())
@@ -972,7 +972,7 @@ func TestCompare(t *testing.T) {
 func TestIsPermutation(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randIntSlice(), randIntSlice()
-	Generate(begin(b), end(b), func() Any {
+	Generate(begin(b), end(b), func() any {
 		if len(a) > 0 {
 			return a[r.Intn(len(a))]
 		}
@@ -996,7 +996,7 @@ func TestIsPermutation(t *testing.T) {
 func TestIsPermutation2(t *testing.T) {
 	assert := assert.New(t)
 	a, b := randIntSlice(), randIntSlice()
-	Generate(begin(b), end(b), func() Any {
+	Generate(begin(b), end(b), func() any {
 		if len(a) > 0 {
 			return a[r.Intn(len(a))]
 		}
@@ -1050,7 +1050,7 @@ func TestIota(t *testing.T) {
 	b := make([]int, l)
 	s := randInt()
 	Iota(begin(a), end(a), s+1)
-	Generate(begin(b), end(b), func() Any { s++; return s })
+	Generate(begin(b), end(b), func() any { s++; return s })
 	sliceEqual(assert.New(t), a, b)
 }
 
@@ -1058,7 +1058,7 @@ func TestAccumulate(t *testing.T) {
 	a := randIntSlice()
 	sum := Accumulate(begin(a), end(a), 0)
 	sum2 := 0
-	ForEach(begin(a), end(a), func(it Any) {
+	ForEach(begin(a), end(a), func(it any) {
 		sum2 += it.(int)
 	})
 	assert.New(t).Equal(sum, sum2)
@@ -1110,9 +1110,9 @@ func TestPartialSum(t *testing.T) {
 	sliceEqual(assert, g, exc)
 	InclusiveScan(begin(a), end(a), begin(g), 2)
 	sliceEqual(assert, g, inc)
-	TransformExclusiveScan(begin(a), end(a), begin(g), 3, func(x Any) Any { return x.(int) * 2 })
+	TransformExclusiveScan(begin(a), end(a), begin(g), 3, func(x any) any { return x.(int) * 2 })
 	sliceEqual(assert, g, exct)
-	TransformInclusiveScan(begin(a), end(a), begin(g), 4, func(x Any) Any { return x.(int) * x.(int) })
+	TransformInclusiveScan(begin(a), end(a), begin(g), 4, func(x any) any { return x.(int) * x.(int) })
 	sliceEqual(assert, g, inct)
 }
 
@@ -1120,15 +1120,15 @@ type dummyObj struct {
 	s string
 }
 
-func (obj dummyObj) Eq(x Any) bool {
+func (obj dummyObj) Eq(x any) bool {
 	return len(obj.s) == len(x.(dummyObj).s)
 }
 
-func (obj dummyObj) Less(x Any) bool {
+func (obj dummyObj) Less(x any) bool {
 	return len(obj.s) < len(x.(dummyObj).s)
 }
 
-func (obj dummyObj) Cmp(x Any) int {
+func (obj dummyObj) Cmp(x any) int {
 	if obj.Eq(x) {
 		return 0
 	}
@@ -1138,19 +1138,19 @@ func (obj dummyObj) Cmp(x Any) int {
 	return 1
 }
 
-func (obj dummyObj) Inc() Any {
+func (obj dummyObj) Inc() any {
 	return dummyObj{s: obj.s + "a"}
 }
 
-func (obj dummyObj) Add(x Any) Any {
+func (obj dummyObj) Add(x any) any {
 	return dummyObj{s: obj.s + x.(dummyObj).s}
 }
 
-func (obj dummyObj) Sub(x Any) Any {
+func (obj dummyObj) Sub(x any) any {
 	return dummyObj{s: obj.s[:len(obj.s)-len(x.(dummyObj).s)]}
 }
 
-func (obj dummyObj) Mul(x Any) Any {
+func (obj dummyObj) Mul(x any) any {
 	return dummyObj{s: strings.Repeat(obj.s, len(x.(dummyObj).s))}
 }
 

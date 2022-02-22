@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func reflectCmp(obj1, obj2 Any) int {
+func reflectCmp(obj1, obj2 any) int {
 	k1 := reflect.ValueOf(obj1).Kind()
 	k2 := reflect.ValueOf(obj2).Kind()
 	if k2 != k1 {
@@ -127,7 +127,7 @@ func reflectCmp(obj1, obj2 Any) int {
 	panic("unknown type")
 }
 
-func reflectInc(x Any) Any {
+func reflectInc(x any) any {
 	switch v := x.(type) {
 	case int:
 		return v + 1
@@ -161,7 +161,7 @@ func reflectInc(x Any) Any {
 	panic("unknown type")
 }
 
-func reflectAdd(obj1, obj2 Any) Any {
+func reflectAdd(obj1, obj2 any) any {
 	k1 := reflect.ValueOf(obj1).Kind()
 	k2 := reflect.ValueOf(obj2).Kind()
 	if k2 != k1 {
@@ -202,7 +202,7 @@ func reflectAdd(obj1, obj2 Any) Any {
 	panic("unknown type")
 }
 
-func reflectSub(obj1, obj2 Any) Any {
+func reflectSub(obj1, obj2 any) any {
 	k1 := reflect.ValueOf(obj1).Kind()
 	k2 := reflect.ValueOf(obj2).Kind()
 	if k2 != k1 {
@@ -241,7 +241,7 @@ func reflectSub(obj1, obj2 Any) Any {
 	panic("unknown type")
 }
 
-func reflectMul(obj1, obj2 Any) Any {
+func reflectMul(obj1, obj2 any) any {
 	k1 := reflect.ValueOf(obj1).Kind()
 	k2 := reflect.ValueOf(obj2).Kind()
 	if k2 != k1 {
