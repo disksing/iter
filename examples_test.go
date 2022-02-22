@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	. "github.com/disksing/iter"
+	. "github.com/disksing/iter/v2"
 )
 
 // shortcuts to make life easier.

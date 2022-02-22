@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	. "github.com/disksing/iter"
+	. "github.com/disksing/iter/v2"
 	"github.com/stretchr/testify/assert"
 )
 
