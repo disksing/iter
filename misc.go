@@ -66,7 +66,7 @@ func RandomGenerator[T any](s []T, r *rand.Rand) Generator[T] {
 func MakeString[T byte | rune, It ForwardReader[T, It]](first, last It) string {
 	var s strings.Builder
 	for ; __ne(first, last); first = first.Next() {
-		switch v := interface{}(first.Read()).(type) {
+		switch v := any(first.Read()).(type) {
 		case byte:
 			s.WriteByte(v)
 		case rune:

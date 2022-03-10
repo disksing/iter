@@ -317,7 +317,7 @@ func (si *StringBuilderInserter[T]) Write(x T) {
 	if si.Builder.Len() > 0 && si.Delimiter != "" {
 		si.Builder.WriteString(si.Delimiter)
 	}
-	switch v := interface{}(x).(type) {
+	switch v := any(x).(type) {
 	case byte:
 		si.Builder.WriteByte(v)
 	case rune:

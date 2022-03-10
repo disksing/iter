@@ -59,7 +59,7 @@ type OutputIter[T any] interface {
 
 func _writeNext[T any, It OutputIter[T]](out It, v T) It {
 	out.Write(v)
-	if inc, ok := interface{}(out).(ForwardMovable[It]); ok {
+	if inc, ok := any(out).(ForwardMovable[It]); ok {
 		out = inc.Next()
 	}
 	return out
@@ -141,7 +141,7 @@ type (
 
 // Distance returns the distance of two iterators.
 func Distance[T any, It Iter[T]](first, last It) int {
-	ifirst, ilast := interface{}(first), interface{}(last)
+	ifirst, ilast := any(first), any(last)
 	if f, ok := ifirst.(RandomIter[T, It]); ok {
 		if l, ok := ilast.(It); ok {
 			return f.Distance(l)
@@ -150,7 +150,7 @@ func Distance[T any, It Iter[T]](first, last It) int {
 	if f, ok := ifirst.(ForwardIter[T, It]); ok {
 		if l, ok := ilast.(It); ok {
 			var d int
-			for ; !f.Eq(l); f = (interface{})(f.Next()).(ForwardIter[T, It]) {
+			for ; !f.Eq(l); f = any(f.Next()).(ForwardIter[T, It]) {
 				d++
 			}
 			return d
@@ -158,7 +158,7 @@ func Distance[T any, It Iter[T]](first, last It) int {
 	}
 	if f, ok := ifirst.(InputIter[T, It]); ok {
 		var d int
-		for ; !f.Eq(last); f = (interface{})(f.Next()).(InputIter[T, It]) {
+		for ; !f.Eq(last); f = any(f.Next()).(InputIter[T, It]) {
 			d++
 		}
 		return d
@@ -168,24 +168,24 @@ func Distance[T any, It Iter[T]](first, last It) int {
 
 // AdvanceN moves an iterator by step N.
 func AdvanceN[T any, It Iter[T]](it It, n int) It {
-	if it2, ok := interface{}(it).(RandomIter[T, It]); ok {
+	if it2, ok := any(it).(RandomIter[T, It]); ok {
 		return it2.AdvanceN(n)
 	}
-	if it2, ok := interface{}(it).(ForwardIter[T, It]); ok && n >= 0 {
+	if it2, ok := any(it).(ForwardIter[T, It]); ok && n >= 0 {
 		for ; n > 0; n-- {
-			it2 = (interface{})(it2.Next()).(ForwardIter[T, It])
+			it2 = (any)(it2.Next()).(ForwardIter[T, It])
 		}
 		return it2.(It)
 	}
-	if it2, ok := interface{}(it).(InputIter[T, It]); ok && n >= 0 {
+	if it2, ok := any(it).(InputIter[T, It]); ok && n >= 0 {
 		for ; n > 0; n-- {
-			it2 = (interface{})(it2.Next()).(InputIter[T, It])
+			it2 = any(it2.Next()).(InputIter[T, It])
 		}
 		return it2.(It)
 	}
-	if it2, ok := interface{}(it).(BidiIter[T, It]); ok && n <= 0 {
+	if it2, ok := any(it).(BidiIter[T, It]); ok && n <= 0 {
 		for ; n < 0; n++ {
-			it2 = (interface{})(it2.Prev()).(BidiIter[T, It])
+			it2 = any(it2.Prev()).(BidiIter[T, It])
 		}
 		return it2.(It)
 	}

@@ -500,8 +500,8 @@ func Shuffle[T any, It RandomReadWriter[T, It]](first, last It, r *rand.Rand) {
 // // possible sample has equal probability of appearance, and writes those
 // // selected elements into the output iterator out.
 // func Sample[T any, In ForwardReader[T, In], Out OutputIter[T]](first, last In, out Out, n int, r *rand.Rand) Out {
-// 	_, rr := (interface{})(first).(RandomReader[T, In])
-// 	rout, rw := (interface{})(out).(RandomWriter[T, Out])
+// 	_, rr := any(first).(RandomReader[T, In])
+// 	rout, rw := any(out).(RandomWriter[T, Out])
 // 	if !rr && rw {
 // 		return _reservoirSample[T](first, last, rout, n, r)
 // 	}
@@ -855,11 +855,11 @@ func (h *heapHelper[T, It]) Less(i, j int) bool {
 	)
 }
 
-func (h *heapHelper[T, It]) Push(x interface{}) {
+func (h *heapHelper[T, It]) Push(x any) {
 	h.n++
 }
 
-func (h *heapHelper[T, It]) Pop() interface{} {
+func (h *heapHelper[T, It]) Pop() any {
 	h.n--
 	return nil
 }
