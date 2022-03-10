@@ -1,131 +1,72 @@
 package iter
 
 import (
-	"container/list"
 	"math/rand"
-	"reflect"
 	"strings"
 )
 
-type iotaReader struct {
-	x any
+type iotaReader[T Numeric] struct {
+	x T
 }
 
-func (r iotaReader) Read() any {
+func (r iotaReader[T]) Read() T {
 	return r.x
 }
 
-func (r iotaReader) Next() Incrementable {
-	return iotaReader{x: _inc(r.x)}
+func (r iotaReader[T]) Next() iotaReader[T] {
+	return iotaReader[T]{x: r.x + 1}
 }
 
-func (r iotaReader) Eq(Iter) bool {
+func (r iotaReader[T]) Eq(iotaReader[T]) bool {
 	return false
 }
 
 // IotaReader creates an InputIter that returns [x, x+1, x+2...).
-func IotaReader(x any) InputIter {
-	return iotaReader{x: x}
+func IotaReader[T Numeric, It iotaReader[T]](x T) It {
+	return It{x: x}
 }
 
 // IotaGenerator creates a Generator that returns [x, x+1, x+2...).
-func IotaGenerator(x any) Generator {
+func IotaGenerator[T Numeric](x T) Generator[T] {
 	r := IotaReader(x)
-	return func() any {
+	return func() T {
 		v := r.Read()
-		r = NextInputIter(r)
+		r = r.Next()
 		return v
 	}
 }
 
-type repeatReader struct {
-	x any
+type repeatReader[T any] struct {
+	x T
 }
 
-func (r repeatReader) Read() any { return r.x }
+func (r repeatReader[T]) Read() T { return r.x }
 
-func (r repeatReader) Next() Incrementable { return r }
+func (r repeatReader[T]) Next() repeatReader[T] { return r }
 
-func (r repeatReader) Eq(Iter) bool { return false }
+func (r repeatReader[T]) Eq(repeatReader[T]) bool { return false }
 
 // RepeatReader creates an InputIter that returns [x, x, x...).
-func RepeatReader(x any) InputIter {
-	return repeatReader{x: x}
+func RepeatReader[T any](x T) InputIter[T, repeatReader[T]] {
+	return repeatReader[T]{x: x}
 }
 
 // RepeatGenerator creates an Generator that returns [x, x, x...).
-func RepeatGenerator(x any) Generator {
-	return func() any { return x }
+func RepeatGenerator[T any](x T) Generator[T] {
+	return func() T { return x }
 }
 
 // RandomGenerator creates a generator that returns random item of a slice.
-func RandomGenerator(s interface{}, r *rand.Rand) Generator {
-	v := reflect.ValueOf(s)
-	l := v.Len()
-	return func() any { return v.Index(r.Intn(l)).Interface() }
-}
-
-// Erase removes a range from a container.
-// c should be settable (*[]T or *list.List).
-// With 2 iterators arguments, it removes [it1, it2).
-// With 1 iterator argument, it removes [it, end).
-// With no iterator argument, it remvoes [begin, end).
-func Erase(c interface{}, it ...Iter) {
-	if len(it) > 2 {
-		panic("too many iterators, expect <=2")
-	}
-	if val := reflect.ValueOf(c); val.Elem().Type().Kind() == reflect.Slice {
-		v := val.Elem()
-		switch len(it) {
-		case 0:
-			v.Set(v.Slice(0, 0))
-		case 1:
-			l := Distance(SliceBegin(c), it[0])
-			v.Set(v.Slice(0, l))
-		case 2:
-			l, h := Distance(SliceBegin(c), it[0]), Distance(SliceBegin(c), it[1])
-			v.Set(reflect.AppendSlice(v.Slice(0, l), v.Slice(h, v.Len())))
-		}
-	} else if lst, ok := c.(*list.List); ok {
-		switch len(it) {
-		case 0:
-			for lst.Len() > 0 {
-				lst.Remove(lst.Front())
-			}
-		case 1:
-			if it, ok := it[0].(listIter); ok {
-				for e := it.e; e != nil; {
-					next := e.Next()
-					it.l.Remove(e)
-					e = next
-				}
-				return
-			}
-			panic("iterator is not listIter")
-		case 2:
-			if it1, ok := it[0].(listIter); ok {
-				if it2, ok := it[1].(listIter); ok {
-					for e := it1.e; e != it2.e; {
-						next := e.Next()
-						it1.l.Remove(e)
-						e = next
-					}
-					return
-				}
-			}
-			panic("iterator is not listIter")
-		}
-	} else {
-		panic("c is not *[]T or *list.List")
-	}
+func RandomGenerator[T any](s []T, r *rand.Rand) Generator[T] {
+	return func() T { return s[r.Intn(len(s))] }
 }
 
 // MakeString creates a string by range spesified by [first, last). The value
 // type should be byte or rune.
-func MakeString(first, last ForwardReader) string {
+func MakeString[T byte | rune, It ForwardReader[T, It]](first, last It) string {
 	var s strings.Builder
-	for ; _ne(first, last); first = NextForwardReader(first) {
-		switch v := first.Read().(type) {
+	for ; __ne(first, last); first = first.Next() {
+		switch v := interface{}(first.Read()).(type) {
 		case byte:
 			s.WriteByte(v)
 		case rune:

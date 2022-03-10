@@ -1,263 +1,164 @@
 package iter
 
 // Iter represents an iterator, just an alias of any.
-type Iter = any
+type Iter[T any] interface{}
 
 type (
 	// Reader is a readable iterator.
-	Reader interface {
-		Read() any
+	Reader[T any] interface {
+		Read() T
 	}
 	// Writer is a writable iterator.
-	Writer interface {
-		Write(any)
+	Writer[T any] interface {
+		Write(T)
 	}
 	// ReadWriter is an interface that groups Reader and Writer.
-	ReadWriter interface {
-		Reader
-		Writer
+	ReadWriter[T any] interface {
+		Reader[T]
+		Writer[T]
 	}
 )
 
-// Incrementable represents iterators that can move forward.
-type Incrementable interface {
-	Next() Incrementable
+// Comparable represents an iterator that can be compared.
+type Comparable[It Iter[any]] interface {
+	Eq(It) bool
 }
 
-// InputIter is a readable and incrementable iterator.
-type InputIter interface {
-	Reader
-	Incrementable
-	Eq(Iter) bool
+// ForwardMovable represents iterators that can move forward.
+type ForwardMovable[It Iter[any]] interface {
+	Next() It
 }
 
-// NextInputIter moves an InputIter forward.
-func NextInputIter(it InputIter) InputIter {
-	return it.Next().(InputIter)
+// BackwardMovable represents iterators that can move backward.
+type BackwardMovable[It Iter[any]] interface {
+	Prev() It
 }
 
-// OutputIter is a writable and incrementable iterator.
+// InputIter is a readable and forward movable iterator.
+type InputIter[T any, It Iter[T]] interface {
+	Reader[T]
+	ForwardMovable[It]
+	Comparable[It]
+}
+
+func __eq[It Comparable[It]](x, y It) bool {
+	return x.Eq(y)
+}
+
+func __ne[It Comparable[It]](x, y It) bool {
+	return !__eq(x, y)
+}
+
+// OutputIter is a writable and ForwardMovable iterator.
 //
 // It may not implement the incremental interface, in which case the increment
 // logic is done in Write().
-type OutputIter = Writer
+type OutputIter[T any] interface {
+	Writer[T]
+}
 
-func _writeNext(out OutputIter, v any) OutputIter {
+func _writeNext[T any, It OutputIter[T]](out It, v T) It {
 	out.Write(v)
-	if inc, ok := out.(Incrementable); ok {
-		out = inc.Next().(OutputIter)
+	if inc, ok := interface{}(out).(ForwardMovable[It]); ok {
+		out = inc.Next()
 	}
 	return out
 }
 
 type (
 	// ForwardIter is an iterator that moves forward.
-	ForwardIter interface {
-		Incrementable
-		Eq(Iter) bool
+	ForwardIter[T any, It Iter[T]] interface {
+		ForwardMovable[It]
+		Comparable[It]
 		AllowMultiplePass() // a marker indicates it can be multiple passed.
 	}
 	// ForwardReader is an interface that groups ForwardIter and Reader.
-	ForwardReader interface {
-		ForwardIter
-		Reader
+	ForwardReader[T any, It Iter[T]] interface {
+		ForwardIter[T, It]
+		Reader[T]
 	}
 	// ForwardWriter is an interface that groups ForwardIter and Writer.
-	ForwardWriter interface {
-		ForwardIter
-		Writer
+	ForwardWriter[T any, It Iter[T]] interface {
+		ForwardIter[T, It]
+		Writer[T]
 	}
 	// ForwardReadWriter is an interface that groups ForwardIter and
 	// ReadWriter.
-	ForwardReadWriter interface {
-		ForwardIter
-		ReadWriter
+	ForwardReadWriter[T any, It Iter[T]] interface {
+		ForwardIter[T, It]
+		ReadWriter[T]
 	}
 )
-
-// NextForwardIter moves a ForwardIter to next.
-func NextForwardIter(r ForwardIter) ForwardIter {
-	return r.Next().(ForwardIter)
-}
-
-// NextForwardReader moves a ForwardReader to next.
-func NextForwardReader(r ForwardReader) ForwardReader {
-	return r.Next().(ForwardReader)
-}
-
-// NextForwardWriter moves a ForwardWriter to next.
-func NextForwardWriter(w ForwardWriter) ForwardWriter {
-	return w.Next().(ForwardWriter)
-}
-
-// NextForwardReadWriter moves a ForwardReadWriter to next.
-func NextForwardReadWriter(rw ForwardReadWriter) ForwardReadWriter {
-	return rw.Next().(ForwardReadWriter)
-}
 
 type (
 	// BidiIter is an iterator that moves both forward or backward.
-	BidiIter interface {
-		ForwardIter
-		Prev() BidiIter
+	BidiIter[T any, It Iter[T]] interface {
+		ForwardIter[T, It]
+		BackwardMovable[It]
 	}
 	// BidiReader is an interface that groups BidiIter and Reader.
-	BidiReader interface {
-		BidiIter
-		Reader
+	BidiReader[T any, It Iter[T]] interface {
+		BidiIter[T, It]
+		Reader[T]
 	}
 	// BidiWriter is an interface that groups BidiIter and Writer.
-	BidiWriter interface {
-		BidiIter
-		Writer
+	BidiWriter[T any, It Iter[T]] interface {
+		BidiIter[T, It]
+		Writer[T]
 	}
 	// BidiReadWriter is an interface that groups BidiIter and ReadWriter.
-	BidiReadWriter interface {
-		BidiIter
-		ReadWriter
+	BidiReadWriter[T any, It Iter[T]] interface {
+		BidiIter[T, It]
+		ReadWriter[T]
 	}
 )
-
-// NextBidiIter moves a BidiIter to next.
-func NextBidiIter(bi BidiIter) BidiIter {
-	return bi.Next().(BidiIter)
-}
-
-// PrevBidiIter moves a BidiIter to prev.
-func PrevBidiIter(bi BidiIter) BidiIter {
-	return bi.Prev().(BidiIter)
-}
-
-// NextBidiReader moves a BidiReader to next.
-func NextBidiReader(br BidiReader) BidiReader {
-	return br.Next().(BidiReader)
-}
-
-// PrevBidiReader moves a BidiReader to prev.
-func PrevBidiReader(br BidiReader) BidiReader {
-	return br.Prev().(BidiReader)
-}
-
-// NextBidiWriter moves a BidiWriter to next.
-func NextBidiWriter(br BidiWriter) BidiWriter {
-	return br.Next().(BidiWriter)
-}
-
-// PrevBidiWriter moves a BidiWriter to prev.
-func PrevBidiWriter(br BidiWriter) BidiWriter {
-	return br.Prev().(BidiWriter)
-}
-
-// NextBidiReadWriter moves a BidiReadWriter to next.
-func NextBidiReadWriter(br BidiReadWriter) BidiReadWriter {
-	return br.Next().(BidiReadWriter)
-}
-
-// PrevBidiReadWriter moves a BidiReadWriter to prev.
-func PrevBidiReadWriter(br BidiReadWriter) BidiReadWriter {
-	return br.Prev().(BidiReadWriter)
-}
 
 type (
 	// RandomIter is a random access iterator.
-	RandomIter interface {
-		BidiIter
-		AdvanceN(n int) RandomIter
-		Distance(RandomIter) int
-		Less(Iter) bool
+	RandomIter[T any, It Iter[T]] interface {
+		BidiIter[T, It]
+		AdvanceN(n int) It
+		Distance(It) int
+		Less(It) bool
 	}
 	// RandomReader is an interface that groups RandomIter and Reader.
-	RandomReader interface {
-		RandomIter
-		Reader
+	RandomReader[T any, It Iter[T]] interface {
+		RandomIter[T, It]
+		Reader[T]
 	}
 	// RandomWriter is an interface that groups RandomIter and Writer.
-	RandomWriter interface {
-		RandomIter
-		Writer
+	RandomWriter[T any, It Iter[T]] interface {
+		RandomIter[T, It]
+		Writer[T]
 	}
 	// RandomReadWriter is an interface that groups RandomIter and
 	// ReadWriter.
-	RandomReadWriter interface {
-		RandomIter
-		ReadWriter
+	RandomReadWriter[T any, It Iter[T]] interface {
+		RandomIter[T, It]
+		ReadWriter[T]
 	}
 )
 
-// NextRandomIter moves a RandomIter to next.
-func NextRandomIter(bi RandomIter) RandomIter {
-	return bi.Next().(RandomIter)
-}
-
-// PrevRandomIter moves a RandomIter to prev.
-func PrevRandomIter(bi RandomIter) RandomIter {
-	return bi.Prev().(RandomIter)
-}
-
-// NextRandomReader moves a RandomReader to next.
-func NextRandomReader(br RandomReader) RandomReader {
-	return br.Next().(RandomReader)
-}
-
-// PrevRandomReader moves a RandomReader to prev.
-func PrevRandomReader(br RandomReader) RandomReader {
-	return br.Prev().(RandomReader)
-}
-
-// NextRandomWriter moves a RandomWriter to next.
-func NextRandomWriter(br RandomWriter) RandomWriter {
-	return br.Next().(RandomWriter)
-}
-
-// PrevRandomWriter moves a RandomWriter to prev.
-func PrevRandomWriter(br RandomWriter) RandomWriter {
-	return br.Prev().(RandomWriter)
-}
-
-// NextRandomReadWriter moves a RandomReadWriter to next.
-func NextRandomReadWriter(br RandomReadWriter) RandomReadWriter {
-	return br.Next().(RandomReadWriter)
-}
-
-// PrevRandomReadWriter moves a RandomReadWriter to prev.
-func PrevRandomReadWriter(br RandomReadWriter) RandomReadWriter {
-	return br.Prev().(RandomReadWriter)
-}
-
-// AdvanceNReader moves a RandomReader by step N.
-func AdvanceNReader(rr RandomReader, n int) RandomReader {
-	return rr.AdvanceN(n).(RandomReader)
-}
-
-// AdvanceNWriter moves a RandomWriter by step N.
-func AdvanceNWriter(rw RandomWriter, n int) RandomWriter {
-	return rw.AdvanceN(n).(RandomWriter)
-}
-
-// AdvanceNReadWriter moves a RandomReadWriter by step N.
-func AdvanceNReadWriter(rw RandomReadWriter, n int) RandomReadWriter {
-	return rw.AdvanceN(n).(RandomReadWriter)
-}
-
 // Distance returns the distance of two iterators.
-func Distance(first, last Iter) int {
-	if f, ok := first.(RandomIter); ok {
-		if l, ok := last.(RandomIter); ok {
+func Distance[T any, It Iter[T]](first, last It) int {
+	ifirst, ilast := interface{}(first), interface{}(last)
+	if f, ok := ifirst.(RandomIter[T, It]); ok {
+		if l, ok := ilast.(It); ok {
 			return f.Distance(l)
 		}
 	}
-	if f, ok := first.(ForwardIter); ok {
-		if l, ok := last.(ForwardIter); ok {
+	if f, ok := ifirst.(ForwardIter[T, It]); ok {
+		if l, ok := ilast.(It); ok {
 			var d int
-			for ; _ne(f, l); f = NextForwardIter(f) {
+			for ; !f.Eq(l); f = (interface{})(f.Next()).(ForwardIter[T, It]) {
 				d++
 			}
 			return d
 		}
 	}
-	if i, ok := first.(InputIter); ok {
+	if f, ok := ifirst.(InputIter[T, It]); ok {
 		var d int
-		for ; _ne(i, last); i = NextInputIter(i) {
+		for ; !f.Eq(last); f = (interface{})(f.Next()).(InputIter[T, It]) {
 			d++
 		}
 		return d
@@ -266,27 +167,27 @@ func Distance(first, last Iter) int {
 }
 
 // AdvanceN moves an iterator by step N.
-func AdvanceN(it Iter, n int) Iter {
-	if it2, ok := it.(RandomIter); ok {
+func AdvanceN[T any, It Iter[T]](it It, n int) It {
+	if it2, ok := interface{}(it).(RandomIter[T, It]); ok {
 		return it2.AdvanceN(n)
 	}
-	if it2, ok := it.(ForwardIter); ok && n >= 0 {
+	if it2, ok := interface{}(it).(ForwardIter[T, It]); ok && n >= 0 {
 		for ; n > 0; n-- {
-			it2 = NextForwardIter(it2)
+			it2 = (interface{})(it2.Next()).(ForwardIter[T, It])
 		}
-		return it2
+		return it2.(It)
 	}
-	if it2, ok := it.(InputIter); ok && n >= 0 {
+	if it2, ok := interface{}(it).(InputIter[T, It]); ok && n >= 0 {
 		for ; n > 0; n-- {
-			it2 = NextInputIter(it2)
+			it2 = (interface{})(it2.Next()).(InputIter[T, It])
 		}
-		return it2
+		return it2.(It)
 	}
-	if it2, ok := it.(BidiIter); ok && n <= 0 {
+	if it2, ok := interface{}(it).(BidiIter[T, It]); ok && n <= 0 {
 		for ; n < 0; n++ {
-			it2 = it2.Prev()
+			it2 = (interface{})(it2.Prev()).(BidiIter[T, It])
 		}
-		return it2
+		return it2.(It)
 	}
 	panic("cannot advance")
 }

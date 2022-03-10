@@ -2,95 +2,85 @@ package iter
 
 type (
 	// UnaryPredicate checks if a value satisfy condition.
-	UnaryPredicate func(any) bool
+	UnaryPredicate[T any] func(T) bool
 	// EqComparer checks if first value equals to the second value.
-	EqComparer func(any, any) bool
+	EqComparer[T1, T2 any] func(T1, T2) bool
 	// LessComparer checks if first value is less than the second value.
-	LessComparer func(any, any) bool
+	LessComparer[T any] func(T, T) bool
 	// ThreeWayComparer compares 2 values, returns 1 if first>second, 0 if
 	// first=second, -1 if first<second.
-	ThreeWayComparer func(any, any) int
+	ThreeWayComparer[T1, T2 any] func(T1, T2) int
 	// IteratorFunction apply some actions to a value.
-	IteratorFunction func(any)
+	IteratorFunction[T any] func(T)
 	// UnaryOperation transforms a value to another.
-	UnaryOperation func(any) any
+	UnaryOperation[T1, T2 any] func(T1) T2
 	// BinaryOperation transforms 2 values to 1 value.
-	BinaryOperation func(any, any) any
+	BinaryOperation[T1, T2, T3 any] func(T1, T2) T3
 	// Generator creates a value on each call.
-	Generator func() any
+	Generator[T any] func() T
 )
 
-func _eq(x, y any) bool {
-	type ieq interface{ Eq(any) bool }
-	if e, ok := x.(ieq); ok {
-		return e.Eq(y)
+func _cmp[T Ordered](x, y T) int {
+	if x > y {
+		return 1
 	}
+	if x < y {
+		return -1
+	}
+	return 0
+}
+
+func _eq[T comparable](x, y T) bool {
 	return x == y
 }
 
-func _ne(x, y any) bool {
-	return !_eq(x, y)
+func _inc[T Integer](x T) T {
+	return x + 1
 }
 
-func _less(x, y any) bool {
-	type iless interface{ Less(any) bool }
-	if c, ok := x.(iless); ok {
-		return c.Less(y)
-	}
-	return _cmp(x, y) < 0
+func _add[T1, T2 Numeric](x, y T1) T2 {
+	return T2(x + y)
 }
 
-func _cmp(x, y any) int {
-	type icmp interface{ Cmp(any) int }
-	if t, ok := x.(icmp); ok {
-		return t.Cmp(y)
-	}
-	return reflectCmp(x, y)
+func _sub[T1, T2 Numeric](x, y T1) T2 {
+	return T2(x - y)
 }
 
-func _inc(x any) any {
-	type iinc interface{ Inc() any }
-	if i, ok := x.(iinc); ok {
-		return i.Inc()
-	}
-	return reflectInc(x)
-}
-
-func _add(x, y any) any {
-	type iadd interface{ Add(any) any }
-	if a, ok := x.(iadd); ok {
-		return a.Add(y)
-	}
-	return reflectAdd(x, y)
-}
-
-func _sub(x, y any) any {
-	type isub interface{ Sub(any) any }
-	if s, ok := x.(isub); ok {
-		return s.Sub(y)
-	}
-	return reflectSub(x, y)
-}
-
-func _mul(x, y any) any {
-	type imul interface{ Mul(any) any }
-	if m, ok := x.(imul); ok {
-		return m.Mul(y)
-	}
-	return reflectMul(x, y)
+func _mul[T1, T2 Numeric](x, y T1) T2 {
+	return T2(x * y)
 }
 
 // Returns a Predicate that returns true if the value equals v.
-func _eq1(v any) UnaryPredicate {
-	return func(x any) bool {
-		return _eq(v, x)
+func _eq1[T comparable](v T) UnaryPredicate[T] {
+	return func(x T) bool {
+		return x == v
 	}
 }
 
-func _not1(p UnaryPredicate) UnaryPredicate {
-	return func(x any) bool { return !p(x) }
+func _eq2[T comparable](v1, v2 T) bool {
+	return v1 == v2
 }
 
-func _true1(any) bool { return true }
+func _eq_bind1[T1, T2 any](p EqComparer[T1, T2], v T1) UnaryPredicate[T2] {
+	return func(x T2) bool {
+		return p(v, x)
+	}
+}
 
-func _noop(x any) any { return x }
+func _eq_bind2[T1, T2 any](p EqComparer[T1, T2], v T2) UnaryPredicate[T1] {
+	return func(x T1) bool {
+		return p(x, v)
+	}
+}
+
+func _not1[T any](p UnaryPredicate[T]) UnaryPredicate[T] {
+	return func(x T) bool { return !p(x) }
+}
+
+func _less[T Ordered](v1, v2 T) bool {
+	return v1 < v2
+}
+
+func _true1[T any](T) bool { return true }
+
+func _noop[T any](x T) T { return x }
