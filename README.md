@@ -1,5 +1,7 @@
 # iter
 
+**Note: I'm currently working on making it work with Go generics. For previous version, please check `v1` branch.**
+
 Go implementation of C++ STL iterators and algorithms.
 
 Less hand-written loops, more expressive code.
