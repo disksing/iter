@@ -6,12 +6,11 @@ import (
 	"testing"
 
 	. "github.com/disksing/iter/v2"
+	. "github.com/disksing/iter/v2/algo"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSliceIterator(t *testing.T) {
-	skipAfter(t, 1)
-
 	assert := assert.New(t)
 	a := make([]int, 100)
 	b := SliceBegin(a)
@@ -45,8 +44,6 @@ func listEq[T comparable](assert *assert.Assertions, lst *list.List, v ...T) {
 }
 
 func TestListIterator(t *testing.T) {
-	skipAfter(t, 1)
-
 	assert := assert.New(t)
 	lst := list.New()
 	listEq[int](assert, lst)
@@ -62,8 +59,8 @@ func TestListIterator(t *testing.T) {
 	assert.Equal(rb.Read(), 3)
 	rb1 := rb.Next()
 	assert.Equal(rb1.Read(), 2)
-	assert.True(_eq(rb.Next(), rb1))
-	assert.True(_eq(rb1.Prev(), rb))
+	assert.True(rb.Next().Eq(rb1))
+	assert.True(rb1.Prev().Eq(rb))
 	assert.True(ListEnd[int](lst).Prev().Prev().Eq(b1))
 	assert.Equal(ListREnd[int](lst).Prev().Read(), 1)
 
@@ -77,8 +74,6 @@ func TestListIterator(t *testing.T) {
 }
 
 func TestStringIterator(t *testing.T) {
-	skipAfter(t, 1)
-
 	assert := assert.New(t)
 	s := "abcdefg"
 	assert.Equal(MakeString[byte](StringRBegin(s), StringREnd(s)), "gfedcba")
@@ -120,7 +115,6 @@ func TestStringIterator(t *testing.T) {
 }
 
 func TestStringBuilder(t *testing.T) {
-	skipAfter(t, 1)
 	assert := assert.New(t)
 
 	var bs StringBuilderInserter[any]
@@ -148,8 +142,6 @@ func TestStringBuilder(t *testing.T) {
 }
 
 // func TestChanIterator(t *testing.T) {
-// 	skipAfter(t, 1)
-
 // 	assert := assert.New(t)
 // 	ch := make(chan int)
 // 	go func() {

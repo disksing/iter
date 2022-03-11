@@ -1,4 +1,20 @@
-package iter
+package algo
+
+import (
+	. "github.com/disksing/iter/v2"
+)
+
+func __iter_eq[It Comparable[It]](x, y It) bool {
+	return x.Eq(y)
+}
+
+func __write_next[T any, It OutputIter[T]](out It, v T) It {
+	out.Write(v)
+	if inc, ok := any(out).(ForwardMovable[It]); ok {
+		out = inc.Next()
+	}
+	return out
+}
 
 type (
 	// UnaryPredicate checks if a value satisfy condition.
@@ -20,7 +36,7 @@ type (
 	Generator[T any] func() T
 )
 
-func _cmp[T Ordered](x, y T) int {
+func __cmp[T Ordered](x, y T) int {
 	if x > y {
 		return 1
 	}
@@ -30,57 +46,50 @@ func _cmp[T Ordered](x, y T) int {
 	return 0
 }
 
-func _eq[T comparable](x, y T) bool {
+func __eq[T comparable](x, y T) bool {
 	return x == y
 }
 
-func _inc[T Integer](x T) T {
+func __inc[T Integer](x T) T {
 	return x + 1
 }
 
-func _add[T1, T2 Numeric](x, y T1) T2 {
+func __add[T1, T2 Numeric](x, y T1) T2 {
 	return T2(x + y)
 }
 
-func _sub[T1, T2 Numeric](x, y T1) T2 {
+func __sub[T1, T2 Numeric](x, y T1) T2 {
 	return T2(x - y)
 }
 
-func _mul[T1, T2 Numeric](x, y T1) T2 {
+func __mul[T1, T2 Numeric](x, y T1) T2 {
 	return T2(x * y)
 }
 
-// Returns a Predicate that returns true if the value equals v.
-func _eq1[T comparable](v T) UnaryPredicate[T] {
+func __eq1[T comparable](v T) UnaryPredicate[T] {
 	return func(x T) bool {
 		return x == v
 	}
 }
 
-func _eq2[T comparable](v1, v2 T) bool {
+func __eq2[T comparable](v1, v2 T) bool {
 	return v1 == v2
 }
 
-func _eq_bind1[T1, T2 any](p EqComparer[T1, T2], v T1) UnaryPredicate[T2] {
+func __eq_bind1[T1, T2 any](p EqComparer[T1, T2], v T1) UnaryPredicate[T2] {
 	return func(x T2) bool {
 		return p(v, x)
 	}
 }
 
-func _eq_bind2[T1, T2 any](p EqComparer[T1, T2], v T2) UnaryPredicate[T1] {
-	return func(x T1) bool {
-		return p(x, v)
-	}
-}
-
-func _not1[T any](p UnaryPredicate[T]) UnaryPredicate[T] {
+func __not1[T any](p UnaryPredicate[T]) UnaryPredicate[T] {
 	return func(x T) bool { return !p(x) }
 }
 
-func _less[T Ordered](v1, v2 T) bool {
+func __less[T Ordered](v1, v2 T) bool {
 	return v1 < v2
 }
 
-func _true1[T any](T) bool { return true }
+func __true1[T any](T) bool { return true }
 
-func _noop[T any](x T) T { return x }
+func __noop[T any](x T) T { return x }

@@ -27,7 +27,7 @@ func IotaReader[T Numeric, It iotaReader[T]](x T) It {
 }
 
 // IotaGenerator creates a Generator that returns [x, x+1, x+2...).
-func IotaGenerator[T Numeric](x T) Generator[T] {
+func IotaGenerator[T Numeric](x T) func() T {
 	r := IotaReader(x)
 	return func() T {
 		v := r.Read()
@@ -52,12 +52,12 @@ func RepeatReader[T any](x T) repeatReader[T] {
 }
 
 // RepeatGenerator creates an Generator that returns [x, x, x...).
-func RepeatGenerator[T any](x T) Generator[T] {
+func RepeatGenerator[T any](x T) func() T {
 	return func() T { return x }
 }
 
 // RandomGenerator creates a generator that returns random item of a slice.
-func RandomGenerator[T any](s []T, r *rand.Rand) Generator[T] {
+func RandomGenerator[T any](s []T, r *rand.Rand) func() T {
 	return func() T { return s[r.Intn(len(s))] }
 }
 
@@ -65,7 +65,7 @@ func RandomGenerator[T any](s []T, r *rand.Rand) Generator[T] {
 // type should be byte or rune.
 func MakeString[T byte | rune, It ForwardReader[T, It]](first, last It) string {
 	var s strings.Builder
-	for ; !__iter_eq(first, last); first = first.Next() {
+	for ; !first.Eq(last); first = first.Next() {
 		switch v := any(first.Read()).(type) {
 		case byte:
 			s.WriteByte(v)

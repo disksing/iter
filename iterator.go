@@ -24,10 +24,6 @@ type Comparable[It Iter[any]] interface {
 	Eq(It) bool
 }
 
-func __iter_eq[It Comparable[It]](x, y It) bool {
-	return x.Eq(y)
-}
-
 // ForwardMovable represents iterators that can move forward.
 type ForwardMovable[It Iter[any]] interface {
 	Next() It
@@ -51,14 +47,6 @@ type InputIter[T any, It Iter[T]] interface {
 // logic is done in Write().
 type OutputIter[T any] interface {
 	Writer[T]
-}
-
-func _writeNext[T any, It OutputIter[T]](out It, v T) It {
-	out.Write(v)
-	if inc, ok := any(out).(ForwardMovable[It]); ok {
-		out = inc.Next()
-	}
-	return out
 }
 
 type (

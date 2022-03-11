@@ -1,4 +1,4 @@
-package iter_test
+package algo_test
 
 import (
 	"container/heap"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	. "github.com/disksing/iter/v2"
+	. "github.com/disksing/iter/v2/algo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -70,10 +71,6 @@ func sliceEqual(assert *assert.Assertions, a, b []int) {
 		return
 	}
 	assert.Equal(a, b)
-}
-
-func _eq[T comparable](x, y T) bool {
-	return x == y
 }
 
 func __eq[T Comparable[T]](x, y T) bool {
@@ -221,7 +218,7 @@ func TestSearch(t *testing.T) {
 	if i == -1 {
 		i = len(a)
 	}
-	assert.New(t).True(_eq(
+	assert.New(t).True(__eq(
 		Search[byte](_first_str(a), _last_str(a), _first_str(b), _last_str(b)),
 		AdvanceN[byte](_first_str(a), i),
 	))
@@ -723,7 +720,6 @@ func TestSort(t *testing.T) {
 }
 
 func TestNthElement(t *testing.T) {
-	skipAfter(t, 1)
 	assert := assert.New(t)
 
 	cases := []string{
