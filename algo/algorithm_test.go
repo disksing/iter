@@ -57,7 +57,7 @@ func randIntSlice() []int {
 	lh := []int{randInt(), randInt()}
 	Sort[int](_first_int(lh), _last_int(lh))
 	var s []int
-	GenerateN(slices.BackInserter(&s), randInt(), func() int { return lh[0] + r.Intn(lh[1]-lh[0]+1) })
+	GenerateN(slices.Appender(&s), randInt(), func() int { return lh[0] + r.Intn(lh[1]-lh[0]+1) })
 	return s
 }
 
@@ -245,7 +245,7 @@ func TestSearchN(t *testing.T) {
 func TestCopy(t *testing.T) {
 	a := randIntSlice()
 	var b []int
-	Copy[int](_first_int(a), _last_int(a), slices.BackInserter(&b))
+	Copy[int](_first_int(a), _last_int(a), slices.Appender(&b))
 	sliceEqual(assert.New(t), a, b)
 }
 
@@ -259,7 +259,7 @@ func TestCopyIf(t *testing.T) {
 			c = append(c, x)
 		}
 	}
-	CopyIf(_first_int(a), _last_int(a), slices.BackInserter(&b), f)
+	CopyIf(_first_int(a), _last_int(a), slices.Appender(&b), f)
 	sliceEqual(assert.New(t), b, c)
 }
 
@@ -267,7 +267,7 @@ func TestCopyN(t *testing.T) {
 	a := randIntSlice()
 	n := r.Intn(len(a) + 1)
 	var b []int
-	CopyN[int](_first_int(a), n, slices.BackInserter(&b))
+	CopyN[int](_first_int(a), n, slices.Appender(&b))
 	sliceEqual(assert.New(t), b, a[:n])
 }
 
@@ -369,8 +369,8 @@ func TestRemove(t *testing.T) {
 	countf := CountIf(_first_int(a), _last_int(a), f)
 	a = a[:Distance[int](_first_int(a), Remove(_first_int(a), _last_int(a), 1))]
 	b = b[:Distance[int](_first_int(b), RemoveIf(_first_int(b), _last_int(b), f))]
-	RemoveCopy(_first_int(c), _last_int(c), slices.BackInserter(&d), 1)
-	RemoveCopyIf(_first_int(c), _last_int(c), slices.BackInserter(&e), f)
+	RemoveCopy(_first_int(c), _last_int(c), slices.Appender(&d), 1)
+	RemoveCopyIf(_first_int(c), _last_int(c), slices.Appender(&e), f)
 
 	assert.Equal(Count(_first_int(a), _last_int(a), 1), 0)
 	assert.True(NoneOf(_first_int(b), _last_int(b), f))
@@ -392,8 +392,8 @@ func TestReplace(t *testing.T) {
 
 	Replace(_first_int(a), _last_int(a), 1, 2)
 	ReplaceIf(_first_int(b), _last_int(b), f, 1)
-	ReplaceCopy(_first_int(c), _last_int(c), slices.BackInserter(&d), 1, 2)
-	ReplaceCopyIf(_first_int(c), _last_int(c), slices.BackInserter(&e), f, 1)
+	ReplaceCopy(_first_int(c), _last_int(c), slices.Appender(&d), 1, 2)
+	ReplaceCopyIf(_first_int(c), _last_int(c), slices.Appender(&e), f, 1)
 
 	for i := range c {
 		if c[i] == 1 {
@@ -461,7 +461,7 @@ func TestRotate(t *testing.T) {
 	d = append(d, a[:n]...)
 	var c []int
 	Rotate[int](_first_int(a), _first_int(a).AdvanceN(n), _last_int(a))
-	RotateCopy[int](_first_int(b), _first_int(b).AdvanceN(n), _last_int(b), slices.BackInserter(&c))
+	RotateCopy[int](_first_int(b), _first_int(b).AdvanceN(n), _last_int(b), slices.Appender(&c))
 	sliceEqual(assert, d, a)
 	sliceEqual(assert, d, c)
 }
@@ -487,7 +487,7 @@ func TestSampleSelection(t *testing.T) {
 	a := randIntSlice()
 	n := randInt()
 	var b []int
-	Sample[int](_first_int(a), _last_int(a), slices.BackInserter(&b), n, r)
+	Sample[int](_first_int(a), _last_int(a), slices.Appender(&b), n, r)
 	count := make([]int, randN)
 	for _, x := range a {
 		count[x]++
@@ -559,7 +559,7 @@ func TestPartition(t *testing.T) {
 	checkPartition(a)
 
 	var b, c []bool
-	PartitionCopy(_first_bool(a), _last_bool(a), slices.BackInserter(&b), slices.BackInserter(&c), f)
+	PartitionCopy(_first_bool(a), _last_bool(a), slices.Appender(&b), slices.Appender(&c), f)
 	ita := Partition(_first_bool(a), _last_bool(a), f)
 	assert.True(checkPartition(a))
 	assert.True(AllOf(_first_bool(b), _last_bool(b), f))
@@ -768,7 +768,7 @@ func TestMerge(t *testing.T) {
 	c := make([]int, len(a)+len(b))
 	PartialSortCopy[int](_first_int(ab), _last_int(ab), _first_int(c), _last_int(c))
 	var d []int
-	Merge[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.BackInserter(&d))
+	Merge[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.Appender(&d))
 	sliceEqual(assert, c, d)
 
 	middle := _first_int(ab).AdvanceN(len(a))
@@ -793,17 +793,17 @@ func TestSet(t *testing.T) {
 			func(a, b int) bool { return a >= b }),
 	)
 	var diff, intersection, symmetric, union []int
-	SetDifference[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.BackInserter(&diff))
-	SetIntersection[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.BackInserter(&intersection))
-	SetSymmetricDifference[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.BackInserter(&symmetric))
-	SetUnion[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.BackInserter(&union))
+	SetDifference[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.Appender(&diff))
+	SetIntersection[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.Appender(&intersection))
+	SetSymmetricDifference[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.Appender(&symmetric))
+	SetUnion[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.Appender(&union))
 
 	var diff2, intersection2, symmetric2, union2 []int
 	for i := range countA {
-		FillN(slices.BackInserter(&diff2), countA[i]-countB[i], i)
-		FillN(slices.BackInserter(&intersection2), Min(countA[i], countB[i]), i)
-		FillN(slices.BackInserter(&symmetric2), Max(countA[i]-countB[i], countB[i]-countA[i]), i)
-		FillN(slices.BackInserter(&union2), Max(countA[i], countB[i]), i)
+		FillN(slices.Appender(&diff2), countA[i]-countB[i], i)
+		FillN(slices.Appender(&intersection2), Min(countA[i], countB[i]), i)
+		FillN(slices.Appender(&symmetric2), Max(countA[i]-countB[i], countB[i]-countA[i]), i)
+		FillN(slices.Appender(&union2), Max(countA[i], countB[i]), i)
 	}
 
 	sliceEqual(assert, diff, diff2)

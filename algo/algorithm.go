@@ -61,7 +61,7 @@ func CountIf[T any, It InputIter[T, It]](first, last It, pred UnaryPredicate[T])
 }
 
 // Mismatch returns the first mismatching pair of elements from two ranges: one
-// defined by [first1, last1) and another defined by [first2,last2).
+// defined by [first1, last1) and another defined by [first2, last2).
 //
 // If last2 is nil, it denotes first2 + (last1 - first1).
 func Mismatch[T comparable, It1 InputIter[T, It1], It2 InputIter[T, It2]](first1, last1 It1, first2 It2, last2 *It2) (It1, It2) {
@@ -69,7 +69,7 @@ func Mismatch[T comparable, It1 InputIter[T, It1], It2 InputIter[T, It2]](first1
 }
 
 // MismatchBy returns the first mismatching pair of elements from two ranges:
-// one defined by [first1, last1) and another defined by [first2,last2).
+// one defined by [first1, last1) and another defined by [first2, last2).
 //
 // If last2 is nil, it denotes first2 + (last1 - first1). Elements are compared
 // using the given comparer eq.

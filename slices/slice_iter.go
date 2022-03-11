@@ -91,9 +91,9 @@ type sliceBackInserter[T any] struct {
 	s *[]T
 }
 
-// BackInserter returns an OutputIter to append elements to the back of the
+// Appender returns an OutputIter to append elements to the back of the
 // slice.
-func BackInserter[T any](s *[]T) sliceBackInserter[T] {
+func Appender[T any](s *[]T) sliceBackInserter[T] {
 	return sliceBackInserter[T]{
 		s: s,
 	}
