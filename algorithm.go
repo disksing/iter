@@ -713,7 +713,7 @@ func StablePartitionBidi[T any, It BidiReadWriter[T, It]](first, last It, pred U
 			break
 		}
 	}
-	return _stablePartitionBidi(first, last, pred, Distance[T](first, last))
+	return _stablePartitionBidi(first, last, pred, Distance[T](first, last)+1)
 }
 
 func _stablePartitionBidi[T any, It BidiReadWriter[T, It]](first, last It, pred UnaryPredicate[T], l int) It {
