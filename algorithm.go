@@ -639,7 +639,7 @@ func PartitionCopy[T any, In InputIter[T, In], Out OutputIter[T]](first, last In
 // way that all elements for which the predicate pred returns true precede the
 // elements for which predicate pred returns false. Relative order of the
 // elements is preserved.
-func StablePartition[T any, It ForwardReadWriter[T, It], It2 BidiReadWriter[T, It2]](first, last It, pred UnaryPredicate[T]) It {
+func StablePartition[T any, It ForwardReadWriter[T, It]](first, last It, pred UnaryPredicate[T]) It {
 	for {
 		if __iter_eq(first, last) {
 			return first
@@ -649,22 +649,71 @@ func StablePartition[T any, It ForwardReadWriter[T, It], It2 BidiReadWriter[T, I
 		}
 		first = first.Next()
 	}
-	if bfirst, ok := any(first).(It2); ok {
-		if blast, ok := any(last).(It2); ok {
-			for {
-				blast = any(blast.Prev()).(It2)
-				last = any(blast).(It)
-				if __iter_eq(first, last) {
-					return first
-				}
-				if pred(last.Read()) {
-					break
-				}
-			}
-			return any(_stablePartitionBidi(bfirst, blast, pred, Distance[T](first, last)+1)).(It)
+	return _stablePartitionForward(first, last, pred, Distance[T](first, last))
+}
+
+func _stablePartitionForward[T any, It ForwardReadWriter[T, It]](first, last It, pred UnaryPredicate[T], l int) It {
+	if l == 1 {
+		return first
+	}
+	if l == 2 {
+		m := first.Next()
+		if pred(m.Read()) {
+			Swap[T](first, m)
+			return m
+		}
+		return first
+	}
+	l2 := l / 2
+	m := AdvanceN[T](first, l2)
+	// F?????????????????
+	// f       m         l
+	firstFalse := _stablePartitionForward(first, m, pred, l2)
+	// TTTFFFFF??????????
+	// f  ff   m         l
+	m1, lh := m, l-l2
+	for pred(m1.Read()) {
+		m1 = m1.Next()
+		if __iter_eq(m1, last) {
+			break
+		}
+		lh--
+	}
+	secondFalse := last
+	if !__iter_eq(m1, last) {
+		// TTTFFFFFTTTF??????
+		// f  ff   m  m1     l
+		secondFalse = _stablePartitionForward(m1, last, pred, lh)
+	}
+	// TTTFFFFFTTTTTFFFFF
+	// f  ff   m    sf   l
+	return Rotate[T](firstFalse, m, secondFalse)
+}
+
+// StablePartitionBidi reorders the elements in the range [first, last) in such a
+// way that all elements for which the predicate pred returns true precede the
+// elements for which predicate pred returns false. Relative order of the
+// elements is preserved.
+func StablePartitionBidi[T any, It BidiReadWriter[T, It]](first, last It, pred UnaryPredicate[T]) It {
+	for {
+		if __iter_eq(first, last) {
+			return first
+		}
+		if !pred(first.Read()) {
+			break
+		}
+		first = first.Next()
+	}
+	for {
+		last = last.Prev()
+		if __iter_eq(first, last) {
+			return first
+		}
+		if pred(last.Read()) {
+			break
 		}
 	}
-	return _stablePartitionForward(first, last, pred, Distance[T](first, last))
+	return _stablePartitionBidi(first, last, pred, Distance[T](first, last))
 }
 
 func _stablePartitionBidi[T any, It BidiReadWriter[T, It]](first, last It, pred UnaryPredicate[T], l int) It {
@@ -718,44 +767,6 @@ func _stablePartitionBidi[T any, It BidiReadWriter[T, It]](first, last It, pred 
 	}
 	// TTFFFFFFTTTTTTFFFF
 	// f ff m1 m  m1 sf l
-	return Rotate[T](firstFalse, m, secondFalse)
-}
-
-func _stablePartitionForward[T any, It ForwardReadWriter[T, It]](first, last It, pred UnaryPredicate[T], l int) It {
-	if l == 1 {
-		return first
-	}
-	if l == 2 {
-		m := first.Next()
-		if pred(m.Read()) {
-			Swap[T](first, m)
-			return m
-		}
-		return first
-	}
-	l2 := l / 2
-	m := AdvanceN[T](first, l2)
-	// F?????????????????
-	// f       m         l
-	firstFalse := _stablePartitionForward(first, m, pred, l2)
-	// TTTFFFFF??????????
-	// f  ff   m         l
-	m1, lh := m, l-l2
-	for pred(m1.Read()) {
-		m1 = m1.Next()
-		if __iter_eq(m1, last) {
-			break
-		}
-		lh--
-	}
-	secondFalse := last
-	if !__iter_eq(m1, last) {
-		// TTTFFFFFTTTF??????
-		// f  ff   m  m1     l
-		secondFalse = _stablePartitionForward(m1, last, pred, lh)
-	}
-	// TTTFFFFFTTTTTFFFFF
-	// f  ff   m    sf   l
 	return Rotate[T](firstFalse, m, secondFalse)
 }
 

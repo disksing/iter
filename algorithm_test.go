@@ -588,94 +588,94 @@ func (ci *compareItem) String() string {
 	return fmt.Sprintf("{a=%v,b=%v}", ci.a, ci.b)
 }
 
-type forwardListIter struct {
+type forwardListIter[T any] struct {
 	l *list.List
 	e *list.Element
 }
 
-func forwardListBegin(l *list.List) *forwardListIter {
-	return &forwardListIter{
+func forwardListBegin[T any](l *list.List) *forwardListIter[T] {
+	return &forwardListIter[T]{
 		l: l,
 		e: l.Front(),
 	}
 }
 
-func forwardListEnd(l *list.List) *forwardListIter {
-	return &forwardListIter{
+func forwardListEnd[T any](l *list.List) *forwardListIter[T] {
+	return &forwardListIter[T]{
 		l: l,
 		e: l.Back(),
 	}
 }
 
-func (l *forwardListIter) Eq(x *forwardListIter) bool {
+func (l *forwardListIter[T]) Eq(x *forwardListIter[T]) bool {
 	return l.e == x.e
 }
 
-func (l *forwardListIter) AllowMultiplePass() {}
+func (l *forwardListIter[T]) AllowMultiplePass() {}
 
-func (l *forwardListIter) Next() *forwardListIter {
-	return &forwardListIter{
+func (l *forwardListIter[T]) Next() *forwardListIter[T] {
+	return &forwardListIter[T]{
 		l: l.l,
 		e: l.e.Next(),
 	}
 }
 
-func (l *forwardListIter) Read() int {
-	return l.e.Value.(int)
+func (l *forwardListIter[T]) Read() T {
+	return l.e.Value.(T)
 }
 
-func (l *forwardListIter) Write(x int) {
+func (l *forwardListIter[T]) Write(x T) {
 	l.e.Value = x
 }
 
-// func TestStablePartition(t *testing.T) {
-// 	assert := assert.New(t)
-// 	l := randInt()
-// 	a := make([]*compareItem, l)
-// 	var id int
-// 	GenerateN(SliceBegin(a), l, func() *compareItem {
-// 		id++
-// 		return &compareItem{
-// 			a: r.Intn(2),
-// 			b: id,
-// 		}
-// 	})
-// 	f := func(x *compareItem) bool { return x.a > 0 }
-// 	b := list.New()
-// 	Copy[*compareItem](SliceBegin(a), SliceEnd(a), ListBackInserter[*compareItem](b))
+func TestStablePartition(t *testing.T) {
+	assert := assert.New(t)
+	l := randInt()
+	a := make([]*compareItem, l)
+	var id int
+	GenerateN(SliceBegin(a), l, func() *compareItem {
+		id++
+		return &compareItem{
+			a: r.Intn(2),
+			b: id,
+		}
+	})
+	f := func(x *compareItem) bool { return x.a > 0 }
+	b := list.New()
+	Copy[*compareItem](SliceBegin(a), SliceEnd(a), ListBackInserter[*compareItem](b))
 
-// 	{
-// 		StablePartition[*compareItem](SliceBegin(a), SliceEnd(a), f)
-// 		var i int
-// 		for mb := 0; i < len(a) && f(a[i]); i++ {
-// 			cb := a[i].b
-// 			assert.Greater(cb, mb)
-// 			mb = cb
-// 		}
-// 		for mb := 0; i < len(a); i++ {
-// 			assert.False(f(a[i]))
-// 			cb := a[i].b
-// 			assert.Greater(cb, mb)
-// 			mb = cb
-// 		}
-// 	}
+	{
+		StablePartitionBidi(SliceBegin(a), SliceEnd(a), f)
+		var i int
+		for mb := 0; i < len(a) && f(a[i]); i++ {
+			cb := a[i].b
+			assert.Greater(cb, mb)
+			mb = cb
+		}
+		for mb := 0; i < len(a); i++ {
+			assert.False(f(a[i]))
+			cb := a[i].b
+			assert.Greater(cb, mb)
+			mb = cb
+		}
+	}
 
-// 	{
-// 		StablePartition(forwardListBegin(b), forwardListEnd(b), f)
-// 		var ele *list.Element
-// 		for mb := 0; ele != nil && f(ele.Value); ele = ele.Next() {
-// 			cb := ele.Value.(*compareItem).b
-// 			assert.Greater(cb, mb)
-// 			mb = cb
-// 		}
-// 		for mb := 0; ele != nil; ele = ele.Next() {
-// 			assert.False(f(ele.Value))
-// 			cb := ele.Value.(*compareItem).b
-// 			assert.Greater(cb, mb)
-// 			mb = cb
-// 		}
-// 	}
-// }
+	{
+		StablePartition(forwardListBegin[*compareItem](b), forwardListEnd[*compareItem](b), f)
+		var ele *list.Element
+		for mb := 0; ele != nil && f(ele.Value.(*compareItem)); ele = ele.Next() {
+			cb := ele.Value.(*compareItem).b
+			assert.Greater(cb, mb)
+			mb = cb
+		}
+		for mb := 0; ele != nil; ele = ele.Next() {
+			assert.False(f(ele.Value.(*compareItem)))
+			cb := ele.Value.(*compareItem).b
+			assert.Greater(cb, mb)
+			mb = cb
+		}
+	}
+}
 
 func TestSort(t *testing.T) {
 	assert := assert.New(t)
@@ -759,23 +759,23 @@ func TestNthElement(t *testing.T) {
 	}
 }
 
-// func TestMerge(t *testing.T) {
-// 	assert := assert.New(t)
-// 	a, b := randIntSlice(), randIntSlice()
-// 	Sort[int](_first_int(a), _last_int(a))
-// 	Sort[int](_first_int(b), _last_int(b))
-// 	ab := append(a[:len(a):len(a)], b...)
+func TestMerge(t *testing.T) {
+	assert := assert.New(t)
+	a, b := randIntSlice(), randIntSlice()
+	Sort[int](_first_int(a), _last_int(a))
+	Sort[int](_first_int(b), _last_int(b))
+	ab := append(a[:len(a):len(a)], b...)
 
-// 	c := make([]int, len(a)+len(b))
-// 	PartialSortCopy[int](_first_int(ab), _last_int(ab), _first_int(c), _last_int(c))
-// 	var d []int
-// 	Merge[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), SliceBackInserter(&d))
-// 	sliceEqual(assert, c, d)
+	c := make([]int, len(a)+len(b))
+	PartialSortCopy[int](_first_int(ab), _last_int(ab), _first_int(c), _last_int(c))
+	var d []int
+	Merge[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), SliceBackInserter(&d))
+	sliceEqual(assert, c, d)
 
-// 	middle := _first_int(ab).AdvanceN(len(a))
-// 	InplaceMerge[int](_first_int(ab), middle, _last_int(ab))
-// 	sliceEqual(assert, c, ab)
-// }
+	middle := _first_int(ab).AdvanceN(len(a))
+	InplaceMerge[int](_first_int(ab), middle, _last_int(ab))
+	sliceEqual(assert, c, ab)
+}
 
 func TestSet(t *testing.T) {
 	assert := assert.New(t)

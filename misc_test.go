@@ -8,9 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMain(m *testing.M) {
-}
-
 // check if need skip the test. A test will be run count/count+1 times.
 func skipAfter(t *testing.T, count int) {
 	if atomic.LoadInt32(&testCounter) > int32(count) {
@@ -37,8 +34,8 @@ func TestMisc(t *testing.T) {
 	it2 := RepeatReader(100)
 	assert.Equal(it2.Read(), 100)
 	assert.False(__eq(it2, RepeatReader(100)))
-	it = it.Next()
-	assert.Equal(it.Read(), 100)
+	it2 = it2.Next()
+	assert.Equal(it2.Read(), 100)
 
 	g := IotaGenerator(100)
 	assert.Equal(g(), 100)
