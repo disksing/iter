@@ -43,22 +43,17 @@ func __end_ref[T any](s []T) *sliceIter[T] {
 }
 
 func __idx[T any](it sliceIter[T]) int {
-	if it.i == len(it.s) {
-		return -1
-	}
 	return it.i
 }
 
-// Mismatch returns the first mismatching position of the two slices. If a slice
-// is prefix of the other, it returns -1.
+// Mismatch returns the first mismatching position of the two slices.
 func Mismatch[T comparable](s1, s2 []T) (int, int) {
 	it1, it2 := algo.Mismatch[T](Begin(s1), End(s1), Begin(s2), __end_ref(s2))
 	return __idx(it1), __idx(it2)
 }
 
-// MismatchBy returns the first mismatching position of the two slices. If a
-// slice is prefix of the other, it returns -1. Elements are compared using the
-// given comparer eq.
+// MismatchBy returns the first mismatching position of the two slices. Elements
+// are compared using the given comparer eq.
 func MismatchBy[T1, T2 any](s1 []T1, s2 []T2, eq algo.EqComparer[T1, T2]) (int, int) {
 	it1, it2 := algo.MismatchBy(Begin(s1), End(s1), Begin(s2), __end_ref(s2), eq)
 	return __idx(it1), __idx(it2)
