@@ -29,13 +29,3 @@ func TestMisc(t *testing.T) {
 	assert.Equal(g(), 100)
 	assert.Equal(g(), 100)
 }
-
-func TestMakeString(t *testing.T) {
-	assert := assert.New(t)
-
-	bs := []byte{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '!'}
-	assert.Equal(MakeString[byte](SliceBegin(bs), SliceEnd(bs)), "hello world!")
-
-	rs := []rune{'改', '革', '春', '风', '吹', '满', '地'}
-	assert.Equal(MakeString[rune](SliceBegin(rs), SliceEnd(rs)), "改革春风吹满地")
-}

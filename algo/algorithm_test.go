@@ -12,6 +12,9 @@ import (
 
 	. "github.com/disksing/iter/v2"
 	. "github.com/disksing/iter/v2/algo"
+	"github.com/disksing/iter/v2/lists"
+	"github.com/disksing/iter/v2/slices"
+	"github.com/disksing/iter/v2/strs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,30 +23,30 @@ const randN = 100
 var r = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 var (
-	_first_int   = SliceBegin[int]
-	_first_int_r = SliceRBegin[int]
-	_last_int    = SliceEnd[int]
-	_last_int_r  = SliceREnd[int]
+	_first_int   = slices.Begin[int]
+	_first_int_r = slices.RBegin[int]
+	_last_int    = slices.End[int]
+	_last_int_r  = slices.REnd[int]
 
-	_first_byte   = SliceBegin[byte]
-	_first_byte_r = SliceRBegin[byte]
-	_last_byte    = SliceEnd[byte]
-	_last_byte_r  = SliceREnd[byte]
+	_first_byte   = slices.Begin[byte]
+	_first_byte_r = slices.RBegin[byte]
+	_last_byte    = slices.End[byte]
+	_last_byte_r  = slices.REnd[byte]
 
-	_first_bool   = SliceBegin[bool]
-	_first_bool_r = SliceRBegin[bool]
-	_last_bool    = SliceEnd[bool]
-	_last_bool_r  = SliceREnd[bool]
+	_first_bool   = slices.Begin[bool]
+	_first_bool_r = slices.RBegin[bool]
+	_last_bool    = slices.End[bool]
+	_last_bool_r  = slices.REnd[bool]
 
-	_first_str   = StringBegin
-	_first_str_r = StringRBegin
-	_last_str    = StringEnd
-	_last_str_r  = StringREnd
+	_first_str   = strs.Begin
+	_first_str_r = strs.RBegin
+	_last_str    = strs.End
+	_last_str_r  = strs.REnd
 
-	_head_int   = ListBegin[int]
-	_head_int_r = ListRBegin[int]
-	_tail_int   = ListEnd[int]
-	_tail_int_r = ListREnd[int]
+	_head_int   = lists.Begin[int]
+	_head_int_r = lists.RBegin[int]
+	_tail_int   = lists.End[int]
+	_tail_int_r = lists.REnd[int]
 )
 
 func randInt() int {
@@ -54,14 +57,14 @@ func randIntSlice() []int {
 	lh := []int{randInt(), randInt()}
 	Sort[int](_first_int(lh), _last_int(lh))
 	var s []int
-	GenerateN(SliceBackInserter(&s), randInt(), func() int { return lh[0] + r.Intn(lh[1]-lh[0]+1) })
+	GenerateN(slices.BackInserter(&s), randInt(), func() int { return lh[0] + r.Intn(lh[1]-lh[0]+1) })
 	return s
 }
 
 func randString() string {
 	alphabets := make([]byte, 26)
 	Iota(_first_byte(alphabets), _last_byte(alphabets), byte('a'))
-	var bs StringBuilderInserter[byte]
+	var bs strs.StringBuilderInserter[byte]
 	GenerateN(&bs, randInt(), RandomGenerator(alphabets, r))
 	return bs.String()
 }
@@ -242,7 +245,7 @@ func TestSearchN(t *testing.T) {
 func TestCopy(t *testing.T) {
 	a := randIntSlice()
 	var b []int
-	Copy[int](_first_int(a), _last_int(a), SliceBackInserter(&b))
+	Copy[int](_first_int(a), _last_int(a), slices.BackInserter(&b))
 	sliceEqual(assert.New(t), a, b)
 }
 
@@ -256,7 +259,7 @@ func TestCopyIf(t *testing.T) {
 			c = append(c, x)
 		}
 	}
-	CopyIf(_first_int(a), _last_int(a), SliceBackInserter(&b), f)
+	CopyIf(_first_int(a), _last_int(a), slices.BackInserter(&b), f)
 	sliceEqual(assert.New(t), b, c)
 }
 
@@ -264,7 +267,7 @@ func TestCopyN(t *testing.T) {
 	a := randIntSlice()
 	n := r.Intn(len(a) + 1)
 	var b []int
-	CopyN[int](_first_int(a), n, SliceBackInserter(&b))
+	CopyN[int](_first_int(a), n, slices.BackInserter(&b))
 	sliceEqual(assert.New(t), b, a[:n])
 }
 
@@ -366,8 +369,8 @@ func TestRemove(t *testing.T) {
 	countf := CountIf(_first_int(a), _last_int(a), f)
 	a = a[:Distance[int](_first_int(a), Remove(_first_int(a), _last_int(a), 1))]
 	b = b[:Distance[int](_first_int(b), RemoveIf(_first_int(b), _last_int(b), f))]
-	RemoveCopy(_first_int(c), _last_int(c), SliceBackInserter(&d), 1)
-	RemoveCopyIf(_first_int(c), _last_int(c), SliceBackInserter(&e), f)
+	RemoveCopy(_first_int(c), _last_int(c), slices.BackInserter(&d), 1)
+	RemoveCopyIf(_first_int(c), _last_int(c), slices.BackInserter(&e), f)
 
 	assert.Equal(Count(_first_int(a), _last_int(a), 1), 0)
 	assert.True(NoneOf(_first_int(b), _last_int(b), f))
@@ -389,8 +392,8 @@ func TestReplace(t *testing.T) {
 
 	Replace(_first_int(a), _last_int(a), 1, 2)
 	ReplaceIf(_first_int(b), _last_int(b), f, 1)
-	ReplaceCopy(_first_int(c), _last_int(c), SliceBackInserter(&d), 1, 2)
-	ReplaceCopyIf(_first_int(c), _last_int(c), SliceBackInserter(&e), f, 1)
+	ReplaceCopy(_first_int(c), _last_int(c), slices.BackInserter(&d), 1, 2)
+	ReplaceCopyIf(_first_int(c), _last_int(c), slices.BackInserter(&e), f, 1)
 
 	for i := range c {
 		if c[i] == 1 {
@@ -458,7 +461,7 @@ func TestRotate(t *testing.T) {
 	d = append(d, a[:n]...)
 	var c []int
 	Rotate[int](_first_int(a), _first_int(a).AdvanceN(n), _last_int(a))
-	RotateCopy[int](_first_int(b), _first_int(b).AdvanceN(n), _last_int(b), SliceBackInserter(&c))
+	RotateCopy[int](_first_int(b), _first_int(b).AdvanceN(n), _last_int(b), slices.BackInserter(&c))
 	sliceEqual(assert, d, a)
 	sliceEqual(assert, d, c)
 }
@@ -484,7 +487,7 @@ func TestSampleSelection(t *testing.T) {
 	a := randIntSlice()
 	n := randInt()
 	var b []int
-	Sample[int](_first_int(a), _last_int(a), SliceBackInserter(&b), n, r)
+	Sample[int](_first_int(a), _last_int(a), slices.BackInserter(&b), n, r)
 	count := make([]int, randN)
 	for _, x := range a {
 		count[x]++
@@ -501,7 +504,7 @@ func TestSampleReservoir(t *testing.T) {
 	a := randIntSlice()
 	n := randInt()
 	b := list.New()
-	Copy[int](_first_int(a), _last_int(a), ListBackInserter[int](b))
+	Copy[int](_first_int(a), _last_int(a), lists.ListBackInserter[int](b))
 	c := make([]int, n)
 	Sample[int](_head_int(b), _tail_int(b), _first_int(c), n, r)
 	count := make([]int, randN)
@@ -538,8 +541,8 @@ func TestPartition(t *testing.T) {
 		for ; i < len(a) && a[i]; i++ {
 		}
 		if i == len(a) {
-			assert.True(IsPartitioned(_first_bool(a), SliceEnd(a), f))
-			assert.Equal(i, Distance[bool](_first_bool(a), PartitionPoint(_first_bool(a), SliceEnd(a), f)))
+			assert.True(IsPartitioned(_first_bool(a), slices.End(a), f))
+			assert.Equal(i, Distance[bool](_first_bool(a), PartitionPoint(_first_bool(a), slices.End(a), f)))
 			return true
 		}
 		m := i
@@ -556,7 +559,7 @@ func TestPartition(t *testing.T) {
 	checkPartition(a)
 
 	var b, c []bool
-	PartitionCopy(_first_bool(a), _last_bool(a), SliceBackInserter(&b), SliceBackInserter(&c), f)
+	PartitionCopy(_first_bool(a), _last_bool(a), slices.BackInserter(&b), slices.BackInserter(&c), f)
 	ita := Partition(_first_bool(a), _last_bool(a), f)
 	assert.True(checkPartition(a))
 	assert.True(AllOf(_first_bool(b), _last_bool(b), f))
@@ -630,7 +633,7 @@ func TestStablePartition(t *testing.T) {
 	l := randInt()
 	a := make([]*compareItem, l)
 	var id int
-	GenerateN(SliceBegin(a), l, func() *compareItem {
+	GenerateN(slices.Begin(a), l, func() *compareItem {
 		id++
 		return &compareItem{
 			a: r.Intn(2),
@@ -639,10 +642,10 @@ func TestStablePartition(t *testing.T) {
 	})
 	f := func(x *compareItem) bool { return x.a > 0 }
 	b := list.New()
-	Copy[*compareItem](SliceBegin(a), SliceEnd(a), ListBackInserter[*compareItem](b))
+	Copy[*compareItem](slices.Begin(a), slices.End(a), lists.ListBackInserter[*compareItem](b))
 
 	{
-		StablePartitionBidi(SliceBegin(a), SliceEnd(a), f)
+		StablePartitionBidi(slices.Begin(a), slices.End(a), f)
 		var i int
 		for mb := 0; i < len(a) && f(a[i]); i++ {
 			cb := a[i].b
@@ -765,7 +768,7 @@ func TestMerge(t *testing.T) {
 	c := make([]int, len(a)+len(b))
 	PartialSortCopy[int](_first_int(ab), _last_int(ab), _first_int(c), _last_int(c))
 	var d []int
-	Merge[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), SliceBackInserter(&d))
+	Merge[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.BackInserter(&d))
 	sliceEqual(assert, c, d)
 
 	middle := _first_int(ab).AdvanceN(len(a))
@@ -790,17 +793,17 @@ func TestSet(t *testing.T) {
 			func(a, b int) bool { return a >= b }),
 	)
 	var diff, intersection, symmetric, union []int
-	SetDifference[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), SliceBackInserter(&diff))
-	SetIntersection[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), SliceBackInserter(&intersection))
-	SetSymmetricDifference[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), SliceBackInserter(&symmetric))
-	SetUnion[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), SliceBackInserter(&union))
+	SetDifference[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.BackInserter(&diff))
+	SetIntersection[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.BackInserter(&intersection))
+	SetSymmetricDifference[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.BackInserter(&symmetric))
+	SetUnion[int](_first_int(a), _last_int(a), _first_int(b), _last_int(b), slices.BackInserter(&union))
 
 	var diff2, intersection2, symmetric2, union2 []int
 	for i := range countA {
-		FillN(SliceBackInserter(&diff2), countA[i]-countB[i], i)
-		FillN(SliceBackInserter(&intersection2), Min(countA[i], countB[i]), i)
-		FillN(SliceBackInserter(&symmetric2), Max(countA[i]-countB[i], countB[i]-countA[i]), i)
-		FillN(SliceBackInserter(&union2), Max(countA[i], countB[i]), i)
+		FillN(slices.BackInserter(&diff2), countA[i]-countB[i], i)
+		FillN(slices.BackInserter(&intersection2), Min(countA[i], countB[i]), i)
+		FillN(slices.BackInserter(&symmetric2), Max(countA[i]-countB[i], countB[i]-countA[i]), i)
+		FillN(slices.BackInserter(&union2), Max(countA[i], countB[i]), i)
 	}
 
 	sliceEqual(assert, diff, diff2)
@@ -844,15 +847,15 @@ func TestStableSort(t *testing.T) {
 	l := randInt()
 	a := make([]*compareItem, l)
 	var id int
-	GenerateN(SliceBegin(a), l, func() *compareItem {
+	GenerateN(slices.Begin(a), l, func() *compareItem {
 		id++
 		return &compareItem{
 			a: randInt(),
 			b: id,
 		}
 	})
-	StableSortBy(SliceBegin(a), SliceEnd(a), func(x, y *compareItem) bool { return x.Less(y) })
-	assert.True(IsSortedBy(SliceBegin(a), SliceEnd(a), func(x, y *compareItem) bool { return x.Less2(y) }))
+	StableSortBy(slices.Begin(a), slices.End(a), func(x, y *compareItem) bool { return x.Less(y) })
+	assert.True(IsSortedBy(slices.Begin(a), slices.End(a), func(x, y *compareItem) bool { return x.Less2(y) }))
 }
 
 func TestHeap(t *testing.T) {

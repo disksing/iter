@@ -2,7 +2,6 @@ package iter
 
 import (
 	"math/rand"
-	"strings"
 )
 
 type iotaReader[T Numeric] struct {
@@ -59,19 +58,4 @@ func RepeatGenerator[T any](x T) func() T {
 // RandomGenerator creates a generator that returns random item of a slice.
 func RandomGenerator[T any](s []T, r *rand.Rand) func() T {
 	return func() T { return s[r.Intn(len(s))] }
-}
-
-// MakeString creates a string by range spesified by [first, last). The value
-// type should be byte or rune.
-func MakeString[T byte | rune, It ForwardReader[T, It]](first, last It) string {
-	var s strings.Builder
-	for ; !first.Eq(last); first = first.Next() {
-		switch v := any(first.Read()).(type) {
-		case byte:
-			s.WriteByte(v)
-		case rune:
-			s.WriteRune(v)
-		}
-	}
-	return s.String()
 }
