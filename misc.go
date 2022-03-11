@@ -47,7 +47,7 @@ func (r repeatReader[T]) Next() repeatReader[T] { return r }
 func (r repeatReader[T]) Eq(repeatReader[T]) bool { return false }
 
 // RepeatReader creates an InputIter that returns [x, x, x...).
-func RepeatReader[T any](x T) InputIter[T, repeatReader[T]] {
+func RepeatReader[T any](x T) repeatReader[T] {
 	return repeatReader[T]{x: x}
 }
 

@@ -8,37 +8,37 @@ import (
 )
 
 type sliceIter[T any] struct {
-	s    *[]T
+	s    []T
 	i    int
 	step int
 }
 
 // SliceBegin returns an iterator to the front element of the slice.
-func SliceBegin[T any, It sliceIter[T]](s *[]T) It {
+func SliceBegin[T any, It sliceIter[T]](s []T) It {
 	return It{s, 0, 1}
 }
 
 // SliceEnd returns an iterator to the passed last element of the slice.
-func SliceEnd[T any, It sliceIter[T]](s *[]T) It {
-	return It{s, len(*s), 1}
+func SliceEnd[T any, It sliceIter[T]](s []T) It {
+	return It{s, len(s), 1}
 }
 
 // SliceRBegin returns an iterator to the back element of the slice.
-func SliceRBegin[T any, It sliceIter[T]](s *[]T) It {
-	return It{s, len(*s) - 1, -1}
+func SliceRBegin[T any, It sliceIter[T]](s []T) It {
+	return It{s, len(s) - 1, -1}
 }
 
 // SliceREnd returns an iterator to the passed first element of the slice.
-func SliceREnd[T any, It sliceIter[T]](s *[]T) It {
+func SliceREnd[T any, It sliceIter[T]](s []T) It {
 	return It{s, -1, -1}
 }
 
 func (it sliceIter[T]) Read() T {
-	return (*it.s)[it.i]
+	return it.s[it.i]
 }
 
 func (it sliceIter[T]) Write(v T) {
-	(*it.s)[it.i] = v
+	it.s[it.i] = v
 }
 
 func (it sliceIter[T]) Eq(it2 sliceIter[T]) bool {
@@ -74,13 +74,13 @@ func (it sliceIter[T]) String() string {
 		dir = "<-"
 	}
 	var buf []string
-	for i := 0; i < 64 && i < len(*it.s); i++ {
-		buf = append(buf, fmt.Sprintf("%v", (*it.s)[i]))
+	for i := 0; i < 64 && i < len(it.s); i++ {
+		buf = append(buf, fmt.Sprintf("%v", it.s[i]))
 	}
-	if len(*it.s) > 64 {
+	if len(it.s) > 64 {
 		buf = append(buf, "...")
 	}
-	return fmt.Sprintf("[%v](len=%d,cap=%d)@%d%s", strings.Join(buf, ","), len(*it.s), cap(*it.s), it.i, dir)
+	return fmt.Sprintf("[%v](len=%d,cap=%d)@%d%s", strings.Join(buf, ","), len(it.s), cap(it.s), it.i, dir)
 }
 
 func (it sliceIter[T]) AllowMultiplePass() {}

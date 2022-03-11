@@ -496,19 +496,30 @@ func Shuffle[T any, It RandomReadWriter[T, It]](first, last It, r *rand.Rand) {
 	})
 }
 
-// // Sample selects n elements from the sequence [first; last) such that each
-// // possible sample has equal probability of appearance, and writes those
-// // selected elements into the output iterator out.
-// func Sample[T any, In ForwardReader[T, In], Out OutputIter[T]](first, last In, out Out, n int, r *rand.Rand) Out {
-// 	_, rr := any(first).(RandomReader[T, In])
-// 	rout, rw := any(out).(RandomWriter[T, Out])
-// 	if !rr && rw {
-// 		return _reservoirSample[T](first, last, rout, n, r)
-// 	}
-// 	return _selectionSample[T](first, last, out, n, r)
-// }
-
-func _selectionSample[T any, In ForwardReader[T, In], Out OutputIter[T]](first, last In, out Out, n int, r *rand.Rand) Out {
+// Sample selects n elements from the sequence [first; last) such that each
+// possible sample has equal probability of appearance, and writes those
+// selected elements into the output iterator out.
+func Sample[T any, In ForwardReader[T, In], Out OutputIter[T]](first, last In, out Out, n int, r *rand.Rand) Out {
+	_, rr := any(first).(RandomReader[T, In])
+	rout, rw := any(out).(RandomWriter[T, Out])
+	if !rr && rw {
+		// reservoir sampling
+		var k int
+		for ; __ne(first, last) && k < n; first, k = first.Next(), k+1 {
+			rout.AdvanceN(k).Write(first.Read())
+		}
+		if __eq(first, last) {
+			return rout.AdvanceN(k)
+		}
+		sz := k
+		for ; __ne(first, last); first, k = first.Next(), k+1 {
+			if d := r.Intn(k + 1); d < sz {
+				rout.AdvanceN(d).Write(first.Read())
+			}
+		}
+		return rout.AdvanceN(n)
+	}
+	// selection sampling
 	unsampled := Distance[T](first, last)
 	if n > unsampled {
 		n = unsampled
@@ -521,23 +532,6 @@ func _selectionSample[T any, In ForwardReader[T, In], Out OutputIter[T]](first, 
 		unsampled--
 	}
 	return out
-}
-
-func _reservoirSample[T any, In ForwardReader[T, In], Out RandomWriter[T, Out]](first, last In, out Out, n int, r *rand.Rand) Out {
-	var k int
-	for ; __ne(first, last) && k < n; first, k = first.Next(), k+1 {
-		out.AdvanceN(k).Write(first.Read())
-	}
-	if __eq(first, last) {
-		return out.AdvanceN(k)
-	}
-	sz := k
-	for ; __ne(first, last); first, k = first.Next(), k+1 {
-		if d := r.Intn(k + 1); d < sz {
-			out.AdvanceN(d).Write(first.Read())
-		}
-	}
-	return out.AdvanceN(n)
 }
 
 // Unique eliminates all but the first element from every consecutive group of
@@ -645,32 +639,33 @@ func PartitionCopy[T any, In InputIter[T, In], Out OutputIter[T]](first, last In
 // way that all elements for which the predicate pred returns true precede the
 // elements for which predicate pred returns false. Relative order of the
 // elements is preserved.
-// func StablePartition(first, last ForwardReadWriter, pred UnaryPredicate) ForwardReadWriter {
-// 	for {
-// 		if _eq(first, last) {
-// 			return first
-// 		}
-// 		if !pred(first.Read()) {
-// 			break
-// 		}
-// 		first = NextForwardReadWriter(first)
-// 	}
-// 	if bfirst, ok := first.(BidiReadWriter); ok {
-// 		if blast, ok := last.(BidiReadWriter); ok {
-// 			for {
-// 				blast = PrevBidiReadWriter(blast)
-// 				if _eq(first, blast) {
-// 					return first
-// 				}
-// 				if pred(blast.Read()) {
-// 					break
-// 				}
-// 			}
-// 			return _stablePartitionBidi(bfirst, blast, pred, Distance(first, blast)+1)
-// 		}
-// 	}
-// 	return _stablePartitionForward(first, last, pred, Distance(first, last))
-// }
+func StablePartition[T any, It ForwardReadWriter[T, It], It2 BidiReadWriter[T, It2]](first, last It, pred UnaryPredicate[T]) It {
+	for {
+		if __eq(first, last) {
+			return first
+		}
+		if !pred(first.Read()) {
+			break
+		}
+		first = first.Next()
+	}
+	if bfirst, ok := any(first).(It2); ok {
+		if blast, ok := any(last).(It2); ok {
+			for {
+				blast = any(blast.Prev()).(It2)
+				last = any(blast).(It)
+				if __eq(first, last) {
+					return first
+				}
+				if pred(last.Read()) {
+					break
+				}
+			}
+			return any(_stablePartitionBidi(bfirst, blast, pred, Distance[T](first, last)+1)).(It)
+		}
+	}
+	return _stablePartitionForward(first, last, pred, Distance[T](first, last))
+}
 
 func _stablePartitionBidi[T any, It BidiReadWriter[T, It]](first, last It, pred UnaryPredicate[T], l int) It {
 	if l == 2 {
@@ -850,8 +845,8 @@ type heapHelper[T any, It RandomReadWriter[T, It]] struct {
 
 func (h *heapHelper[T, It]) Less(i, j int) bool {
 	return h.less(
-		h.first.AdvanceN(i).Read(),
 		h.first.AdvanceN(j).Read(),
+		h.first.AdvanceN(i).Read(),
 	)
 }
 
@@ -1332,7 +1327,7 @@ func InplaceMergeBy[T any, It BidiReadWriter[T, It]](first, middle, last It, les
 		if len1 < len2 {
 			len21 = len2 / 2
 			m2 = AdvanceN[T](middle, len21)
-			m1 = UpperBoundBy[T](first, middle, m2.Read(), less)
+			m1 = UpperBoundBy(first, middle, m2.Read(), less)
 			len11 = Distance[T](first, m1)
 		} else {
 			if len1 == 1 {
@@ -1341,7 +1336,7 @@ func InplaceMergeBy[T any, It BidiReadWriter[T, It]](first, middle, last It, les
 			}
 			len11 = len1 / 2
 			m1 = AdvanceN[T](first, len11)
-			m2 = LowerBoundBy[T](middle, last, m1.Read(), less)
+			m2 = LowerBoundBy(middle, last, m1.Read(), less)
 			len21 = Distance[T](middle, m2)
 		}
 		len12, len22 := len1-len11, len2-len21
@@ -1456,7 +1451,7 @@ func SetIntersectionBy[T any, In1 InputIter[T, In1], In2 InputIter[T, In2], Out 
 // last m-n of those elements are copied from [first1,last1), otherwise the last
 // n-m elements are copied from [first2,last2). The resulting range cannot
 // overlap with either of the input ranges.
-func SetSymmetricDifference[T Ordered, In1 InputIter[T, In1], In2 InputIter[T, In2], Out OutputIter[T]](first1, last1 In1, first2, last2 In1, dFirst Out) Out {
+func SetSymmetricDifference[T Ordered, In1 InputIter[T, In1], Out OutputIter[T]](first1, last1 In1, first2, last2 In1, dFirst Out) Out {
 	return SetSymmetricDifferenceBy(first1, last1, first2, last2, dFirst, _less[T])
 }
 
@@ -1540,7 +1535,7 @@ func IsHeap[T Ordered, It RandomReader[T, It]](first, last It) bool {
 //
 // Elements are compared using the given binary comparer less.
 func IsHeapBy[T any, It RandomReader[T, It]](first, last It, less LessComparer[T]) bool {
-	return __eq(IsHeapUntilBy[T](first, last, less), last)
+	return __eq(IsHeapUntilBy(first, last, less), last)
 }
 
 // IsHeapUntil examines the range [first, last) and finds the largest range

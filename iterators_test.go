@@ -14,17 +14,17 @@ func TestSliceIterator(t *testing.T) {
 
 	assert := assert.New(t)
 	a := make([]int, 100)
-	b := SliceBegin(&a)
+	b := SliceBegin(a)
 	b.AllowMultiplePass()
 	b1 := b.Next()
-	rb := SliceRBegin(&a)
-	e := SliceEnd(&a)
+	rb := SliceRBegin(a)
+	e := SliceEnd(a)
 	assert.True(b.AdvanceN(100).Eq(e))
 	assert.True(e.AdvanceN(-100).Eq(b))
 	assert.Equal(100, Distance[int](b, e))
 	assert.Equal(-100, Distance[int](e, b))
 
-	re := SliceREnd(&a)
+	re := SliceREnd(a)
 	assert.True(rb.AdvanceN(100).Eq(re))
 	assert.True(re.AdvanceN(-100).Eq(rb))
 	assert.Equal(100, Distance[int](rb, re))
@@ -40,8 +40,8 @@ func TestSliceIterator(t *testing.T) {
 }
 
 func listEq[T comparable](assert *assert.Assertions, lst *list.List, v ...T) {
-	end := SliceEnd(&v)
-	assert.True(Equal[T](ListBegin[T](lst), ListEnd[T](lst), SliceBegin(&v), &end))
+	end := SliceEnd(v)
+	assert.True(Equal[T](ListBegin[T](lst), ListEnd[T](lst), SliceBegin(v), &end))
 }
 
 func TestListIterator(t *testing.T) {
