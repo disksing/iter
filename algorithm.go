@@ -9,25 +9,25 @@ import (
 // AllOf checks if unary predicate pred returns true for all elements in the
 // range [first, last).
 func AllOf[T any, It InputIter[T, It]](first, last It, pred UnaryPredicate[T]) bool {
-	return __eq(FindIfNot(first, last, pred), last)
+	return __iter_eq(FindIfNot(first, last, pred), last)
 }
 
 // AnyOf checks if unary predicate pred returns true for at least one element in
 // the range [first, last).
 func AnyOf[T any, It InputIter[T, It]](first, last It, pred UnaryPredicate[T]) bool {
-	return __ne(FindIf(first, last, pred), last)
+	return !__iter_eq(FindIf(first, last, pred), last)
 }
 
 // NoneOf checks if unary predicate pred returns true for no elements in the
 // range [first, last).
 func NoneOf[T any, It InputIter[T, It]](first, last It, pred UnaryPredicate[T]) bool {
-	return __eq(FindIf(first, last, pred), last)
+	return __iter_eq(FindIf(first, last, pred), last)
 }
 
 // ForEach applies the given function f to the result of dereferencing every
 // iterator in the range [first, last), in order.
 func ForEach[T any, It InputIter[T, It]](first, last It, f IteratorFunction[T]) IteratorFunction[T] {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		f(first.Read())
 	}
 	return f
@@ -50,7 +50,7 @@ func Count[T comparable, It InputIter[T, It]](first, last It, v T) int {
 // CountIf counts elements for which predicate pred returns true.
 func CountIf[T any, It InputIter[T, It]](first, last It, pred UnaryPredicate[T]) int {
 	var ret int
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		if pred(first.Read()) {
 			ret++
 		}
@@ -72,7 +72,7 @@ func Mismatch[T comparable, It1 InputIter[T, It1], It2 InputIter[T, It2]](first1
 // If last2 is nil, it denotes first2 + (last1 - first1). Elements are compared
 // using the given comparer eq.
 func MismatchBy[T1, T2 any, It1 InputIter[T1, It1], It2 InputIter[T2, It2]](first1, last1 It1, first2 It2, last2 *It2, eq EqComparer[T1, T2]) (It1, It2) {
-	for __ne(first1, last1) && (last2 == nil || __ne(first2, *last2)) && eq(first1.Read(), first2.Read()) {
+	for !__iter_eq(first1, last1) && (last2 == nil || !__iter_eq(first2, *last2)) && eq(first1.Read(), first2.Read()) {
 		first1, first2 = first1.Next(), first2.Next()
 	}
 	return first1, first2
@@ -87,7 +87,7 @@ func Find[T comparable, It InputIter[T, It]](first, last It, v T) It {
 // FindIf returns the first element in the range [first, last) which predicate
 // pred returns true.
 func FindIf[T any, It InputIter[T, It]](first, last It, pred UnaryPredicate[T]) It {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		if pred(first.Read()) {
 			return first
 		}
@@ -115,12 +115,12 @@ func FindEnd[T comparable, It ForwardReader[T, It]](first, last, sFirst, sLast I
 // If [sFirst, sLast) is empty or such sequence is found, last is returned.
 // Elements are compared using the given binary comparer eq.
 func FindEndBy[T1, T2 any, It1 ForwardReader[T1, It1], It2 ForwardReader[T2, It2]](first, last It1, sFirst, sLast It2, eq EqComparer[T1, T2]) It1 {
-	if __eq(sFirst, sLast) {
+	if __iter_eq(sFirst, sLast) {
 		return last
 	}
 	result := last
 	for {
-		if newResult := SearchBy(first, last, sFirst, sLast, eq); __eq(newResult, last) {
+		if newResult := SearchBy(first, last, sFirst, sLast, eq); __iter_eq(newResult, last) {
 			break
 		} else {
 			result = newResult
@@ -159,10 +159,10 @@ func AdjacentFind[T comparable, It ForwardReader[T, It]](first, last It) It {
 //
 // Elements are compared using the given binary comparer eq.
 func AdjacentFindBy[T any, It ForwardReader[T, It]](first, last It, eq EqComparer[T, T]) It {
-	if __eq(first, last) {
+	if __iter_eq(first, last) {
 		return last
 	}
-	for next := first.Next(); __ne(next, last); first, next = first.Next(), next.Next() {
+	for next := first.Next(); !__iter_eq(next, last); first, next = first.Next(), next.Next() {
 		if eq(first.Read(), next.Read()) {
 			return first
 		}
@@ -184,10 +184,10 @@ func SearchBy[T1, T2 any, It1 ForwardReader[T1, It1], It2 ForwardReader[T2, It2]
 	for {
 		it := first
 		for sIt := sFirst; ; sIt, it = sIt.Next(), it.Next() {
-			if __eq(sIt, sLast) {
+			if __iter_eq(sIt, sLast) {
 				return first
 			}
-			if __eq(it, last) {
+			if __iter_eq(it, last) {
 				return last
 			}
 			if !eq(it.Read(), sIt.Read()) {
@@ -212,7 +212,7 @@ func SearchNBy[T1, T2 any, It ForwardReader[T1, It]](first, last It, count int, 
 	if count <= 0 {
 		return first
 	}
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		if !eq(first.Read(), v) {
 			continue
 		}
@@ -223,7 +223,7 @@ func SearchNBy[T1, T2 any, It ForwardReader[T1, It]](first, last It, count int, 
 			if curCount >= count {
 				return candidate
 			}
-			if first = first.Next(); __eq(first, last) {
+			if first = first.Next(); __iter_eq(first, last) {
 				return last
 			}
 			if !eq(first.Read(), v) {
@@ -249,7 +249,7 @@ func Copy[T any, In InputIter[T, In], Out OutputIter[T]](first, last In, dFirst 
 // It returns an iterator in the destination range, pointing past the last
 // element copied.
 func CopyIf[T any, In InputIter[T, In], Out OutputIter[T]](first, last In, dFirst Out, pred UnaryPredicate[T]) Out {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		if v := first.Read(); pred(v) {
 			dFirst = _writeNext(dFirst, v)
 		}
@@ -277,7 +277,7 @@ func CopyN[T any, In InputIter[T, In], Out OutputIter[T]](first In, count int, d
 // but their relative order is preserved. It returns an iterator to the last
 // element copied.
 func CopyBackward[T any, In BidiReader[T, In], Out BidiWriter[T, Out]](first, last In, dLast Out) Out {
-	for __ne(first, last) {
+	for !__iter_eq(first, last) {
 		last, dLast = last.Prev(), dLast.Prev()
 		dLast.Write(last.Read())
 	}
@@ -286,7 +286,7 @@ func CopyBackward[T any, In BidiReader[T, In], Out BidiWriter[T, Out]](first, la
 
 // Fill assigns the given value to the elements in the range [first, last).
 func Fill[T any, It ForwardWriter[T, It]](first, last It, v T) {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		first.Write(v)
 	}
 }
@@ -304,7 +304,7 @@ func FillN[T any, Out OutputIter[T]](dFirst Out, count int, v T) {
 // Transform applies the given function to the range [first, last) and stores
 // the result in another range, beginning at dFirst.
 func Transform[T1, T2 any, In InputIter[T1, In], Out OutputIter[T2]](first, last In, dFirst Out, op UnaryOperation[T1, T2]) Out {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		dFirst = _writeNext(dFirst, op(first.Read()))
 	}
 	return dFirst
@@ -314,7 +314,7 @@ func Transform[T1, T2 any, In InputIter[T1, In], Out OutputIter[T2]](first, last
 // [first2, first2+last-first) and stores the result in another range, beginning
 // at dFirst.
 func TransformBinary[T1, T2, T3 any, In1 ForwardReader[T1, In1], In2 ForwardReader[T2, In2], Out OutputIter[T3]](first1, last1 In1, first2 In2, dFirst Out, op BinaryOperation[T1, T2, T3]) Out {
-	for ; __ne(first1, last1); first1, first2 = first1.Next(), first2.Next() {
+	for ; !__iter_eq(first1, last1); first1, first2 = first1.Next(), first2.Next() {
 		dFirst = _writeNext(dFirst, op(first1.Read(), first2.Read()))
 	}
 	return dFirst
@@ -323,7 +323,7 @@ func TransformBinary[T1, T2, T3 any, In1 ForwardReader[T1, In1], In2 ForwardRead
 // Generate assigns each element in range [first, last) a value generated by the
 // given function object g.
 func Generate[T any, It ForwardWriter[T, It]](first, last It, g Generator[T]) {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		first.Write(g())
 	}
 }
@@ -350,8 +350,8 @@ func Remove[T comparable, It ForwardReadWriter[T, It]](first, last It, v T) It {
 // the range.
 func RemoveIf[T any, It ForwardReadWriter[T, It]](first, last It, pred UnaryPredicate[T]) It {
 	first = FindIf(first, last, pred)
-	if __ne(first, last) {
-		for i := first.Next(); __ne(i, last); i = i.Next() {
+	if !__iter_eq(first, last) {
+		for i := first.Next(); !__iter_eq(i, last); i = i.Next() {
 			if !pred(i.Read()) {
 				first.Write(i.Read())
 				first = first.Next()
@@ -375,7 +375,7 @@ func RemoveCopy[T comparable, In InputIter[T, In], Out OutputIter[T]](first, las
 //
 // Source and destination ranges cannot overlap.
 func RemoveCopyIf[T any, In InputIter[T, In], Out OutputIter[T]](first, last In, dFirst Out, pred UnaryPredicate[T]) Out {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		if v := first.Read(); !pred(v) {
 			dFirst = _writeNext(dFirst, v)
 		}
@@ -392,7 +392,7 @@ func Replace[T comparable, It ForwardReadWriter[T, It]](first, last It, old, new
 // ReplaceIf replaces all elements satisfy pred with new in the range [first,
 // last).
 func ReplaceIf[T any, It ForwardReadWriter[T, It]](first, last It, pred UnaryPredicate[T], v T) {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		if pred(first.Read()) {
 			first.Write(v)
 		}
@@ -412,7 +412,7 @@ func ReplaceCopy[T comparable, In InputIter[T, In], Out OutputIter[T]](first, la
 //
 // The source and destination ranges cannot overlap.
 func ReplaceCopyIf[T any, In InputIter[T, In], Out OutputIter[T]](first, last In, dFirst Out, pred UnaryPredicate[T], v T) Out {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		if v0 := first.Read(); pred(v0) {
 			dFirst = _writeNext(dFirst, v)
 		} else {
@@ -432,16 +432,16 @@ func Swap[T any](a, b ReadWriter[T]) {
 // SwapRanges exchanges elements between range [first1, last1) and another range
 // starting at first2.
 func SwapRanges[T any, It1 ForwardReadWriter[T, It1], It2 ForwardReadWriter[T, It2]](first1, last1 It1, first2 It2) {
-	for ; __ne(first1, last1); first1, first2 = first1.Next(), first2.Next() {
+	for ; !__iter_eq(first1, last1); first1, first2 = first1.Next(), first2.Next() {
 		Swap[T](first1, first2)
 	}
 }
 
 // Reverse reverses the order of the elements in the range [first, last).
 func Reverse[T any, It BidiReadWriter[T, It]](first, last It) {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		last = last.Prev()
-		if __eq(first, last) {
+		if __iter_eq(first, last) {
 			return
 		}
 		Swap[T](first, last)
@@ -452,7 +452,7 @@ func Reverse[T any, It BidiReadWriter[T, It]](first, last It) {
 // beginning at dFirst in such a way that the elements in the new range are in
 // reverse order.
 func ReverseCopy[T any, In BidiReader[T, In], Out OutputIter[T]](first, last In, dFirst Out) Out {
-	for __ne(first, last) {
+	for !__iter_eq(first, last) {
 		last = last.Prev()
 		dFirst = _writeNext(dFirst, last.Read())
 	}
@@ -463,15 +463,15 @@ func ReverseCopy[T any, In BidiReader[T, In], Out OutputIter[T]](first, last In,
 // the element nFirst becomes the first element of the new range and nFirst - 1
 // becomes the last element.
 func Rotate[T any, It ForwardReadWriter[T, It]](first, nFirst, last It) It {
-	if __eq(first, nFirst) {
+	if __iter_eq(first, nFirst) {
 		return last
 	}
-	if __eq(nFirst, last) {
+	if __iter_eq(nFirst, last) {
 		return first
 	}
 	read, write, nextRead := nFirst, first, first
-	for __ne(read, last) {
-		if __eq(write, nextRead) {
+	for !__iter_eq(read, last) {
+		if __iter_eq(write, nextRead) {
 			nextRead = read
 		}
 		Swap[T](write, read)
@@ -505,14 +505,14 @@ func Sample[T any, In ForwardReader[T, In], Out OutputIter[T]](first, last In, o
 	if !rr && rw {
 		// reservoir sampling
 		var k int
-		for ; __ne(first, last) && k < n; first, k = first.Next(), k+1 {
+		for ; !__iter_eq(first, last) && k < n; first, k = first.Next(), k+1 {
 			rout.AdvanceN(k).Write(first.Read())
 		}
-		if __eq(first, last) {
+		if __iter_eq(first, last) {
 			return rout.AdvanceN(k)
 		}
 		sz := k
-		for ; __ne(first, last); first, k = first.Next(), k+1 {
+		for ; !__iter_eq(first, last); first, k = first.Next(), k+1 {
 			if d := r.Intn(k + 1); d < sz {
 				rout.AdvanceN(d).Write(first.Read())
 			}
@@ -547,17 +547,17 @@ func Unique[T comparable, It ForwardReadWriter[T, It]](first, last It) It {
 //
 // Elements are compared using the given binary comparer eq.
 func UniqueIf[T any, It ForwardReadWriter[T, It]](first, last It, eq EqComparer[T, T]) It {
-	if __eq(first, last) {
+	if __iter_eq(first, last) {
 		return last
 	}
 	result := first
 	for {
 		first = first.Next()
-		if __eq(first, last) {
+		if __iter_eq(first, last) {
 			return result.Next()
 		}
 		if !eq(result.Read(), first.Read()) {
-			if result = result.Next(); __ne(result, first) {
+			if result = result.Next(); !__iter_eq(result, first) {
 				result.Write(first.Read())
 			}
 		}
@@ -580,10 +580,10 @@ func UniqueCopy[T comparable, In InputIter[T, In], Out OutputIter[T]](first, las
 // Only the first element of each group of equal elements is copied. Elements
 // are compared using the given binary comparer eq.
 func UniqueCopyIf[T any, In InputIter[T, In], Out OutputIter[T]](first, last In, dFirst Out, eq EqComparer[T, T]) Out {
-	if __ne(first, last) {
+	if !__iter_eq(first, last) {
 		v := first.Read()
 		dFirst = _writeNext(dFirst, v)
-		for first = first.Next(); __ne(first, last); first = first.Next() {
+		for first = first.Next(); !__iter_eq(first, last); first = first.Next() {
 			if v1 := first.Read(); !eq(v, v1) {
 				v = v1
 				dFirst = _writeNext(dFirst, v)
@@ -607,10 +607,10 @@ func IsPartitioned[T any, It InputIter[T, It]](first, last It, pred UnaryPredica
 // Relative order of the elements is not preserved.
 func Partition[T any, It ForwardReadWriter[T, It]](first, last It, pred UnaryPredicate[T]) It {
 	first = FindIfNot(first, last, pred)
-	if __eq(first, last) {
+	if __iter_eq(first, last) {
 		return first
 	}
-	for i := first.Next(); __ne(i, last); i = i.Next() {
+	for i := first.Next(); !__iter_eq(i, last); i = i.Next() {
 		if pred(i.Read()) {
 			Swap[T](first, i)
 			first = first.Next()
@@ -625,7 +625,7 @@ func Partition[T any, It ForwardReadWriter[T, It]](first, last It, pred UnaryPre
 // outTrue. The rest of the elements are copied to the range beginning at
 // outFalse.
 func PartitionCopy[T any, In InputIter[T, In], Out OutputIter[T]](first, last In, outTrue, outFalse Out, pred UnaryPredicate[T]) (Out, Out) {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		if v := first.Read(); pred(v) {
 			outTrue = _writeNext(outTrue, v)
 		} else {
@@ -641,7 +641,7 @@ func PartitionCopy[T any, In InputIter[T, In], Out OutputIter[T]](first, last In
 // elements is preserved.
 func StablePartition[T any, It ForwardReadWriter[T, It], It2 BidiReadWriter[T, It2]](first, last It, pred UnaryPredicate[T]) It {
 	for {
-		if __eq(first, last) {
+		if __iter_eq(first, last) {
 			return first
 		}
 		if !pred(first.Read()) {
@@ -654,7 +654,7 @@ func StablePartition[T any, It ForwardReadWriter[T, It], It2 BidiReadWriter[T, I
 			for {
 				blast = any(blast.Prev()).(It2)
 				last = any(blast).(It)
-				if __eq(first, last) {
+				if __iter_eq(first, last) {
 					return first
 				}
 				if pred(last.Read()) {
@@ -689,13 +689,13 @@ func _stablePartitionBidi[T any, It BidiReadWriter[T, It]](first, last It, pred 
 	// f       m       l
 	m1, lh := m, l2
 	for m1 = m1.Prev(); !pred(m1.Read()); m1 = m1.Prev() {
-		if __eq(m1, first) {
+		if __iter_eq(m1, first) {
 			break
 		}
 		lh--
 	}
 	firstFalse := first
-	if __ne(m1, first) {
+	if !__iter_eq(m1, first) {
 		// F????TFF????????T
 		// f    m1 m       l
 		firstFalse = _stablePartitionBidi(first, m1, pred, lh)
@@ -705,13 +705,13 @@ func _stablePartitionBidi[T any, It BidiReadWriter[T, It]](first, last It, pred 
 	m1, lh = m, l-l2
 	for pred(m1.Read()) {
 		m1 = m1.Next()
-		if __eq(m1, last) {
+		if __iter_eq(m1, last) {
 			break
 		}
 		lh--
 	}
 	secondFalse := last.Next()
-	if __ne(m1, last) {
+	if !__iter_eq(m1, last) {
 		// TTFFFFFFTTTF?????T
 		// f ff m1 m  m1    l
 		secondFalse = _stablePartitionBidi(m1, last, pred, lh)
@@ -743,13 +743,13 @@ func _stablePartitionForward[T any, It ForwardReadWriter[T, It]](first, last It,
 	m1, lh := m, l-l2
 	for pred(m1.Read()) {
 		m1 = m1.Next()
-		if __eq(m1, last) {
+		if __iter_eq(m1, last) {
 			break
 		}
 		lh--
 	}
 	secondFalse := last
-	if __ne(m1, last) {
+	if !__iter_eq(m1, last) {
 		// TTTFFFFFTTTF??????
 		// f  ff   m  m1     l
 		secondFalse = _stablePartitionForward(m1, last, pred, lh)
@@ -780,7 +780,7 @@ func PartitionPoint[T any, It ForwardReader[T, It]](first, last It, pred UnaryPr
 // IsSorted checks if the elements in range [first, last) are sorted in
 // non-descending order.
 func IsSorted[T Ordered, It ForwardReader[T, It]](first, last It) bool {
-	return __eq(IsSortedUntil[T](first, last), last)
+	return __iter_eq(IsSortedUntil[T](first, last), last)
 }
 
 // IsSortedBy checks if the elements in range [first, last) are sorted in
@@ -788,7 +788,7 @@ func IsSorted[T Ordered, It ForwardReader[T, It]](first, last It) bool {
 //
 // Elements are compared using the given binary comparer less.
 func IsSortedBy[T any, It ForwardReader[T, It]](first, last It, less LessComparer[T]) bool {
-	return __eq(IsSortedUntilBy(first, last, less), last)
+	return __iter_eq(IsSortedUntilBy(first, last, less), last)
 }
 
 // IsSortedUntil examines the range [first, last) and finds the largest range
@@ -802,8 +802,8 @@ func IsSortedUntil[T Ordered, It ForwardReader[T, It]](first, last It) It {
 //
 // Elements are compared using the given binary comparer less.
 func IsSortedUntilBy[T any, It ForwardReader[T, It]](first, last It, less LessComparer[T]) It {
-	if __ne(first, last) {
-		for next := first.Next(); __ne(next, last); next = next.Next() {
+	if !__iter_eq(first, last) {
+		for next := first.Next(); !__iter_eq(next, last); next = next.Next() {
 			if less(next.Read(), first.Read()) {
 				return next
 			}
@@ -895,7 +895,7 @@ func PartialSort[T Ordered, It RandomReadWriter[T, It]](first, middle, last It) 
 // are compared using the given binary comparer less.
 func PartialSortBy[T any, It RandomReadWriter[T, It]](first, middle, last It, less LessComparer[T]) {
 	MakeHeapBy(first, middle, less)
-	for i := middle; __ne(i, last); i = i.Next() {
+	for i := middle; !__iter_eq(i, last); i = i.Next() {
 		if less(i.Read(), first.Read()) {
 			Swap[T](first, i)
 			heap.Fix(&heapHelper[T, It]{
@@ -928,15 +928,15 @@ func PartialSortCopy[T Ordered, In InputIter[T, In], Out RandomReadWriter[T, Out
 // first, dLast - dFirst)). The order of equal elements is not guaranteed to be
 // preserved. Elements are compared using the given binary comparer less.
 func PartialSortCopyBy[T any, In InputIter[T, In], Out RandomReadWriter[T, Out]](first, last In, dFirst, dLast Out, less LessComparer[T]) {
-	if __eq(dFirst, dLast) {
+	if __iter_eq(dFirst, dLast) {
 		return
 	}
 	r, len := dFirst, dFirst.Distance(dLast)
-	for ; __ne(first, last) && __ne(r, dLast); first, r = first.Next(), r.Next() {
+	for ; !__iter_eq(first, last) && !__iter_eq(r, dLast); first, r = first.Next(), r.Next() {
 		r.Write(first.Read())
 	}
 	MakeHeapBy(dFirst, dLast, less)
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		if less(first.Read(), dFirst.Read()) {
 			dFirst.Write(first.Read())
 			heap.Fix(&heapHelper[T, Out]{
@@ -990,7 +990,7 @@ func NthElement[T Ordered, It RandomReadWriter[T, It]](first, nth, last It) {
 func NthElementBy[T any, It RandomReadWriter[T, It]](first, nth, last It, less LessComparer[T]) {
 Restart:
 	for {
-		if __eq(nth, last) {
+		if __iter_eq(nth, last) {
 			return
 		}
 		len := first.Distance(last)
@@ -1045,7 +1045,7 @@ Restart:
 			// f        m        l
 			// i                j
 			for {
-				if j = j.Prev(); __eq(i, j) {
+				if j = j.Prev(); __iter_eq(i, j) {
 					// 0+++++++++++++
 					// f             l
 					// i
@@ -1054,7 +1054,7 @@ Restart:
 						// 0++++++++++++0
 						// fi           jl
 						for {
-							if __eq(i, j) {
+							if __iter_eq(i, j) {
 								// 00000000000000
 								// f            jl
 								//              i
@@ -1073,7 +1073,7 @@ Restart:
 					}
 					// 000000+++++++>
 					// f     i      jl
-					if __eq(i, j) {
+					if __iter_eq(i, j) {
 						// 0000000000000>
 						// f            jl
 						//              i
@@ -1135,7 +1135,7 @@ Restart:
 				}
 				Swap[T](i, j)
 				maybeSorted = false
-				if __eq(m, i) {
+				if __iter_eq(m, i) {
 					m = j
 				}
 				// -----??0?????++++       --------?????0+++
@@ -1147,13 +1147,13 @@ Restart:
 
 		// -------+++0+++
 		// f      i  m   l
-		if __ne(i, m) && less(m.Read(), i.Read()) {
+		if !__iter_eq(i, m) && less(m.Read(), i.Read()) {
 			Swap[T](i, m)
 			maybeSorted = false
 		}
 		// -------0++++++
 		// f      i      l
-		if __eq(nth, i) {
+		if __iter_eq(nth, i) {
 			return
 		}
 		if nth.Less(i) {
@@ -1234,7 +1234,7 @@ func BinarySearch[T Ordered, It ForwardReader[T, It]](first, last It, v T) bool 
 // Elements are compared using the given binary comparer less.
 func BinarySearchBy[T any, It ForwardReader[T, It]](first, last It, v T, less LessComparer[T]) bool {
 	first = LowerBoundBy(first, last, v, less)
-	return __ne(first, last) && !(less(v, first.Read()))
+	return !__iter_eq(first, last) && !(less(v, first.Read()))
 }
 
 // EqualRange returns a range containing all elements equivalent to value in the
@@ -1275,8 +1275,8 @@ func Merge[T Ordered, In1 InputIter[T, In1], In2 InputIter[T, In2], Out OutputIt
 //
 // Elements are compared using the given binary comparer less.
 func MergeBy[T any, In1 InputIter[T, In1], In2 InputIter[T, In2], Out OutputIter[T]](first1, last1 In1, first2, last2 In2, dFirst Out, less LessComparer[T]) Out {
-	for __ne(first1, last1) {
-		if __eq(first2, last2) {
+	for !__iter_eq(first1, last1) {
+		if __iter_eq(first2, last2) {
 			return Copy[T](first1, last1, dFirst)
 		}
 		if v1, v2 := first1.Read(), first2.Read(); less(v2, v1) {
@@ -1364,8 +1364,8 @@ func Includes[T Ordered, It1 InputIter[T, It1], It2 InputIter[T, It2]](first1, l
 //
 // Elements are compared using the given binary comparer less.
 func IncludesBy[T any, It1 InputIter[T, It1], It2 InputIter[T, It2]](first1, last1 It1, first2, last2 It2, less LessComparer[T]) bool {
-	for ; __ne(first2, last2); first1 = first1.Next() {
-		if __eq(first1, last1) || less(first2.Read(), first1.Read()) {
+	for ; !__iter_eq(first2, last2); first1 = first1.Next() {
+		if __iter_eq(first1, last1) || less(first2.Read(), first1.Read()) {
 			return false
 		}
 		if !less(first1.Read(), first2.Read()) {
@@ -1388,8 +1388,8 @@ func SetDifference[T Ordered, In1 InputIter[T, In1], In2 InputIter[T, In2], Out 
 //
 // Elements are compared using the given binary comparer less.
 func SetDifferenceBy[T any, In1 InputIter[T, In1], In2 InputIter[T, In2], Out OutputIter[T]](first1, last1 In1, first2, last2 In2, dFirst Out, less LessComparer[T]) Out {
-	for __ne(first1, last1) {
-		if __eq(first2, last2) {
+	for !__iter_eq(first1, last1) {
+		if __iter_eq(first2, last2) {
 			return Copy[T](first1, last1, dFirst)
 		}
 		if v1, v2 := first1.Read(), first2.Read(); less(v1, v2) {
@@ -1427,7 +1427,7 @@ func SetIntersection[T Ordered, In1 InputIter[T, In1], In2 InputIter[T, In2], Ou
 // overlap with either of the input ranges. Elements are compared using the
 // given binary comparer less.
 func SetIntersectionBy[T any, In1 InputIter[T, In1], In2 InputIter[T, In2], Out OutputIter[T]](first1, last1 In1, first2, last2 In2, dFirst Out, less LessComparer[T]) Out {
-	for __ne(first1, last1) && __ne(first2, last2) {
+	for !__iter_eq(first1, last1) && !__iter_eq(first2, last2) {
 		if v1, v2 := first1.Read(), first2.Read(); less(v1, v2) {
 			first1 = first1.Next()
 		} else {
@@ -1467,8 +1467,8 @@ func SetSymmetricDifference[T Ordered, In1 InputIter[T, In1], Out OutputIter[T]]
 // overlap with either of the input ranges. Elements are compared using the
 // given binary comparer less.
 func SetSymmetricDifferenceBy[T any, In1 InputIter[T, In1], In2 InputIter[T, In2], Out OutputIter[T]](first1, last1 In1, first2, last2 In2, dFirst Out, less LessComparer[T]) Out {
-	for __ne(first1, last1) {
-		if __eq(first2, last2) {
+	for !__iter_eq(first1, last1) {
+		if __iter_eq(first2, last2) {
 			return Copy[T](first1, last1, dFirst)
 		}
 		if v1, v2 := first1.Read(), first2.Read(); less(v1, v2) {
@@ -1508,8 +1508,8 @@ func SetUnion[T Ordered, In1 InputIter[T, In1], In2 InputIter[T, In2], Out Outpu
 // [first2, last2) to dFirst, also preserving order.  Elements are compared
 // using the given binary comparer less.
 func SetUnionBy[T any, In1 InputIter[T, In1], In2 InputIter[T, In2], Out OutputIter[T]](first1, last1 In1, first2, last2 In2, dFirst Out, less LessComparer[T]) Out {
-	for __ne(first1, last1) {
-		if __eq(first2, last2) {
+	for !__iter_eq(first1, last1) {
+		if __iter_eq(first2, last2) {
 			return Copy[T](first1, last1, dFirst)
 		}
 		if v1, v2 := first1.Read(), first2.Read(); less(v2, v1) {
@@ -1535,7 +1535,7 @@ func IsHeap[T Ordered, It RandomReader[T, It]](first, last It) bool {
 //
 // Elements are compared using the given binary comparer less.
 func IsHeapBy[T any, It RandomReader[T, It]](first, last It, less LessComparer[T]) bool {
-	return __eq(IsHeapUntilBy(first, last, less), last)
+	return __iter_eq(IsHeapUntilBy(first, last, less), last)
 }
 
 // IsHeapUntil examines the range [first, last) and finds the largest range
@@ -1641,7 +1641,7 @@ func SortHeap[T Ordered, It RandomReadWriter[T, It]](first, last It) {
 //
 // Elements are compared using the given binary comparer less.
 func SortHeapBy[T any, It RandomReadWriter[T, It]](first, last It, less LessComparer[T]) {
-	for ; __ne(first, last); last = last.Prev() {
+	for ; !__iter_eq(first, last); last = last.Prev() {
 		PopHeapBy(first, last, less)
 	}
 }
@@ -1670,11 +1670,11 @@ func MaxElement[T Ordered, It ForwardReader[T, It]](first, last It) It {
 //
 // Values are compared using the given binary comparer less.
 func MaxElementBy[T any, It ForwardReader[T, It]](first, last It, less LessComparer[T]) It {
-	if __eq(first, last) {
+	if __iter_eq(first, last) {
 		return last
 	}
 	max := first
-	for first = first.Next(); __ne(first, last); first = first.Next() {
+	for first = first.Next(); !__iter_eq(first, last); first = first.Next() {
 		if less(max.Read(), first.Read()) {
 			max = first
 		}
@@ -1706,11 +1706,11 @@ func MinElement[T Ordered, It ForwardReader[T, It]](first, last It) It {
 //
 // Values are compared using the given binary comparer less.
 func MinElementBy[T any, It ForwardReader[T, It]](first, last It, less LessComparer[T]) It {
-	if __eq(first, last) {
+	if __iter_eq(first, last) {
 		return last
 	}
 	min := first
-	for first = first.Next(); __ne(first, last); first = first.Next() {
+	for first = first.Next(); !__iter_eq(first, last); first = first.Next() {
 		if less(first.Read(), min.Read()) {
 			min = first
 		}
@@ -1742,14 +1742,14 @@ func MinmaxElement[T Ordered, It ForwardReader[T, It]](first, last It) (It, It) 
 //
 // Values are compared using the given binary comparer less.
 func MinmaxElementBy[T any, It ForwardReader[T, It]](first, last It, less LessComparer[T]) (It, It) {
-	if __eq(first, last) {
+	if __iter_eq(first, last) {
 		return first, first
 	}
 	min, max := first, first
-	for first = first.Next(); __ne(first, last); first = first.Next() {
+	for first = first.Next(); !__iter_eq(first, last); first = first.Next() {
 		i := first
 		first = first.Next()
-		if __eq(first, last) {
+		if __iter_eq(first, last) {
 			if less(i.Read(), min.Read()) {
 				min = i
 			} else if less(max.Read(), i.Read()) {
@@ -1809,12 +1809,12 @@ func Equal[T comparable, In1 InputIter[T, In1], In2 InputIter[T, In2]](first1, l
 // If last2 is nil, it denotes first2 + (last1 - first1). Elements are compared
 // using the given binary comparer eq.
 func EqualBy[T1, T2 any, In1 InputIter[T1, In1], In2 InputIter[T2, In2]](first1, last1 In1, first2 In2, last2 *In2, eq EqComparer[T1, T2]) bool {
-	for ; __ne(first1, last1); first1, first2 = first1.Next(), first2.Next() {
-		if (last2 != nil && __eq(first2, *last2)) || !eq(first1.Read(), first2.Read()) {
+	for ; !__iter_eq(first1, last1); first1, first2 = first1.Next(), first2.Next() {
+		if (last2 != nil && __iter_eq(first2, *last2)) || !eq(first1.Read(), first2.Read()) {
 			return false
 		}
 	}
-	return last2 == nil || __eq(first2, *last2)
+	return last2 == nil || __iter_eq(first2, *last2)
 }
 
 // LexicographicalCompare checks if the first range [first1, last1) is
@@ -1828,8 +1828,8 @@ func LexicographicalCompare[T Ordered, In1 InputIter[T, In1], In2 InputIter[T, I
 //
 // Elements are compared using the given binary comparer less.
 func LexicographicalCompareBy[T any, In1 InputIter[T, In1], In2 InputIter[T, In2]](first1, last1 In1, first2, last2 In2, less LessComparer[T]) bool {
-	for ; __ne(first2, last2); first1, first2 = first1.Next(), first2.Next() {
-		if __eq(first1, last1) || less(first1.Read(), first2.Read()) {
+	for ; !__iter_eq(first2, last2); first1, first2 = first1.Next(), first2.Next() {
+		if __iter_eq(first1, last1) || less(first1.Read(), first2.Read()) {
 			return true
 		}
 		if less(first2.Read(), first1.Read()) {
@@ -1854,15 +1854,15 @@ func LexicographicalCompareThreeWay[T Ordered, In1 InputIter[T, In1], In2 InputI
 //
 // Elements are compared using the given binary predicate cmp.
 func LexicographicalCompareThreeWayBy[T1, T2 any, In1 InputIter[T1, In1], In2 InputIter[T2, In2]](first1, last1 In1, first2, last2 In2, cmp ThreeWayComparer[T1, T2]) int {
-	for ; __ne(first2, last2); first1, first2 = first1.Next(), first2.Next() {
-		if __eq(first1, last1) {
+	for ; !__iter_eq(first2, last2); first1, first2 = first1.Next(), first2.Next() {
+		if __iter_eq(first1, last1) {
 			return -1
 		}
 		if x := cmp(first1.Read(), first2.Read()); x != 0 {
 			return x
 		}
 	}
-	if __eq(first1, last1) {
+	if __iter_eq(first1, last1) {
 		return 0
 	}
 	return 1
@@ -1891,12 +1891,12 @@ func IsPermutationBy[T any, It1 ForwardReader[T, It1], It2 ForwardReader[T, It2]
 		return false
 	}
 	first1, first2 = MismatchBy(first1, last1, first2, last2, eq)
-	if __eq(first1, last1) {
+	if __iter_eq(first1, last1) {
 		return true
 	}
-	for i := first1; __ne(i, last1); i = i.Next() {
+	for i := first1; !__iter_eq(i, last1); i = i.Next() {
 		pred := _eq_bind1(eq, i.Read())
-		if __ne(FindIf(first1, i, pred), i) {
+		if !__iter_eq(FindIf(first1, i, pred), i) {
 			continue
 		}
 		c2 := CountIf(first2, *last2, pred)
@@ -1924,11 +1924,11 @@ func NextPermutation[T Ordered, It BidiReadWriter[T, It]](first, last It) bool {
 // Elements are compared using the given
 // binary comparer less.
 func NextPermutationBy[T any, It BidiReadWriter[T, It]](first, last It, less LessComparer[T]) bool {
-	if __eq(first, last) {
+	if __iter_eq(first, last) {
 		return false
 	}
 	i := last.Prev()
-	if __eq(first, i) {
+	if __iter_eq(first, i) {
 		return false
 	}
 	for {
@@ -1942,7 +1942,7 @@ func NextPermutationBy[T any, It BidiReadWriter[T, It]](first, last It, less Les
 			Reverse[T](ip1, last)
 			return true
 		}
-		if __eq(i, first) {
+		if __iter_eq(i, first) {
 			Reverse[T](first, last)
 			return false
 		}
@@ -1966,11 +1966,11 @@ func PrevPermutation[T Ordered, It BidiReadWriter[T, It]](first, last It) bool {
 //
 // Elements are compared using the given binary comparer less.
 func PrevPermutationBy[T any, It BidiReadWriter[T, It]](first, last It, less LessComparer[T]) bool {
-	if __eq(first, last) {
+	if __iter_eq(first, last) {
 		return false
 	}
 	i := last.Prev()
-	if __eq(first, i) {
+	if __iter_eq(first, i) {
 		return false
 	}
 	for {
@@ -1984,7 +1984,7 @@ func PrevPermutationBy[T any, It BidiReadWriter[T, It]](first, last It, less Les
 			Reverse[T](ip1, last)
 			return true
 		}
-		if __eq(i, first) {
+		if __iter_eq(i, first) {
 			Reverse[T](first, last)
 			return false
 		}
@@ -2000,7 +2000,7 @@ func Iota[T Integer, It ForwardWriter[T, It]](first, last It, v T) {
 // IotaBy fills the range [first, last) with sequentially increasing values,
 // starting with v and repetitively evaluating inc(v).
 func IotaBy[T any, It ForwardWriter[T, It]](first, last It, v T, inc UnaryOperation[T, T]) {
-	for ; __ne(first, last); first, v = first.Next(), inc(v) {
+	for ; !__iter_eq(first, last); first, v = first.Next(), inc(v) {
 		first.Write(v)
 	}
 }
@@ -2014,7 +2014,7 @@ func Accumulate[T Numeric, It InputIter[T, It]](first, last It, v T) T {
 // AccumulateBy computes the sum of the given value v and the elements in the
 // range [first, last), using v=add(v,x).
 func AccumulateBy[T1, T2 any, It InputIter[T1, It]](first, last It, v T2, add BinaryOperation[T2, T1, T2]) T2 {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		v = add(v, first.Read())
 	}
 	return v
@@ -2030,7 +2030,7 @@ func InnerProduct[T Numeric, It1 InputIter[T, It1], It2 InputIter[T, It2]](first
 // ordered map/reduce operation on the range [first1, last1), using
 // v=add(v,mul(x,y)).
 func InnerProductBy[T1, T2, T3, T4 any, It1 InputIter[T1, It1], It2 InputIter[T2, It2]](first1, last1 It1, first2 It2, v T4, add BinaryOperation[T4, T3, T4], mul BinaryOperation[T1, T2, T3]) T4 {
-	for ; __ne(first1, last1); first1, first2 = first1.Next(), first2.Next() {
+	for ; !__iter_eq(first1, last1); first1, first2 = first1.Next(), first2.Next() {
 		v = add(v, mul(first1.Read(), first2.Read()))
 	}
 	return v
@@ -2049,12 +2049,12 @@ func AdjacentDifference[T Numeric, In InputIter[T, In], Out OutputIter[T]](first
 // them to the range beginning at dFirst + 1. An unmodified copy of first is
 // written to dFirst. Differences are calculated by sub(cur,prev).
 func AdjacentDifferenceBy[T any, In InputIter[T, In], Out OutputIter[T]](first, last In, dFirst Out, sub BinaryOperation[T, T, T]) Out {
-	if __eq(first, last) {
+	if __iter_eq(first, last) {
 		return dFirst
 	}
 	prev := first.Read()
 	dFirst = _writeNext(dFirst, prev)
-	for first = first.Next(); __ne(first, last); first = first.Next() {
+	for first = first.Next(); !__iter_eq(first, last); first = first.Next() {
 		cur := first.Read()
 		dFirst = _writeNext(dFirst, sub(cur, prev))
 		prev = cur
@@ -2073,12 +2073,12 @@ func PartialSum[T Numeric, In InputIter[T, In], Out OutputIter[T]](first, last I
 // the range [first, last) and writes them to the range beginning at dFirst.
 // Sums are calculated by sum=add(sum,cur).
 func PartialSumBy[T any, In InputIter[T, In], Out OutputIter[T]](first, last In, dFirst Out, add BinaryOperation[T, T, T]) Out {
-	if __eq(first, last) {
+	if __iter_eq(first, last) {
 		return dFirst
 	}
 	sum := first.Read()
 	dFirst = _writeNext(dFirst, sum)
-	for first = first.Next(); __ne(first, last); first = first.Next() {
+	for first = first.Next(); !__iter_eq(first, last); first = first.Next() {
 		sum = add(sum, first.Read())
 		dFirst = _writeNext(dFirst, sum)
 	}
@@ -2132,7 +2132,7 @@ func TransformExclusiveScan[T1, T2 Numeric, In InputIter[T1, In], Out OutputIter
 // results to the range beginning at dFirst. "exclusive" means that the i-th
 // input element is not included in the i-th sum.
 func TransformExclusiveScanBy[T1, T2, T3 any, In InputIter[T1, In], Out OutputIter[T3]](first, last In, dFirst Out, v T3, add BinaryOperation[T3, T2, T3], op UnaryOperation[T1, T2]) Out {
-	if __eq(first, last) {
+	if __iter_eq(first, last) {
 		return dFirst
 	}
 	saved := v
@@ -2141,7 +2141,7 @@ func TransformExclusiveScanBy[T1, T2, T3 any, In InputIter[T1, In], Out OutputIt
 		dFirst = _writeNext(dFirst, saved)
 		saved = v
 		first = first.Next()
-		if __eq(first, last) {
+		if __iter_eq(first, last) {
 			break
 		}
 	}
@@ -2163,7 +2163,7 @@ func TransformInclusiveScan[T1, T2 Numeric, In InputIter[T1, In], Out OutputIter
 // writes the results to the range beginning at dFirst. "inclusive" means that
 // the i-th input element is included in the i-th sum.
 func TransformInclusiveScanBy[T1, T2, T3 any, In InputIter[T1, In], Out OutputIter[T3]](first, last In, dFirst Out, v T3, add BinaryOperation[T3, T2, T3], op UnaryOperation[T1, T2]) Out {
-	for ; __ne(first, last); first = first.Next() {
+	for ; !__iter_eq(first, last); first = first.Next() {
 		v = add(v, op(first.Read()))
 		dFirst = _writeNext(dFirst, v)
 	}
