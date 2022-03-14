@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 	}
 }
 
-const randN = 100
+const randN = 20
 
 var r = rand.New(rand.NewSource(time.Now().UnixNano()))
 
