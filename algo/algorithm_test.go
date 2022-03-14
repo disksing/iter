@@ -3,8 +3,10 @@ package algo_test
 import (
 	"container/heap"
 	"container/list"
+	"flag"
 	"fmt"
 	"math/rand"
+	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -17,6 +19,24 @@ import (
 	"github.com/disksing/iter/v2/strs"
 	"github.com/stretchr/testify/assert"
 )
+
+var (
+	fuzzTime = flag.Duration("fuzz-time", 0, "fuzz test timeout")
+)
+
+func TestMain(m *testing.M) {
+	if code := m.Run(); code != 0 {
+		os.Exit(code)
+	}
+	if *fuzzTime > 0 {
+		start := time.Now()
+		for time.Since(start) < *fuzzTime {
+			if code := m.Run(); code != 0 {
+				os.Exit(code)
+			}
+		}
+	}
+}
 
 const randN = 100
 
