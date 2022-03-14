@@ -24,7 +24,7 @@ jobs:
       run: go test -coverprofile=coverage1.txt -covermode=atomic ./...
 
     - name: fuzz
-      run: go test -coverprofile=coverage2.txt -covermode=atomic --fuzz-time=10s ./algo
+      run: go test -coverprofile=coverage2.txt -covermode=atomic ./algo --fuzz-time=60s
 
     - name: merge coverage
       run: cat coverage1.txt coverage2.txt > coverage.txt
