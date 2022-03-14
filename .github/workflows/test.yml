@@ -24,7 +24,7 @@ jobs:
       run: go test -coverprofile=coverage1.txt -covermode=atomic ./...
 
     - name: fuzz
-      run: go test -coverprofile=coverage2.txt -covermode=atomic ./algo --fuzz-time=500s
+      run: go test -coverprofile=coverage2.txt -covermode=atomic ./algo --fuzz-time=5m
 
     - name: upload codecov
       uses: codecov/codecov-action@v2
