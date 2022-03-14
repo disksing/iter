@@ -26,9 +26,8 @@ jobs:
     - name: fuzz
       run: go test -coverprofile=coverage2.txt -covermode=atomic ./algo --fuzz-time=60s
 
-    - name: merge coverage
-      run: cat coverage1.txt coverage2.txt > coverage.txt
-
-    - name: report coverage
-      run: bash <(curl -s https://codecov.io/bash)
+    - name: upload codecov
+      uses: codecov/codecov-action@v2
+      with:
+        files: ./coverage1.txt, ./coverage2.txt
 
