@@ -62,8 +62,8 @@ func RandomGenerator[T any](s []T, r *rand.Rand) func() T {
 	return func() T { return s[r.Intn(len(s))] }
 }
 
-type chanReader[T any, C Chan[T]] struct {
-	ch    C
+type chanReader[T any] struct {
+	ch    chan T
 	cur   T
 	read1 bool
 	eof   bool
@@ -98,27 +98,27 @@ func (cr *chanReader[T]) Eq(x *chanReader[T]) bool {
 	return cr.eof && x == nil
 }
 
-type chanWriter[T any, C Chan[T]] struct {
-	ch C
+type chanWriter[T any] struct {
+	ch chan T
 }
 
 func (cr *chanWriter[T]) Write(x T) {
 	cr.ch <- x
 }
 
-// // ChanReader returns an InputIter that reads from a channel.
-// func ChanReader[T any, C Chan[T]](c C) *chanReader[T, C] {
-// 	return &chanReader[T, C]{
-// 		ch: c,
-// 	}
-// }
+// ChanReader returns an InputIter that reads from a channel.
+func ChanReader[T any](c chan T) *chanReader[T] {
+	return &chanReader[T]{
+		ch: c,
+	}
+}
 
-// // ChanWriter returns an OutIter that writes to a channel.
-// func ChanWriter[T any, C Chan[T]](c C) *chanWriter[T, C] {
-// 	return &chanWriter[T, C]{
-// 		ch: c,
-// 	}
-// }
+// ChanWriter returns an OutIter that writes to a channel.
+func ChanWriter[T any](c chan T) *chanWriter[T] {
+	return &chanWriter[T]{
+		ch: c,
+	}
+}
 
 type ioWriter struct {
 	w         io.Writer

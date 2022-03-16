@@ -3,7 +3,9 @@ package iter_test
 import (
 	"testing"
 
+	"github.com/disksing/iter/v2"
 	. "github.com/disksing/iter/v2"
+	"github.com/disksing/iter/v2/algo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,48 +32,41 @@ func TestMisc(t *testing.T) {
 	assert.Equal(g(), 100)
 }
 
-// func TestChanIterator(t *testing.T) {
-// 	assert := assert.New(t)
-// 	ch := make(chan int)
-// 	go func() {
-// 		CopyN(IotaReader(1), 10, ChanWriter(ch))
-// 		close(ch)
-// 	}()
-// 	assert.Equal(Accumulate(ChanReader(ch), ChanEOF, 0), 55)
+func TestChanIterator(t *testing.T) {
+	assert := assert.New(t)
+	ch := make(chan int)
+	go func() {
+		algo.CopyN[int](IotaReader(1), 10, ChanWriter(ch))
+		close(ch)
+	}()
+	assert.Equal(algo.Accumulate(ChanReader(ch), nil, 0), 55)
 
-// 	ch = make(chan int)
-// 	close(ch)
-// 	assert.True(ChanReader(ch).Eq(ChanEOF))
+	ch = make(chan int)
+	close(ch)
+	assert.True(ChanReader(ch).Eq(nil))
 
-// 	ch = make(chan int)
-// 	close(ch)
-// 	assert.True(ChanEOF.Eq(ChanReader(ch)))
+	ch = make(chan int, 1)
+	ch <- 100
+	assert.Equal(ChanReader(ch).Read(), 100)
 
-// 	assert.Nil(ChanEOF.Read())
-// 	assert.Equal(ChanEOF.Next(), ChanEOF)
-// 	assert.True(ChanEOF.Eq(ChanEOF))
+	ch = make(chan int, 2)
+	ch <- 42
+	ch <- 43
+	it := ChanReader(ch)
+	it.Next()
+	assert.Equal(it.Read(), 43)
 
-// 	ch = make(chan int, 1)
-// 	ch <- 100
-// 	assert.Equal(ChanReader(ch).Read(), 100)
+	ch = make(chan int, 10)
+	algo.CopyN[int](IotaReader(1), 5, ChanWriter(ch))
+	close(ch)
+	it = ChanReader(ch)
+	it = iter.AdvanceN[int](it, 3)
+	assert.Equal(it.Read(), 4)
+	assert.Equal(iter.Distance[int](it, nil), 2)
 
-// 	ch = make(chan int, 2)
-// 	ch <- 42
-// 	ch <- 43
-// 	it := ChanReader(ch)
-// 	it.Next()
-// 	assert.Equal(it.Read(), 43)
-
-// 	ch = make(chan int, 10)
-// 	CopyN(IotaReader(1), 5, ChanWriter(ch))
-// 	close(ch)
-// 	it = ChanReader(ch)
-// 	it = AdvanceN(it, 3).(InputIter)
-// 	assert.Equal(it.Read(), 4)
-// 	assert.Equal(Distance(it, ChanEOF), 2)
-
-// 	ch = make(chan int)
-// 	w := ChanWriter(ch)
-// 	assert.Panics(func() { AdvanceN(w, 1) })
-// 	assert.Panics(func() { Distance(w, ChanEOF) })
-// }
+	ch = make(chan int)
+	w := ChanWriter(ch)
+	// See: https://github.com/golang/go/issues/51700
+	// assert.Panics(func() { iter.AdvanceN[int](w, 1) })
+	assert.Panics(func() { iter.Distance[int](w, nil) })
+}

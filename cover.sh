@@ -1,4 +1,4 @@
 #!/bin/bash
 
-go test -count 10000 -coverprofile=coverage.txt -covermode=atomic
+go test -coverprofile=coverage.txt -covermode=atomic ./algo -fuzz-time=5m
 gcov2lcov -infile coverage.txt -outfile lcov.info
