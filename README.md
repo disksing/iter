@@ -1,6 +1,6 @@
 # iter
 
-**Note: I'm currently working on making it work with Go generics. For previous version, please check `v1` branch.**
+**Note: The generic v2 API is still under development and has not been released. It requires Go 1.26 or later. For the previous version, please check the [`v1` branch](https://github.com/disksing/iter/tree/v1).**
 
 Go implementation of C++ STL iterators and algorithms.
 
@@ -8,22 +8,22 @@ Less hand-written loops, more expressive code.
 
 README translations: [简体中文](README_ZH.md)
 
-[![GoDoc](https://godoc.org/github.com/disksing/iter?status.svg)](https://godoc.org/github.com/disksing/iter)
-[![Build Status](https://travis-ci.com/disksing/iter.svg?branch=master)](https://travis-ci.com/disksing/iter)
+[![Go Reference](https://pkg.go.dev/badge/github.com/disksing/iter/v2.svg)](https://pkg.go.dev/github.com/disksing/iter/v2)
+[![CI](https://github.com/disksing/iter/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/disksing/iter/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/disksing/iter/branch/master/graph/badge.svg)](https://codecov.io/gh/disksing/iter)
-[![Go Report Card](https://goreportcard.com/badge/github.com/disksing/iter)](https://goreportcard.com/report/github.com/disksing/iter)
+[![Go Report Card](https://goreportcard.com/badge/github.com/disksing/iter/v2)](https://goreportcard.com/report/github.com/disksing/iter/v2)
 
 ## Motivation
 
-Although Go doesn't have generics, we deserve to have reuseable general algorithms. `iter` helps improving Go code in several ways:
+Go now has generics, and we deserve to have reusable general algorithms. `iter` helps improve Go code in several ways:
 
-- Some simple loops are unlikely to be wrong or inefficient, but calling algorithm instead will **make the code more concise and easier to comprehend**. Such as [AllOf](https://godoc.org/github.com/disksing/iter#AllOf), [FindIf](https://godoc.org/github.com/disksing/iter#FindIf), [Accumulate](https://godoc.org/github.com/disksing/iter#Accumulate).
+- Some simple loops are unlikely to be wrong or inefficient, but calling an algorithm instead will **make the code more concise and easier to comprehend**. Such as [AllOf](https://pkg.go.dev/github.com/disksing/iter/v2/algo#AllOf), [FindIf](https://pkg.go.dev/github.com/disksing/iter/v2/algo#FindIf), [Accumulate](https://pkg.go.dev/github.com/disksing/iter/v2/algo#Accumulate).
 
-- Some algorithms are not complicated, but it is not easy to write them correctly. **Reusing code makes them easier to reason for correctness**. Such as [Shuffle](https://godoc.org/github.com/disksing/iter#Shuffle), [Sample](https://godoc.org/github.com/disksing/iter#Sample), [Partition](https://godoc.org/github.com/disksing/iter#Partition).
+- Some algorithms are not complicated, but it is not easy to write them correctly. **Reusing code makes them easier to reason for correctness**. Such as [Shuffle](https://pkg.go.dev/github.com/disksing/iter/v2/algo#Shuffle), [Sample](https://pkg.go.dev/github.com/disksing/iter/v2/algo#Sample), [Partition](https://pkg.go.dev/github.com/disksing/iter/v2/algo#Partition).
 
-- STL also includes some complicated algorithms that may take hours to make it correct. **Implementing it manually is impractical**. Such as [NthElement](https://godoc.org/github.com/disksing/iter#NthElement), [StablePartition](https://godoc.org/github.com/disksing/iter#StablePartition), [NextPermutation](https://godoc.org/github.com/disksing/iter#NextPermutation).
+- STL also includes some complicated algorithms that may take hours to make it correct. **Implementing it manually is impractical**. Such as [NthElement](https://pkg.go.dev/github.com/disksing/iter/v2/algo#NthElement), [StablePartition](https://pkg.go.dev/github.com/disksing/iter/v2/algo#StablePartition), [NextPermutation](https://pkg.go.dev/github.com/disksing/iter/v2/algo#NextPermutation).
 
-- The implementation in the library contains some **imperceptible performance optimizations**. For instance, [MinmaxElement](https://godoc.org/github.com/disksing/iter#MinmaxElement) is done by taking two elements at a time. In this way, the overall number of comparisons is significantly reduced.
+- The implementation in the library contains some **imperceptible performance optimizations**. For instance, [MinmaxElement](https://pkg.go.dev/github.com/disksing/iter/v2/algo#MinmaxElement) is done by taking two elements at a time. In this way, the overall number of comparisons is significantly reduced.
 
 There are alternative libraries have similar goals, such as [gostl](https://github.com/liyue201/gostl), [gods](https://github.com/emirpasic/gods) and [go-stp](https://github.com/itrabbit/go-stp). What makes `iter` unique is:
 
@@ -33,11 +33,11 @@ There are alternative libraries have similar goals, such as [gostl](https://gith
 
 ## Examples
 
-> The examples are run with some function alias to make it simple. See [example_test.go](https://github.com/disksing/iter/blob/master/examples_test.go) for the detail.
+> The examples keep package qualifiers so the generic v2 API is explicit. See [examples_test.go](examples_test.go) for complete, executable examples.
 
 <table>
 <thead><tr><th colspan="2">Print a list.List</th></tr></thead>
-<tbody><td>
+<tbody><tr><td>
 
 ```go
 l := list.New()
@@ -58,8 +58,8 @@ for e := l.Front(); e != nil; e = e.Next() {
 
 ```go
 l := list.New()
-GenerateN(ListBackInserter(l), 5, IotaGenerator(1))
-Copy(lBegin(l), lEnd(l), IOWriter(os.Stdout, "->"))
+algo.GenerateN(lists.ListBackInserter[int](l), 5, iter.IotaGenerator(1))
+algo.Copy(lists.Begin[int](l), lists.End[int](l), iter.IOWriter[int](os.Stdout, "->"))
 // Output:
 // 1->2->3->4->5
 ```
@@ -92,10 +92,10 @@ fmt.Println(string(b))
 
 ```go
 s := "!dlrow olleH"
-fmt.Println(MakeString(StringRBegin(s), StringREnd(s)))
+fmt.Println(strs.MakeString(strs.RBegin(s), strs.REnd(s)))
 
 b := []byte(s)
-Reverse(begin(b), end(b))
+iterslices.Reverse(b)
 fmt.Println(string(b))
 // Output:
 // Hello world!
@@ -104,7 +104,7 @@ fmt.Println(string(b))
 
 </td></tr></tbody>
 
-<thead><tr><th colspan="2">In-place deduplicate (from <a href="https://github.com/golang/go/wiki/SliceTricks#in-place-deduplicate-comparable">SliceTricks</a>, with minor change)</th></tr></thead>
+<thead><tr><th colspan="2">In-place deduplicate (from <a href="https://go.dev/wiki/SliceTricks#in-place-deduplicate-comparable">SliceTricks</a>, with minor change)</th></tr></thead>
 <tbody><tr><td>
 
 ```go
@@ -128,8 +128,8 @@ fmt.Println(in)
 
 ```go
 in := []int{3, 2, 1, 4, 3, 2, 1, 4, 1}
-Sort(begin(in), end(in))
-Erase(&in, Unique(begin(in), end(in)))
+iterslices.Sort(in)
+in = iterslices.Unique(in)
 fmt.Println(in)
 // Output:
 // [1 2 3 4]
@@ -162,10 +162,10 @@ fmt.Println(sum)
 ```go
 ch := make(chan int)
 go func() {
-  CopyN(IotaReader(1), 100, ChanWriter(ch))
+  algo.CopyN[int](iter.IotaReader(1), 100, iter.ChanWriter(ch))
   close(ch)
 }()
-fmt.Println(Accumulate(ChanReader(ch), ChanEOF, 0))
+fmt.Println(algo.Accumulate(iter.ChanReader(ch), nil, 0))
 // Output:
 // 5050
 ```
@@ -194,9 +194,9 @@ fmt.Println(sb.String())
 
 ```go
 str := "  a  quick   brown  fox  "
-var sb StringBuilderInserter
-UniqueCopyIf(sBegin(str), sEnd(str), &sb,
-  func(x, y Any) bool { return x.(byte) == ' ' && y.(byte) == ' ' })
+var sb strs.StringBuilderInserter[byte]
+algo.UniqueCopyIf(strs.Begin(str), strs.End(str), &sb,
+  func(x, y byte) bool { return x == ' ' && y == ' ' })
 fmt.Println(sb.String())
 // Output:
 // a quick brown fox
@@ -208,16 +208,16 @@ fmt.Println(sb.String())
 <tbody><tr><td>
 
 ```go
-// Need to manually mantain a min-heap.
+// Need to manually maintain a min-heap.
 ```
 
 </td><td>
 
 ```go
 top := make([]int, 5)
-PartialSortCopyBy(ChanReader(ch), ChanEOF, begin(top), end(top),
-  func(x, y Any) bool { return x.(int) > y.(int) })
-Copy(begin(top), end(top), IOWriter(os.Stdout, ", "))
+algo.PartialSortCopyBy(iter.ChanReader(ch), nil, iterslices.Begin(top), iterslices.End(top),
+  func(x, y int) bool { return x > y })
+algo.Copy(iterslices.Begin(top), iterslices.End(top), iter.IOWriter[int](os.Stdout, ", "))
 ```
 
 </td></tr></tbody>
@@ -226,14 +226,14 @@ Copy(begin(top), end(top), IOWriter(os.Stdout, ", "))
 <tbody><tr><td>
 
 ```go
-// Usually requires some sort of recursion
+// Usually requires some sort of recursion.
 ```
 
 </td><td>
 
 ```go
 s := []string{"a", "b", "c"}
-for ok := true; ok; ok = NextPermutation(begin(s), end(s)) {
+for ok := true; ok; ok = iterslices.NextPermutation(s) {
   fmt.Println(s)
 }
 // Output:

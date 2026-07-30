@@ -37,12 +37,12 @@ func CountIf[T any](s []T, pred algo.UnaryPredicate[T]) int {
 	return algo.CountIf(Begin(s), End(s), pred)
 }
 
-func __end_ref[T any](s []T) *sliceIter[T] {
+func __end_ref[T any](s []T) *Iterator[T] {
 	e := End(s)
 	return &e
 }
 
-func __idx[T any](it sliceIter[T]) int {
+func __idx[T any](it Iterator[T]) int {
 	return it.i
 }
 
@@ -110,6 +110,30 @@ func Search[T comparable](s1, s2 []T) int {
 // Elements are compared using the given binary comparer eq.
 func SearchBy[T1, T2 any](s1 []T1, s2 []T2, eq algo.EqComparer[T1, T2]) int {
 	return __idx(algo.SearchBy(Begin(s1), End(s1), Begin(s2), End(s2), eq))
+}
+
+// FindEnd searches for the last occurrence of s2 in s1.
+func FindEnd[T comparable](s1, s2 []T) int {
+	return __idx(algo.FindEnd[T](Begin(s1), End(s1), Begin(s2), End(s2)))
+}
+
+// FindEndBy searches for the last occurrence of s2 in s1.
+//
+// Elements are compared using the given binary comparer eq.
+func FindEndBy[T1, T2 any](s1 []T1, s2 []T2, eq algo.EqComparer[T1, T2]) int {
+	return __idx(algo.FindEndBy(Begin(s1), End(s1), Begin(s2), End(s2), eq))
+}
+
+// SearchN searches for the first sequence of count elements equal to v.
+func SearchN[T comparable](s []T, count int, v T) int {
+	return __idx(algo.SearchN(Begin(s), End(s), count, v))
+}
+
+// SearchNBy searches for the first sequence of count matching elements.
+//
+// Elements are compared with v using the given binary comparer eq.
+func SearchNBy[T1, T2 any](s []T1, count int, v T2, eq algo.EqComparer[T1, T2]) int {
+	return __idx(algo.SearchNBy(Begin(s), End(s), count, v, eq))
 }
 
 // Remove removes all elements equal to v from the slice and returns the new
@@ -196,6 +220,122 @@ func StablePartition[T any](s []T, pred algo.UnaryPredicate[T]) int {
 	return __idx(algo.StablePartitionBidi(Begin(s), End(s), pred))
 }
 
+// PartitionPoint returns the first position for which pred is false in an
+// already partitioned slice.
+func PartitionPoint[T any](s []T, pred algo.UnaryPredicate[T]) int {
+	return __idx(algo.PartitionPoint(Begin(s), End(s), pred))
+}
+
+// IsSorted reports whether s is sorted in ascending order.
+func IsSorted[T iter.Ordered](s []T) bool {
+	return algo.IsSorted[T](Begin(s), End(s))
+}
+
+// IsSortedBy reports whether s is sorted according to less.
+func IsSortedBy[T any](s []T, less algo.LessComparer[T]) bool {
+	return algo.IsSortedBy(Begin(s), End(s), less)
+}
+
+// IsSortedUntil returns the first position at which s stops being sorted.
+// It returns len(s) when s is sorted.
+func IsSortedUntil[T iter.Ordered](s []T) int {
+	return __idx(algo.IsSortedUntil[T](Begin(s), End(s)))
+}
+
+// IsSortedUntilBy returns the first position at which s stops being sorted
+// according to less. It returns len(s) when s is sorted.
+func IsSortedUntilBy[T any](s []T, less algo.LessComparer[T]) int {
+	return __idx(algo.IsSortedUntilBy(Begin(s), End(s), less))
+}
+
+// Sort sorts s in ascending order.
+func Sort[T iter.Ordered](s []T) {
+	algo.Sort[T](Begin(s), End(s))
+}
+
+// SortBy sorts s according to less.
+func SortBy[T any](s []T, less algo.LessComparer[T]) {
+	algo.SortBy(Begin(s), End(s), less)
+}
+
+// StableSort stably sorts s in ascending order.
+func StableSort[T iter.Ordered](s []T) {
+	algo.StableSort[T](Begin(s), End(s))
+}
+
+// StableSortBy stably sorts s according to less.
+func StableSortBy[T any](s []T, less algo.LessComparer[T]) {
+	algo.StableSortBy(Begin(s), End(s), less)
+}
+
+// PartialSort rearranges s so that s[:middle] contains the smallest middle
+// elements in ascending order. middle must be in [0, len(s)].
+func PartialSort[T iter.Ordered](s []T, middle int) {
+	algo.PartialSort[T](Begin(s), Begin(s).AdvanceN(middle), End(s))
+}
+
+// PartialSortBy rearranges s so that s[:middle] contains the first middle
+// elements according to less, in sorted order.
+func PartialSortBy[T any](s []T, middle int, less algo.LessComparer[T]) {
+	algo.PartialSortBy(Begin(s), Begin(s).AdvanceN(middle), End(s), less)
+}
+
+// NthElement rearranges s so the element at nth is the one that would occur
+// there in sorted order. nth must be in [0, len(s)).
+func NthElement[T iter.Ordered](s []T, nth int) {
+	algo.NthElement[T](Begin(s), Begin(s).AdvanceN(nth), End(s))
+}
+
+// NthElementBy rearranges s so the element at nth is the one that would occur
+// there when ordered by less.
+func NthElementBy[T any](s []T, nth int, less algo.LessComparer[T]) {
+	algo.NthElementBy(Begin(s), Begin(s).AdvanceN(nth), End(s), less)
+}
+
+// LowerBound returns the first position at which v could be inserted without
+// violating ascending order.
+func LowerBound[T iter.Ordered](s []T, v T) int {
+	return __idx(algo.LowerBound[T](Begin(s), End(s), v))
+}
+
+// LowerBoundBy returns the first insertion position for v according to less.
+func LowerBoundBy[T any](s []T, v T, less algo.LessComparer[T]) int {
+	return __idx(algo.LowerBoundBy(Begin(s), End(s), v, less))
+}
+
+// UpperBound returns the first position after all elements equal to v.
+func UpperBound[T iter.Ordered](s []T, v T) int {
+	return __idx(algo.UpperBound[T](Begin(s), End(s), v))
+}
+
+// UpperBoundBy returns the first position after all elements equivalent to v
+// according to less.
+func UpperBoundBy[T any](s []T, v T, less algo.LessComparer[T]) int {
+	return __idx(algo.UpperBoundBy(Begin(s), End(s), v, less))
+}
+
+// BinarySearch reports whether sorted s contains v.
+func BinarySearch[T iter.Ordered](s []T, v T) bool {
+	return algo.BinarySearch[T](Begin(s), End(s), v)
+}
+
+// BinarySearchBy reports whether sorted s contains v according to less.
+func BinarySearchBy[T any](s []T, v T, less algo.LessComparer[T]) bool {
+	return algo.BinarySearchBy(Begin(s), End(s), v, less)
+}
+
+// EqualRange returns the lower and upper bounds of v in sorted s.
+func EqualRange[T iter.Ordered](s []T, v T) (int, int) {
+	first, last := algo.EqualRange[T](Begin(s), End(s), v)
+	return __idx(first), __idx(last)
+}
+
+// EqualRangeBy returns the lower and upper bounds of v according to less.
+func EqualRangeBy[T any](s []T, v T, less algo.LessComparer[T]) (int, int) {
+	first, last := algo.EqualRangeBy(Begin(s), End(s), v, less)
+	return __idx(first), __idx(last)
+}
+
 // MaxElement returns the position largest element in a slice.
 func MaxElement[T iter.Ordered](s []T) int {
 	return __idx(algo.MaxElement[T](Begin(s), End(s)))
@@ -220,7 +360,7 @@ func MinElementBy[T any](s []T, less algo.LessComparer[T]) int {
 	return __idx(algo.MinElementBy(Begin(s), End(s), less))
 }
 
-// MinmaxElement returns the position smallest and the lagest element in a slice.
+// MinmaxElement returns the positions of the smallest and largest elements.
 func MinmaxElement[T iter.Ordered](s []T) (int, int) {
 	a, b := algo.MinmaxElement[T](Begin(s), End(s))
 	return __idx(a), __idx(b)
@@ -279,8 +419,13 @@ func LexicographicalCompareThreeWayBy[T any](s1, s2 []T, cmp algo.ThreeWayCompar
 
 // IsPermutation returns true if there exists a permutation of the elements in
 // the slice s1 that makes that range equal to s2.
-func IsPermutation[T iter.Ordered](s1, s2 []T) bool {
+func IsPermutation[T comparable](s1, s2 []T) bool {
 	return algo.IsPermutation[T](Begin(s1), End(s1), Begin(s2), __end_ref(s2))
+}
+
+// IsPermutationBy reports whether s1 is a permutation of s2 according to eq.
+func IsPermutationBy[T any](s1, s2 []T, eq algo.EqComparer[T, T]) bool {
+	return algo.IsPermutationBy(Begin(s1), End(s1), Begin(s2), __end_ref(s2), eq)
 }
 
 // NextPermutation transforms the slice into the next permutation from the set of
@@ -309,4 +454,67 @@ func Accumulate[T iter.Numeric](s []T, v T) T {
 // map/reduce operation on the slice, using v=v+x*y.
 func InnerProduct[T iter.Numeric](s1, s2 []T, v T) T {
 	return algo.InnerProduct(Begin(s1), End(s1), Begin(s2), v)
+}
+
+// IsHeap reports whether s is a max heap.
+func IsHeap[T iter.Ordered](s []T) bool {
+	return algo.IsHeap[T](Begin(s), End(s))
+}
+
+// IsHeapBy reports whether s is a heap according to less.
+func IsHeapBy[T any](s []T, less algo.LessComparer[T]) bool {
+	return algo.IsHeapBy(Begin(s), End(s), less)
+}
+
+// IsHeapUntil returns the first position at which s stops being a max heap.
+// It returns len(s) when s is a heap.
+func IsHeapUntil[T iter.Ordered](s []T) int {
+	return __idx(algo.IsHeapUntil[T](Begin(s), End(s)))
+}
+
+// IsHeapUntilBy returns the first position at which s stops being a heap
+// according to less.
+func IsHeapUntilBy[T any](s []T, less algo.LessComparer[T]) int {
+	return __idx(algo.IsHeapUntilBy(Begin(s), End(s), less))
+}
+
+// MakeHeap rearranges s into a max heap.
+func MakeHeap[T iter.Ordered](s []T) {
+	algo.MakeHeap[T](Begin(s), End(s))
+}
+
+// MakeHeapBy rearranges s into a heap according to less.
+func MakeHeapBy[T any](s []T, less algo.LessComparer[T]) {
+	algo.MakeHeapBy(Begin(s), End(s), less)
+}
+
+// PushHeap adds the final element of s to the max heap in s[:len(s)-1].
+func PushHeap[T iter.Ordered](s []T) {
+	algo.PushHeap[T](Begin(s), End(s))
+}
+
+// PushHeapBy adds the final element of s to the heap in s[:len(s)-1].
+func PushHeapBy[T any](s []T, less algo.LessComparer[T]) {
+	algo.PushHeapBy(Begin(s), End(s), less)
+}
+
+// PopHeap moves the largest element to the end of s and restores the max heap
+// in s[:len(s)-1].
+func PopHeap[T iter.Ordered](s []T) {
+	algo.PopHeap[T](Begin(s), End(s))
+}
+
+// PopHeapBy moves the first heap element to the end of s according to less.
+func PopHeapBy[T any](s []T, less algo.LessComparer[T]) {
+	algo.PopHeapBy(Begin(s), End(s), less)
+}
+
+// SortHeap turns a max heap into an ascending sorted slice.
+func SortHeap[T iter.Ordered](s []T) {
+	algo.SortHeap[T](Begin(s), End(s))
+}
+
+// SortHeapBy turns a heap into a sorted slice according to less.
+func SortHeapBy[T any](s []T, less algo.LessComparer[T]) {
+	algo.SortHeapBy(Begin(s), End(s), less)
 }

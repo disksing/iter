@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-go test -coverprofile=coverage.txt -covermode=atomic ./algo -fuzz-time=5m
-gcov2lcov -infile coverage.txt -outfile lcov.info
+set -euo pipefail
+
+go test -covermode=atomic -coverprofile=coverage.txt ./...
+go tool cover -func=coverage.txt

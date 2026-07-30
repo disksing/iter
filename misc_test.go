@@ -1,12 +1,23 @@
 package iter_test
 
 import (
+	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/disksing/iter/v2"
 	. "github.com/disksing/iter/v2"
 	"github.com/disksing/iter/v2/algo"
+	"github.com/disksing/iter/v2/slices"
 	"github.com/stretchr/testify/assert"
+)
+
+var (
+	_ iter.InputIter[int, iter.IotaIterator[int]]   = iter.IotaIterator[int]{}
+	_ iter.InputIter[int, iter.RepeatIterator[int]] = iter.RepeatIterator[int]{}
+	_ iter.InputIter[int, *iter.ChannelReader[int]] = (*iter.ChannelReader[int])(nil)
+	_ iter.OutputIter[int]                          = (*iter.ChannelWriter[int])(nil)
+	_ iter.OutputIter[int]                          = (*iter.OutputWriter[int])(nil)
 )
 
 func TestMisc(t *testing.T) {
@@ -67,6 +78,25 @@ func TestChanIterator(t *testing.T) {
 	ch = make(chan int)
 	w := ChanWriter(ch)
 	// See: https://github.com/golang/go/issues/51700
-	// assert.Panics(func() { iter.AdvanceN[int](w, 1) })
+	assert.Panics(func() { iter.AdvanceN[int](w, 1) })
 	assert.Panics(func() { iter.Distance[int](w, nil) })
+}
+
+type failingWriter struct{}
+
+func (failingWriter) Write([]byte) (int, error) {
+	return 0, errors.New("write failed")
+}
+
+func TestIOWriter(t *testing.T) {
+	assert := assert.New(t)
+	values := []int{1, 2, 3}
+
+	var dst bytes.Buffer
+	algo.Copy(slices.Begin(values), slices.End(values), IOWriter[int](&dst, ", "))
+	assert.Equal("1, 2, 3", dst.String())
+
+	assert.Panics(func() {
+		IOWriter[int](failingWriter{}, "").Write(1)
+	})
 }

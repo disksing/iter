@@ -1,21 +1,56 @@
 package iter_test
 
 import (
+	"bytes"
+	"container/list"
 	"fmt"
+	"math/rand"
 
+	"github.com/disksing/iter/v2"
 	"github.com/disksing/iter/v2/algo"
+	"github.com/disksing/iter/v2/lists"
 	"github.com/disksing/iter/v2/slices"
 	"github.com/disksing/iter/v2/strs"
 )
 
-// // Print all list items to console.
-// func ExampleIOWriter() {
-// 	l := list.New()
-// 	GenerateN(ListBackInserter(l), 5, IotaGenerator(1))
-// 	Copy(lBegin(l), lEnd(l), IOWriter(os.Stdout, "->"))
-// 	// Output:
-// 	// 1->2->3->4->5
-// }
+// Sort, deduplicate, and search a slice.
+func Example_sliceAlgorithms() {
+	values := []int{3, 2, 1, 4, 3, 2, 1}
+	slices.Sort(values)
+	values = slices.Unique(values)
+
+	fmt.Println(values)
+	fmt.Println(slices.BinarySearch(values, 3))
+	fmt.Println(slices.LowerBound(values, 3))
+	// Output:
+	// [1 2 3 4]
+	// true
+	// 2
+}
+
+// Print all list items.
+func ExampleIOWriter() {
+	l := list.New()
+	algo.GenerateN(lists.ListBackInserter[int](l), 5, iter.IotaGenerator(1))
+
+	var out bytes.Buffer
+	algo.Copy(lists.Begin[int](l), lists.End[int](l), iter.IOWriter[int](&out, "->"))
+	fmt.Println(out.String())
+	// Output:
+	// 1->2->3->4->5
+}
+
+// Copy values between different container types.
+func ExampleAppender() {
+	src := list.New()
+	algo.GenerateN(lists.ListBackInserter[int](src), 5, iter.IotaGenerator(1))
+
+	var dst []int
+	algo.Copy(lists.Begin[int](src), lists.End[int](src), slices.Appender(&dst))
+	fmt.Println(dst)
+	// Output:
+	// [1 2 3 4 5]
+}
 
 // Reverse a string.
 func ExampleMakeString() {
@@ -39,17 +74,17 @@ func ExampleUnique() {
 	// [1 2 3 4]
 }
 
-// // Sum all integers received from a channel.
-// func ExampleChanReader() {
-// 	ch := make(chan int)
-// 	go func() {
-// 		CopyN(IotaReader(1), 100, ChanWriter(ch))
-// 		close(ch)
-// 	}()
-// 	fmt.Println(Accumulate(ChanReader(ch), ChanEOF, 0))
-// 	// Output:
-// 	// 5050
-// }
+// Sum all integers received from a channel.
+func ExampleChanReader() {
+	ch := make(chan int)
+	go func() {
+		algo.CopyN[int](iter.IotaReader(1), 100, iter.ChanWriter(ch))
+		close(ch)
+	}()
+	fmt.Println(algo.Accumulate(iter.ChanReader(ch), nil, 0))
+	// Output:
+	// 5050
+}
 
 // Remove consecutive spaces in a string.
 func ExampleUniqueCopyIf() {
@@ -62,23 +97,24 @@ func ExampleUniqueCopyIf() {
 	// a quick brown fox
 }
 
-// // Collect N maximum elements from a channel.
-// func ExamplePartialSortCopyBy() {
-// 	ch := make(chan int)
-// 	go func() {
-// 		n := make([]int, 100)
-// 		Iota(begin(n), end(n), 1)
-// 		Shuffle(begin(n), end(n), r)
-// 		Copy(begin(n), end(n), ChanWriter(ch))
-// 		close(ch)
-// 	}()
-// 	top := make([]int, 5)
-// 	PartialSortCopyBy(ChanReader(ch), ChanEOF, begin(top), end(top),
-// 		func(x, y any) bool { return x.(int) > y.(int) })
-// 	Copy(begin(top), end(top), IOWriter(os.Stdout, ", "))
-// 	// Output:
-// 	// 100, 99, 98, 97, 96
-// }
+// Collect N maximum elements from a channel.
+func ExamplePartialSortCopyBy() {
+	ch := make(chan int)
+	go func() {
+		values := make([]int, 100)
+		algo.Iota(slices.Begin(values), slices.End(values), 1)
+		slices.Shuffle(values, rand.New(rand.NewSource(1)))
+		algo.Copy(slices.Begin(values), slices.End(values), iter.ChanWriter(ch))
+		close(ch)
+	}()
+
+	top := make([]int, 5)
+	algo.PartialSortCopyBy(iter.ChanReader(ch), nil, slices.Begin(top), slices.End(top),
+		func(x, y int) bool { return x > y })
+	fmt.Println(top)
+	// Output:
+	// [100 99 98 97 96]
+}
 
 // Print all permutations of ["a", "b", "c"].
 func ExampleNextPermutation() {

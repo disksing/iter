@@ -4,6 +4,8 @@
 
 package iter
 
+import "cmp"
+
 // Signed is a constraint that permits any signed integer type.
 // If future releases of Go add new predeclared signed integer types,
 // this constraint will be modified to include them.
@@ -44,13 +46,8 @@ type Complex interface {
 	~complex64 | ~complex128
 }
 
-// Ordered is a constraint that permits any ordered type: any type
-// that supports the operators < <= >= >.
-// If future releases of Go add new ordered types,
-// this constraint will be modified to include them.
-type Ordered interface {
-	Integer | Float | ~string
-}
+// Ordered is the standard library constraint for ordered types.
+type Ordered = cmp.Ordered
 
 // Slice is a constraint that matches slices of any element type.
 type Slice[Elem any] interface {

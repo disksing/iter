@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var _ iter.RandomReader[byte, Iterator] = Iterator{}
+
 func TestStringIterator(t *testing.T) {
 	assert := assert.New(t)
 	s := "abcdefg"

@@ -1,27 +1,27 @@
 # iter
 
-**注意：我正在努力使其兼容 Go1.18 支持的泛型。如需旧版本请查看 `v1` 分支。**
+**注意：泛型 v2 API 仍在开发中，尚未发布，并要求 Go 1.26 或更高版本。如需此前可用的版本，请查看 [`v1` 分支](https://github.com/disksing/iter/tree/v1)。**
 
 C++ STL 迭代器和算法库的 Go 语言实现。
 
 更少的手写循环，更多富有表达力的代码。
 
-[![GoDoc](https://godoc.org/github.com/disksing/iter?status.svg)](https://godoc.org/github.com/disksing/iter)
-[![Build Status](https://travis-ci.com/disksing/iter.svg?branch=master)](https://travis-ci.com/disksing/iter)
+[![Go Reference](https://pkg.go.dev/badge/github.com/disksing/iter/v2.svg)](https://pkg.go.dev/github.com/disksing/iter/v2)
+[![CI](https://github.com/disksing/iter/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/disksing/iter/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/disksing/iter/branch/master/graph/badge.svg)](https://codecov.io/gh/disksing/iter)
-[![Go Report Card](https://goreportcard.com/badge/github.com/disksing/iter)](https://goreportcard.com/report/github.com/disksing/iter)
+[![Go Report Card](https://goreportcard.com/badge/github.com/disksing/iter/v2)](https://goreportcard.com/report/github.com/disksing/iter/v2)
 
 ## 动机
 
-虽然 Go 不支持泛型，我们值得拥有可复用的通用算法。`iter` 可以在以下方面帮助改善代码：
+Go 现在已经支持泛型，我们值得拥有可复用的通用算法。`iter` 可以在以下方面帮助改善代码：
 
-- 一些简单的循环逻辑不太可能写错或者低效，但使用算法调用将**使得代码更简洁和易于理解**。例如 [AllOf](https://godoc.org/github.com/disksing/iter#AllOf)，[FindIf](https://godoc.org/github.com/disksing/iter#FindIf)，[Accumulate](https://godoc.org/github.com/disksing/iter#Accumulate)。
+- 一些简单的循环逻辑不太可能写错或者低效，但使用算法调用将**使得代码更简洁和易于理解**。例如 [AllOf](https://pkg.go.dev/github.com/disksing/iter/v2/algo#AllOf)，[FindIf](https://pkg.go.dev/github.com/disksing/iter/v2/algo#FindIf)，[Accumulate](https://pkg.go.dev/github.com/disksing/iter/v2/algo#Accumulate)。
 
-- 一些算法并不是很复杂，但不太容易写对。使用算法库**让代码“一眼看上去就是对的”**。例如 [Shuffle](https://godoc.org/github.com/disksing/iter#Shuffle)，[Sample](https://godoc.org/github.com/disksing/iter#Sample)，[Partition](https://godoc.org/github.com/disksing/iter#Partition)。
+- 一些算法并不是很复杂，但不太容易写对。使用算法库**让代码“一眼看上去就是对的”**。例如 [Shuffle](https://pkg.go.dev/github.com/disksing/iter/v2/algo#Shuffle)，[Sample](https://pkg.go.dev/github.com/disksing/iter/v2/algo#Sample)，[Partition](https://pkg.go.dev/github.com/disksing/iter/v2/algo#Partition)。
 
-- STL 还包含一些复杂算法，可能需要数小时才能搞对。**手动实现它们并不现实**。例如 [NthElement](https://godoc.org/github.com/disksing/iter#NthElement)，[StablePartition](https://godoc.org/github.com/disksing/iter#StablePartition)，[NextPermutation](https://godoc.org/github.com/disksing/iter#NextPermutation)。
+- STL 还包含一些复杂算法，可能需要数小时才能搞对。**手动实现它们并不现实**。例如 [NthElement](https://pkg.go.dev/github.com/disksing/iter/v2/algo#NthElement)，[StablePartition](https://pkg.go.dev/github.com/disksing/iter/v2/algo#StablePartition)，[NextPermutation](https://pkg.go.dev/github.com/disksing/iter/v2/algo#NextPermutation)。
 
-- STL 的实现还有一些**鲜为人知的性能优化**。比如，[MinmaxElement](https://godoc.org/github.com/disksing/iter#MinmaxElement) 被实现为每次取两个元素进行比较，这样做可以大幅减少整体比较次数。
+- STL 的实现还有一些**鲜为人知的性能优化**。比如，[MinmaxElement](https://pkg.go.dev/github.com/disksing/iter/v2/algo#MinmaxElement) 被实现为每次取两个元素进行比较，这样做可以大幅减少整体比较次数。
 
 有一些开源项目在做类似的事情，比如 [gostl](https://github.com/liyue201/gostl)，[gods](https://github.com/emirpasic/gods) 和 [go-stp](https://github.com/itrabbit/go-stp)。`iter` 的独特之处在于：
 
@@ -31,11 +31,11 @@ C++ STL 迭代器和算法库的 Go 语言实现。
 
 ## 示例
 
-> 这些示例给一些函数定义了别名来使代码更美观，详情见 [example_test.go](https://github.com/disksing/iter/blob/master/examples_test.go)。
+> 示例保留包名前缀，以明确对应的泛型 v2 API。完整且可执行的示例见 [examples_test.go](examples_test.go)。
 
 <table>
 <thead><tr><th colspan="2">控制台输出 list.List</th></tr></thead>
-<tbody><td>
+<tbody><tr><td>
 
 ```go
 l := list.New()
@@ -56,8 +56,8 @@ for e := l.Front(); e != nil; e = e.Next() {
 
 ```go
 l := list.New()
-GenerateN(ListBackInserter(l), 5, IotaGenerator(1))
-Copy(lBegin(l), lEnd(l), IOWriter(os.Stdout, "->"))
+algo.GenerateN(lists.ListBackInserter[int](l), 5, iter.IotaGenerator(1))
+algo.Copy(lists.Begin[int](l), lists.End[int](l), iter.IOWriter[int](os.Stdout, "->"))
 // Output:
 // 1->2->3->4->5
 ```
@@ -90,10 +90,10 @@ fmt.Println(string(b))
 
 ```go
 s := "!dlrow olleH"
-fmt.Println(MakeString(StringRBegin(s), StringREnd(s)))
+fmt.Println(strs.MakeString(strs.RBegin(s), strs.REnd(s)))
 
 b := []byte(s)
-Reverse(begin(b), end(b))
+iterslices.Reverse(b)
 fmt.Println(string(b))
 // Output:
 // Hello world!
@@ -102,7 +102,7 @@ fmt.Println(string(b))
 
 </td></tr></tbody>
 
-<thead><tr><th colspan="2">去重（来自 <a href="https://github.com/golang/go/wiki/SliceTricks#in-place-deduplicate-comparable">SliceTricks</a>，略微调整）</th></tr></thead>
+<thead><tr><th colspan="2">去重（来自 <a href="https://go.dev/wiki/SliceTricks#in-place-deduplicate-comparable">SliceTricks</a>，略微调整）</th></tr></thead>
 <tbody><tr><td>
 
 ```go
@@ -126,8 +126,8 @@ fmt.Println(in)
 
 ```go
 in := []int{3, 2, 1, 4, 3, 2, 1, 4, 1}
-Sort(begin(in), end(in))
-Erase(&in, Unique(begin(in), end(in)))
+iterslices.Sort(in)
+in = iterslices.Unique(in)
 fmt.Println(in)
 // Output:
 // [1 2 3 4]
@@ -160,10 +160,10 @@ fmt.Println(sum)
 ```go
 ch := make(chan int)
 go func() {
-  CopyN(IotaReader(1), 100, ChanWriter(ch))
+  algo.CopyN[int](iter.IotaReader(1), 100, iter.ChanWriter(ch))
   close(ch)
 }()
-fmt.Println(Accumulate(ChanReader(ch), ChanEOF, 0))
+fmt.Println(algo.Accumulate(iter.ChanReader(ch), nil, 0))
 // Output:
 // 5050
 ```
@@ -192,9 +192,9 @@ fmt.Println(sb.String())
 
 ```go
 str := "  a  quick   brown  fox  "
-var sb StringBuilderInserter
-UniqueCopyIf(sBegin(str), sEnd(str), &sb,
-  func(x, y Any) bool { return x.(byte) == ' ' && y.(byte) == ' ' })
+var sb strs.StringBuilderInserter[byte]
+algo.UniqueCopyIf(strs.Begin(str), strs.End(str), &sb,
+  func(x, y byte) bool { return x == ' ' && y == ' ' })
 fmt.Println(sb.String())
 // Output:
 // a quick brown fox
@@ -213,9 +213,9 @@ fmt.Println(sb.String())
 
 ```go
 top := make([]int, 5)
-PartialSortCopyBy(ChanReader(ch), ChanEOF, begin(top), end(top),
-  func(x, y Any) bool { return x.(int) > y.(int) })
-Copy(begin(top), end(top), IOWriter(os.Stdout, ", "))
+algo.PartialSortCopyBy(iter.ChanReader(ch), nil, iterslices.Begin(top), iterslices.End(top),
+  func(x, y int) bool { return x > y })
+algo.Copy(iterslices.Begin(top), iterslices.End(top), iter.IOWriter[int](os.Stdout, ", "))
 ```
 
 </td></tr></tbody>
@@ -231,7 +231,7 @@ Copy(begin(top), end(top), IOWriter(os.Stdout, ", "))
 
 ```go
 s := []string{"a", "b", "c"}
-for ok := true; ok; ok = NextPermutation(begin(s), end(s)) {
+for ok := true; ok; ok = iterslices.NextPermutation(s) {
   fmt.Println(s)
 }
 // Output:
