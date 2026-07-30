@@ -1,136 +1,256 @@
 # iter
 
-C++ 标准算法的 Go 泛型实现。
+**注意：泛型 v2 API 仍在开发中，尚未发布，并要求 Go 1.26 或更高版本。如需此前可用的版本，请查看 [`v1` 分支](https://github.com/disksing/iter/tree/v1)。**
 
-`iter` 提供类型安全的迭代器约束、100 多个可复用算法，以及 slice、
-string、channel 和 `container/list` 的便捷适配器。
+C++ STL 迭代器和算法库的 Go 语言实现。
 
-> **开发状态：** 泛型 v2 API 正在整理，尚未发布。此前可用的非泛型版本
-> 位于 [`v1` 分支](https://github.com/disksing/iter/tree/v1)。
+更少的手写循环，更多富有表达力的代码。
 
-[English](README.md)
-
+[![Go Reference](https://pkg.go.dev/badge/github.com/disksing/iter/v2.svg)](https://pkg.go.dev/github.com/disksing/iter/v2)
 [![CI](https://github.com/disksing/iter/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/disksing/iter/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/disksing/iter/branch/master/graph/badge.svg)](https://codecov.io/gh/disksing/iter)
+[![Go Report Card](https://goreportcard.com/badge/github.com/disksing/iter/v2)](https://goreportcard.com/report/github.com/disksing/iter/v2)
 
-## 环境要求
+## 动机
 
-Go 1.26 或更高版本。
+Go 现在已经支持泛型，我们值得拥有可复用的通用算法。`iter` 可以在以下方面帮助改善代码：
 
-## 包结构
+- 一些简单的循环逻辑不太可能写错或者低效，但使用算法调用将**使得代码更简洁和易于理解**。例如 [AllOf](https://pkg.go.dev/github.com/disksing/iter/v2/algo#AllOf)，[FindIf](https://pkg.go.dev/github.com/disksing/iter/v2/algo#FindIf)，[Accumulate](https://pkg.go.dev/github.com/disksing/iter/v2/algo#Accumulate)。
 
-| 包 | 用途 |
-|---|---|
-| `iter` | 迭代器约束，以及生成值、channel、`io.Writer` 等适配器 |
-| `iter/algo` | 面向迭代器区间的完整泛型算法 |
-| `iter/slices` | 常用 slice 算法，可直接依赖类型推断调用 |
-| `iter/lists` | `container/list` 的类型化迭代器适配器 |
-| `iter/strs` | 字节级 string 迭代器和字符串输出工具 |
+- 一些算法并不是很复杂，但不太容易写对。使用算法库**让代码“一眼看上去就是对的”**。例如 [Shuffle](https://pkg.go.dev/github.com/disksing/iter/v2/algo#Shuffle)，[Sample](https://pkg.go.dev/github.com/disksing/iter/v2/algo#Sample)，[Partition](https://pkg.go.dev/github.com/disksing/iter/v2/algo#Partition)。
 
-处理 slice 时优先使用 `slices` 包；需要自定义容器、跨容器复制或完整算法
-集合时使用 `algo` 包。
+- STL 还包含一些复杂算法，可能需要数小时才能搞对。**手动实现它们并不现实**。例如 [NthElement](https://pkg.go.dev/github.com/disksing/iter/v2/algo#NthElement)，[StablePartition](https://pkg.go.dev/github.com/disksing/iter/v2/algo#StablePartition)，[NextPermutation](https://pkg.go.dev/github.com/disksing/iter/v2/algo#NextPermutation)。
+
+- STL 的实现还有一些**鲜为人知的性能优化**。比如，[MinmaxElement](https://pkg.go.dev/github.com/disksing/iter/v2/algo#MinmaxElement) 被实现为每次取两个元素进行比较，这样做可以大幅减少整体比较次数。
+
+有一些开源项目在做类似的事情，比如 [gostl](https://github.com/liyue201/gostl)，[gods](https://github.com/emirpasic/gods) 和 [go-stp](https://github.com/itrabbit/go-stp)。`iter` 的独特之处在于：
+
+- **非侵入性**。`iter` 避免重复造轮子，尽可能地复用 Go 里已有的容器（slice，string，list.List 等），使用迭代器将它们适配给算法库。
+
+- **完整的算法库（>100）**。它实现了几乎所有 C++17 之前的算法。在[这里](https://github.com/disksing/iter/wiki/Algorithms)可以查看完整列表。
 
 ## 示例
 
-### 排序、去重和查找
+> 示例保留包名前缀，以明确对应的泛型 v2 API。完整且可执行的示例见 [examples_test.go](examples_test.go)。
+
+<table>
+<thead><tr><th colspan="2">控制台输出 list.List</th></tr></thead>
+<tbody><tr><td>
 
 ```go
-package main
-
-import (
-	"fmt"
-
-	iterslices "github.com/disksing/iter/v2/slices"
-)
-
-func main() {
-	values := []int{3, 2, 1, 4, 3, 2, 1}
-	iterslices.Sort(values)
-	values = iterslices.Unique(values)
-
-	fmt.Println(values)
-	fmt.Println(iterslices.BinarySearch(values, 3))
-	fmt.Println(iterslices.LowerBound(values, 3))
+l := list.New()
+for i := 1; i <= 5; i++ {
+  l.PushBack(i)
 }
+for e := l.Front(); e != nil; e = e.Next() {
+  fmt.Print(e.Value)
+  if e.Next() != nil {
+    fmt.Print("->")
+  }
+}
+// Output:
+// 1->2->3->4->5
 ```
 
-输出：
-
-```text
-[1 2 3 4]
-true
-2
-```
-
-### 在不同容器之间运行算法
+</td><td>
 
 ```go
-src := list.New()
-algo.GenerateN(iterlists.ListBackInserter[int](src), 5, iter.IotaGenerator(1))
-
-var dst []int
-algo.Copy(
-	iterlists.Begin[int](src),
-	iterlists.End[int](src),
-	iterslices.Appender(&dst),
-)
-fmt.Println(dst) // [1 2 3 4 5]
+l := list.New()
+algo.GenerateN(lists.ListBackInserter[int](l), 5, iter.IotaGenerator(1))
+algo.Copy(lists.Begin[int](l), lists.End[int](l), iter.IOWriter[int](os.Stdout, "->"))
+// Output:
+// 1->2->3->4->5
 ```
 
-### 从 channel 读取
+</td></tr></tbody>
+
+<thead><tr><th colspan="2">反转 string</th></tr></thead>
+<tbody><tr><td>
+
+```go
+s := "!dlrow olleH"
+var sb strings.Builder
+for i := len(s) - 1; i >= 0; i-- {
+  sb.WriteByte(s[i])
+}
+fmt.Println(sb.String())
+
+b := []byte(s)
+for i := len(s)/2 - 1; i >= 0; i-- {
+  j := len(s) - 1 - i
+  b[i], b[j] = b[j], b[i]
+}
+fmt.Println(string(b))
+// Output:
+// Hello world!
+// Hello world!
+```
+
+</td><td>
+
+```go
+s := "!dlrow olleH"
+fmt.Println(strs.MakeString(strs.RBegin(s), strs.REnd(s)))
+
+b := []byte(s)
+iterslices.Reverse(b)
+fmt.Println(string(b))
+// Output:
+// Hello world!
+// Hello world!
+```
+
+</td></tr></tbody>
+
+<thead><tr><th colspan="2">去重（来自 <a href="https://go.dev/wiki/SliceTricks#in-place-deduplicate-comparable">SliceTricks</a>，略微调整）</th></tr></thead>
+<tbody><tr><td>
+
+```go
+in := []int{3, 2, 1, 4, 3, 2, 1, 4, 1}
+sort.Ints(in)
+j := 0
+for i := 1; i < len(in); i++ {
+  if in[j] == in[i] {
+    continue
+  }
+  j++
+  in[j] = in[i]
+}
+in = in[:j+1]
+fmt.Println(in)
+// Output:
+// [1 2 3 4]
+```
+
+</td><td>
+
+```go
+in := []int{3, 2, 1, 4, 3, 2, 1, 4, 1}
+iterslices.Sort(in)
+in = iterslices.Unique(in)
+fmt.Println(in)
+// Output:
+// [1 2 3 4]
+```
+
+</td></tr></tbody>
+
+<thead><tr><th colspan="2">对 channel 中的所有整数求和</th></tr></thead>
+<tbody><tr><td>
 
 ```go
 ch := make(chan int)
 go func() {
-	algo.CopyN[int](iter.IotaReader(1), 100, iter.ChanWriter(ch))
-	close(ch)
+  for _, x := range rand.Perm(100) {
+    ch <- x + 1
+  }
+  close(ch)
 }()
-
-sum := algo.Accumulate(iter.ChanReader(ch), nil, 0)
-fmt.Println(sum) // 5050
+var sum int
+for x := range ch {
+  sum += x
+}
+fmt.Println(sum)
+// Output:
+// 5050
 ```
 
-更多可执行示例见 [`examples_test.go`](examples_test.go)。
+</td><td>
 
-## 迭代器模型
-
-算法使用左闭右开区间 `[first, last)`。泛型接口表达不同的迭代能力：
-
-- `InputIter`：单次向前读取；
-- `ForwardReader`：允许多次遍历；
-- `BidiReadWriter`：可双向移动并修改值；
-- `RandomReadWriter`：额外支持常数时间的距离和按偏移移动；
-- `OutputIter`：向目标写值。
-
-具体类型均已导出，调用者可以在自己的字段和函数签名中使用：
-
-- `slices.Iterator[T]`
-- `lists.Iterator[T]`
-- `strs.Iterator`
-- `iter.IotaIterator[T]`、`iter.RepeatIterator[T]`
-- `iter.ChannelReader[T]`、`iter.ChannelWriter[T]`
-- `iter.OutputWriter[T]`
-
-默认算法在类型约束允许时使用运算符；以 `By` 结尾的变体接收自定义 predicate、
-相等比较器或顺序比较器。
-
-## 与标准库 iter 的关系
-
-标准库 `iter.Seq` 很适合只读和惰性序列，但不能直接表达可写、双向或随机访问
-的位置。`NthElement`、heap、原地 partition、permutation 等正是本项目保留
-cursor 模型的原因。与标准 `iter.Seq` 的互操作会作为后续工作单独设计，不与
-当前 API 加固混在一起。
-
-## 开发验证
-
-```sh
-go mod verify
-go vet ./...
-go test -race ./...
-go test ./algo -run=^$ -fuzz=^FuzzSort$ -fuzztime=10s
-go test ./algo -run=^$ -fuzz=^FuzzNthElement$ -fuzztime=10s
+```go
+ch := make(chan int)
+go func() {
+  algo.CopyN[int](iter.IotaReader(1), 100, iter.ChanWriter(ch))
+  close(ch)
+}()
+fmt.Println(algo.Accumulate(iter.ChanReader(ch), nil, 0))
+// Output:
+// 5050
 ```
 
-## 许可证
+</td></tr></tbody>
 
-BSD 3-Clause，详见 [LICENSE](LICENSE)。
+<thead><tr><th colspan="2">删除字符串中的连续空格</th></tr></thead>
+<tbody><tr><td>
+
+```go
+str := "  a  quick   brown  fox  "
+var sb strings.Builder
+var prevIsSpace bool
+for i := 0; i < len(str); i++ {
+  if str[i] != ' ' || !prevIsSpace {
+    sb.WriteByte(str[i])
+  }
+  prevIsSpace = str[i] == ' '
+}
+fmt.Println(sb.String())
+// Output:
+// a quick brown fox
+```
+
+</td><td>
+
+```go
+str := "  a  quick   brown  fox  "
+var sb strs.StringBuilderInserter[byte]
+algo.UniqueCopyIf(strs.Begin(str), strs.End(str), &sb,
+  func(x, y byte) bool { return x == ' ' && y == ' ' })
+fmt.Println(sb.String())
+// Output:
+// a quick brown fox
+```
+
+</td></tr></tbody>
+
+<thead><tr><th colspan="2">收集 channel 中最大的 N 个整数</th></tr></thead>
+<tbody><tr><td>
+
+```go
+// 需要手动维护小顶堆。
+```
+
+</td><td>
+
+```go
+top := make([]int, 5)
+algo.PartialSortCopyBy(iter.ChanReader(ch), nil, iterslices.Begin(top), iterslices.End(top),
+  func(x, y int) bool { return x > y })
+algo.Copy(iterslices.Begin(top), iterslices.End(top), iter.IOWriter[int](os.Stdout, ", "))
+```
+
+</td></tr></tbody>
+
+<thead><tr><th colspan="2">输出 ["a", "b", "c"] 的所有排列</th></tr></thead>
+<tbody><tr><td>
+
+```go
+// 通常需要引入递归来完成。
+```
+
+</td><td>
+
+```go
+s := []string{"a", "b", "c"}
+for ok := true; ok; ok = iterslices.NextPermutation(s) {
+  fmt.Println(s)
+}
+// Output:
+// [a b c]
+// [a c b]
+// [b a c]
+// [b c a]
+// [c a b]
+// [c b a]
+```
+
+</td></tr></tbody>
+</table>
+
+## 致谢
+
+- [cppreference.com](https://en.cppreference.com/)
+- [LLVM libc++](https://libcxx.llvm.org/)
+
+## 开源许可证
+
+BSD 3-Clause
