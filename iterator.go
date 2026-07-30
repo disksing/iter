@@ -1,8 +1,5 @@
 package iter
 
-// Iter represents an iterator, just an alias of any.
-type Iter[T any] interface{}
-
 type (
 	// Reader is a readable iterator.
 	Reader[T any] interface {
@@ -20,55 +17,55 @@ type (
 )
 
 // Comparable represents an iterator that can be compared.
-type Comparable[It Iter[any]] interface {
+type Comparable[It any] interface {
 	Eq(It) bool
 }
 
 // ForwardMovable represents iterators that can move forward.
-type ForwardMovable[It Iter[any]] interface {
+type ForwardMovable[It any] interface {
 	Next() It
 }
 
 // BackwardMovable represents iterators that can move backward.
-type BackwardMovable[It Iter[any]] interface {
+type BackwardMovable[It any] interface {
 	Prev() It
 }
 
 // InputIter is a readable and forward movable iterator.
-type InputIter[T any, It Iter[T]] interface {
+type InputIter[T any, It any] interface {
 	Reader[T]
 	ForwardMovable[It]
 	Comparable[It]
 }
 
-// OutputIter is a writable and ForwardMovable iterator.
+// OutputIter is a writable iterator.
 //
-// It may not implement the incremental interface, in which case the increment
-// logic is done in Write().
+// If it also implements ForwardMovable, algorithms advance it after each
+// write. Otherwise Write is responsible for advancing the destination.
 type OutputIter[T any] interface {
 	Writer[T]
 }
 
 type (
 	// ForwardIter is an iterator that moves forward.
-	ForwardIter[T any, It Iter[T]] interface {
+	ForwardIter[T any, It any] interface {
 		ForwardMovable[It]
 		Comparable[It]
 		AllowMultiplePass() // a marker indicates it can be multiple passed.
 	}
 	// ForwardReader is an interface that groups ForwardIter and Reader.
-	ForwardReader[T any, It Iter[T]] interface {
+	ForwardReader[T any, It any] interface {
 		ForwardIter[T, It]
 		Reader[T]
 	}
 	// ForwardWriter is an interface that groups ForwardIter and Writer.
-	ForwardWriter[T any, It Iter[T]] interface {
+	ForwardWriter[T any, It any] interface {
 		ForwardIter[T, It]
 		Writer[T]
 	}
 	// ForwardReadWriter is an interface that groups ForwardIter and
 	// ReadWriter.
-	ForwardReadWriter[T any, It Iter[T]] interface {
+	ForwardReadWriter[T any, It any] interface {
 		ForwardIter[T, It]
 		ReadWriter[T]
 	}
@@ -76,22 +73,22 @@ type (
 
 type (
 	// BidiIter is an iterator that moves both forward or backward.
-	BidiIter[T any, It Iter[T]] interface {
+	BidiIter[T any, It any] interface {
 		ForwardIter[T, It]
 		BackwardMovable[It]
 	}
 	// BidiReader is an interface that groups BidiIter and Reader.
-	BidiReader[T any, It Iter[T]] interface {
+	BidiReader[T any, It any] interface {
 		BidiIter[T, It]
 		Reader[T]
 	}
 	// BidiWriter is an interface that groups BidiIter and Writer.
-	BidiWriter[T any, It Iter[T]] interface {
+	BidiWriter[T any, It any] interface {
 		BidiIter[T, It]
 		Writer[T]
 	}
 	// BidiReadWriter is an interface that groups BidiIter and ReadWriter.
-	BidiReadWriter[T any, It Iter[T]] interface {
+	BidiReadWriter[T any, It any] interface {
 		BidiIter[T, It]
 		ReadWriter[T]
 	}
@@ -99,32 +96,32 @@ type (
 
 type (
 	// RandomIter is a random access iterator.
-	RandomIter[T any, It Iter[T]] interface {
+	RandomIter[T any, It any] interface {
 		BidiIter[T, It]
 		AdvanceN(n int) It
 		Distance(It) int
 		Less(It) bool
 	}
 	// RandomReader is an interface that groups RandomIter and Reader.
-	RandomReader[T any, It Iter[T]] interface {
+	RandomReader[T any, It any] interface {
 		RandomIter[T, It]
 		Reader[T]
 	}
 	// RandomWriter is an interface that groups RandomIter and Writer.
-	RandomWriter[T any, It Iter[T]] interface {
+	RandomWriter[T any, It any] interface {
 		RandomIter[T, It]
 		Writer[T]
 	}
 	// RandomReadWriter is an interface that groups RandomIter and
 	// ReadWriter.
-	RandomReadWriter[T any, It Iter[T]] interface {
+	RandomReadWriter[T any, It any] interface {
 		RandomIter[T, It]
 		ReadWriter[T]
 	}
 )
 
 // Distance returns the distance of two iterators.
-func Distance[T any, It Iter[T]](first, last It) int {
+func Distance[T any, It any](first, last It) int {
 	ifirst, ilast := any(first), any(last)
 	if f, ok := ifirst.(RandomIter[T, It]); ok {
 		if l, ok := ilast.(It); ok {
@@ -151,7 +148,7 @@ func Distance[T any, It Iter[T]](first, last It) int {
 }
 
 // AdvanceN moves an iterator by step N.
-func AdvanceN[T any, It Iter[T]](it It, n int) It {
+func AdvanceN[T any, It any](it It, n int) It {
 	if it2, ok := any(it).(RandomIter[T, It]); ok {
 		return it2.AdvanceN(n)
 	}

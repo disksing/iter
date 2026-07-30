@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var _ iter.BidiReadWriter[int, Iterator[int]] = Iterator[int]{}
+
 func listEq[T comparable](assert *assert.Assertions, lst *list.List, v ...T) {
 	end := slices.End(v)
 	assert.True(Equal[T](Begin[T](lst), End[T](lst), slices.Begin(v), &end))

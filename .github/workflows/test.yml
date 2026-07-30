@@ -1,33 +1,62 @@
-name: Test
+name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
+
+permissions:
+  contents: read
+  id-token: write
 
 concurrency:
-  group: ${{ github.ref }}-${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   test:
+    name: Test with Go 1.26
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
 
-    - uses: actions/setup-go@v3
-      with:
-        go-version: 1.18
-    
-    - name: test
-      run: go test -coverprofile=coverage1.txt -covermode=atomic ./...
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 1.26.x
+          check-latest: true
+          cache-dependency-path: go.sum
 
-    - name: fuzz
-      run: go test -coverprofile=coverage2.txt -covermode=atomic ./algo --fuzz-time=5m
+      - name: Verify dependencies
+        run: go mod verify
 
-    - name: upload codecov
-      uses: codecov/codecov-action@v2
-      with:
-        files: ./coverage1.txt, ./coverage2.txt
+      - name: Vet
+        run: go vet ./...
 
+      - name: Test
+        run: go test -race -covermode=atomic -coverprofile=coverage.txt ./...
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v7
+        with:
+          files: ./coverage.txt
+          fail_ci_if_error: true
+          use_oidc: true
+
+  fuzz:
+    name: Fuzz smoke tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 1.26.x
+          check-latest: true
+          cache-dependency-path: go.sum
+
+      - name: Fuzz Sort
+        run: go test ./algo -run=^$ -fuzz=^FuzzSort$ -fuzztime=10s
+
+      - name: Fuzz NthElement
+        run: go test ./algo -run=^$ -fuzz=^FuzzNthElement$ -fuzztime=10s
